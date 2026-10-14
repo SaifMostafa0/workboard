@@ -13,8 +13,9 @@ import {
   useTasks,
   useUpdateTask,
 } from '@/hooks/useData';
+import { cn } from '@/lib/cn';
 import { ArrowLeft, Kanban, List, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type DragEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import styles from './ProjectDetailPage.module.css';
 
@@ -69,6 +70,14 @@ export function ProjectDetailPage() {
   const visibleTasks = showCompleted ? allTasks : allTasks.filter((t) => t.status !== 'done');
 
   const handleStatusChange = (taskId: string, newStatus: 'todo' | 'in_progress' | 'done') => {
+    updateTask.mutate({ id: taskId, update: { status: newStatus } });
+  };
+
+  // Dropping a card onto another column changes its status. Dropping it back
+  // where it started is a no-op (avoids a pointless write + toast).
+  const handleDropTask = (taskId: string, newStatus: TaskStatus) => {
+    const task = allTasks.find((t) => t.id === taskId);
+    if (!task || task.status === newStatus) return;
     updateTask.mutate({ id: taskId, update: { status: newStatus } });
   };
 
@@ -216,6 +225,7 @@ export function ProjectDetailPage() {
               count={column.count}
               tasks={column.tasks}
               onStatusChange={handleStatusChange}
+              onDropTask={handleDropTask}
               onEdit={(t) => setEditingTask(tasks?.find((x) => x.id === t.id) ?? null)}
               onDelete={handleDelete}
             />
@@ -280,6 +290,7 @@ interface KanbanColumnProps {
     updatedAt: string;
   }>;
   onStatusChange: (id: string, status: 'todo' | 'in_progress' | 'done') => void;
+  onDropTask: (taskId: string, status: TaskStatus) => void;
   onEdit: (task: { id: string }) => void;
   onDelete: (id: string, title: string) => void;
 }
@@ -290,17 +301,47 @@ function KanbanColumn({
   count,
   tasks,
   onStatusChange,
+  onDropTask,
   onEdit,
   onDelete,
 }: KanbanColumnProps) {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
   const statusColors: Record<'todo' | 'in_progress' | 'done', { bg: string; fg: string }> = {
     todo: { bg: 'var(--color-primary)', fg: 'var(--color-text-inverse)' },
     in_progress: { bg: 'var(--color-warning)', fg: '#111827' },
     done: { bg: 'var(--color-success)', fg: '#111827' },
   };
 
+  const handleDragOver = (event: DragEvent<HTMLElement>) => {
+    // Preventing the default is what allows a drop to fire here.
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLElement>) => {
+    // Ignore bubbling from descendants so the highlight doesn't flicker.
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    const taskId = event.dataTransfer.getData('text/plain');
+    if (taskId) onDropTask(taskId, status);
+  };
+
   return (
-    <section className={styles.column} aria-labelledby={`column-${status}`}>
+    <section
+      className={cn(styles.column, isDragOver && styles.columnDragOver)}
+      aria-labelledby={`column-${status}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <header className={styles.columnHeader}>
         <h2 id={`column-${status}`} className={styles.columnTitle}>
           <span className={styles.columnLabel}>{label}</span>
@@ -326,6 +367,14 @@ function KanbanColumn({
               onStatusChange={onStatusChange}
               onEdit={onEdit}
               onDelete={onDelete}
+              draggable
+              isDragging={draggingId === task.id}
+              onDragStart={(event) => {
+                event.dataTransfer.setData('text/plain', task.id);
+                event.dataTransfer.effectAllowed = 'move';
+                setDraggingId(task.id);
+              }}
+              onDragEnd={() => setDraggingId(null)}
             />
           ))
         )}

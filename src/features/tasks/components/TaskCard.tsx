@@ -3,6 +3,7 @@ import type { TaskPriority, TaskStatus } from '@/domain/task';
 import { cn } from '@/lib/cn';
 import { formatRelativeTime, isDueToday, isOverdue } from '@/lib/date';
 import { Calendar, CheckCircle, ChevronRight, Edit, Tag, Trash2, User } from 'lucide-react';
+import type { DragEvent } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './TaskCard.module.css';
 
@@ -27,6 +28,11 @@ interface TaskCardProps {
   selectable?: boolean;
   selected?: boolean;
   onSelect?: (id: string, selected: boolean) => void;
+  /** When true, the card can be dragged (kanban board). */
+  draggable?: boolean;
+  onDragStart?: (event: DragEvent<HTMLElement>) => void;
+  onDragEnd?: (event: DragEvent<HTMLElement>) => void;
+  isDragging?: boolean;
 }
 
 export function TaskCard({
@@ -38,6 +44,10 @@ export function TaskCard({
   selectable = false,
   selected = false,
   onSelect,
+  draggable = false,
+  onDragStart,
+  onDragEnd,
+  isDragging = false,
 }: TaskCardProps) {
   const overdue = task.dueDate && isOverdue(task.dueDate) && task.status !== 'done';
   const dueToday = task.dueDate && isDueToday(task.dueDate) && task.status !== 'done';
@@ -61,9 +71,13 @@ export function TaskCard({
         styles.card,
         styles[variant],
         styles[`priority-${task.priority}`],
-        selected && styles.selected
+        selected && styles.selected,
+        isDragging && styles.dragging
       )}
       role="listitem"
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
     >
       {/* Priority indicator */}
       <div className={styles.priorityBar} aria-hidden="true" />

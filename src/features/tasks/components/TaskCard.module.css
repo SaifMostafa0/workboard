@@ -23,6 +23,18 @@
   border-color: var(--color-primary);
 }
 
+.card[draggable="true"] {
+  cursor: grab;
+}
+
+.card[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.dragging {
+  opacity: 0.5;
+}
+
 /* Priority border */
 .priorityBar {
   position: absolute;

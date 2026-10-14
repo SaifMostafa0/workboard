@@ -60,7 +60,16 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
       'jsx-a11y/anchor-is-valid': 'off',
       'jsx-a11y/click-events-have-key-events': 'warn',
-      'jsx-a11y/no-noninteractive-element-interactions': 'warn',
+      // Kanban cards/columns are list items that also accept drag-and-drop.
+      // Drag interactions aren't keyboard interactions, and a keyboard-accessible
+      // alternative (the status buttons) is always present, so only the classic
+      // click/keyboard handlers are enforced here.
+      'jsx-a11y/no-noninteractive-element-interactions': [
+        'warn',
+        {
+          handlers: ['onClick', 'onMouseDown', 'onMouseUp', 'onKeyPress', 'onKeyDown', 'onKeyUp'],
+        },
+      ],
     },
   },
   {
