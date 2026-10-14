@@ -1,0 +1,16 @@
+# Build output
+dist
+dist-ssr
+coverage
+
+# Test output
+playwright-report
+test-results
+blob-report
+
+# Dependencies / lockfiles
+node_modules
+package-lock.json
+
+# Generated / minified
+*.min.*

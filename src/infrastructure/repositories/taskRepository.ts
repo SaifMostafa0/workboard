@@ -1,0 +1,196 @@
+import type { DomainError, StorageError } from '@/domain/errors';
+import { createNotFoundError } from '@/domain/errors';
+import type { Task, TaskInput, TaskPriority, TaskStatus, TaskUpdate } from '@/domain/task';
+import {
+  safeValidateTaskInput,
+  safeValidateTaskUpdate,
+  zodErrorToValidationError,
+} from '@/domain/validation';
+import type { Result, StorageAdapter } from '@/infrastructure/storage/storageAdapter';
+import {
+  createCollectionPrefix,
+  createStorageKey,
+  err,
+  ok,
+} from '@/infrastructure/storage/storageAdapter';
+
+export interface ITaskRepository {
+  list(projectId?: string): Promise<Result<Task[], DomainError>>;
+  get(id: string): Promise<Result<Task, DomainError>>;
+  create(input: TaskInput): Promise<Result<Task, DomainError>>;
+  update(id: string, update: TaskUpdate): Promise<Result<Task, DomainError>>;
+  delete(id: string): Promise<Result<void, DomainError>>;
+  deleteByProject(projectId: string): Promise<Result<number, DomainError>>;
+  count(projectId?: string): Promise<Result<number, DomainError>>;
+  countByStatus(projectId: string): Promise<Result<Record<TaskStatus, number>, DomainError>>;
+}
+
+const TASK_PREFIX = createCollectionPrefix('tasks');
+
+const toDomainError = (error: StorageError): DomainError => error;
+
+export class LocalTaskRepository implements ITaskRepository {
+  constructor(private readonly adapter: StorageAdapter) {}
+
+  async list(projectId?: string): Promise<Result<Task[], DomainError>> {
+    const result = await this.adapter.getAll<Task>(TASK_PREFIX);
+    if (!result.ok) return err(toDomainError(result.error));
+
+    let tasks = result.value;
+
+    if (projectId) {
+      tasks = tasks.filter((task) => task.projectId === projectId);
+    }
+
+    return ok(
+      tasks.sort((a, b) => {
+        // Sort by status order: todo, in_progress, done
+        const statusOrder: Record<TaskStatus, number> = { todo: 0, in_progress: 1, done: 2 };
+        const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+        if (statusDiff !== 0) return statusDiff;
+        // Then by priority (urgent first)
+        const priorityOrder: Record<TaskPriority, number> = {
+          urgent: 3,
+          high: 2,
+          medium: 1,
+          low: 0,
+        };
+        const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+        if (priorityDiff !== 0) return priorityDiff;
+        // Then by due date (earliest first, nulls last)
+        if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+        if (a.dueDate) return -1;
+        if (b.dueDate) return 1;
+        // Finally by creation date (newest first)
+        return b.createdAt.localeCompare(a.createdAt);
+      })
+    );
+  }
+
+  async get(id: string): Promise<Result<Task, DomainError>> {
+    const key = createStorageKey('tasks', id);
+    const result = await this.adapter.get<Task>(key);
+    if (!result.ok) return err(toDomainError(result.error));
+    if (!result.value) return err(createNotFoundError('Task', id));
+    return ok(result.value);
+  }
+
+  async create(input: TaskInput): Promise<Result<Task, DomainError>> {
+    const validation = safeValidateTaskInput(input);
+    if (!validation.success) {
+      return err(zodErrorToValidationError(validation.error));
+    }
+
+    const validatedInput = validation.data;
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+
+    const task: Task = {
+      id,
+      projectId: validatedInput.projectId,
+      title: validatedInput.title,
+      description: validatedInput.description,
+      status: validatedInput.status,
+      priority: validatedInput.priority,
+      dueDate: validatedInput.dueDate,
+      assignee: validatedInput.assignee,
+      tags: validatedInput.tags,
+      createdAt: now,
+      updatedAt: now,
+      completedAt: validatedInput.status === 'done' ? now : undefined,
+    };
+
+    const key = createStorageKey('tasks', id);
+    const setResult = await this.adapter.set(key, task);
+    if (!setResult.ok) return err(toDomainError(setResult.error));
+
+    return ok(task);
+  }
+
+  async update(id: string, update: TaskUpdate): Promise<Result<Task, DomainError>> {
+    const getResult = await this.get(id);
+    if (!getResult.ok) return getResult;
+
+    const validation = safeValidateTaskUpdate(update);
+    if (!validation.success) {
+      return err(zodErrorToValidationError(validation.error));
+    }
+
+    const task = getResult.value;
+    const now = new Date().toISOString();
+    let completedAt = task.completedAt;
+
+    if (update.status === 'done' && task.status !== 'done') {
+      // Status changed to done - set completedAt
+      completedAt = now;
+    } else if (update.status !== undefined && update.status !== 'done' && task.status === 'done') {
+      // Status changed from done to something else - clear completedAt
+      completedAt = undefined;
+    }
+
+    const updatedTask: Task = {
+      ...task,
+      ...validation.data,
+      updatedAt: now,
+      completedAt,
+    };
+
+    const key = createStorageKey('tasks', id);
+    const setResult = await this.adapter.set(key, updatedTask);
+    if (!setResult.ok) return err(toDomainError(setResult.error));
+
+    return ok(updatedTask);
+  }
+
+  async delete(id: string): Promise<Result<void, DomainError>> {
+    const getResult = await this.get(id);
+    if (!getResult.ok) return getResult;
+
+    const key = createStorageKey('tasks', id);
+    const deleteResult = await this.adapter.delete(key);
+    if (!deleteResult.ok) return err(toDomainError(deleteResult.error));
+
+    return ok(undefined);
+  }
+
+  async deleteByProject(projectId: string): Promise<Result<number, DomainError>> {
+    const listResult = await this.list(projectId);
+    if (!listResult.ok) return listResult;
+
+    let deletedCount = 0;
+    for (const task of listResult.value) {
+      const deleteResult = await this.delete(task.id);
+      if (!deleteResult.ok) return deleteResult;
+      deletedCount++;
+    }
+
+    return ok(deletedCount);
+  }
+
+  async count(projectId?: string): Promise<Result<number, DomainError>> {
+    const listResult = await this.list(projectId);
+    if (!listResult.ok) return listResult;
+    return ok(listResult.value.length);
+  }
+
+  async countByStatus(projectId: string): Promise<Result<Record<TaskStatus, number>, DomainError>> {
+    const listResult = await this.list(projectId);
+    if (!listResult.ok) return listResult;
+
+    const counts: Record<TaskStatus, number> = {
+      todo: 0,
+      in_progress: 0,
+      done: 0,
+    };
+
+    for (const task of listResult.value) {
+      counts[task.status]++;
+    }
+
+    return ok(counts);
+  }
+}
+
+export const createTaskRepository = (adapter: StorageAdapter): ITaskRepository => {
+  return new LocalTaskRepository(adapter);
+};

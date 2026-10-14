@@ -1,0 +1,20 @@
+# Normalize all text files to LF in the repository, regardless of the
+# contributor's local platform. This keeps diffs clean on Windows machines.
+* text=auto eol=lf
+
+# Binary assets should never be line-ending converted or diffed as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.avif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+
+# Keep lockfiles mergable and readable in review.
+package-lock.json -diff linguist-generated=true

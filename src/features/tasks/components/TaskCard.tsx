@@ -1,0 +1,173 @@
+import { Button } from '@/components/ui/Button';
+import type { TaskPriority, TaskStatus } from '@/domain/task';
+import { cn } from '@/lib/cn';
+import { formatRelativeTime, isDueToday, isOverdue } from '@/lib/date';
+import { Calendar, CheckCircle, ChevronRight, Edit, Tag, Trash2, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import styles from './TaskCard.module.css';
+
+interface TaskCardProps {
+  task: {
+    id: string;
+    projectId?: string;
+    title: string;
+    description: string;
+    status: TaskStatus;
+    priority: TaskPriority;
+    dueDate?: string;
+    assignee?: string;
+    tags: string[];
+    updatedAt: string;
+  };
+  onStatusChange: (id: string, status: TaskStatus) => void;
+  onEdit: (task: { id: string }) => void;
+  onDelete: (id: string, title: string) => void;
+  variant?: 'kanban' | 'list';
+}
+
+export function TaskCard({
+  task,
+  onStatusChange,
+  onEdit,
+  onDelete,
+  variant = 'kanban',
+}: TaskCardProps) {
+  const overdue = task.dueDate && isOverdue(task.dueDate) && task.status !== 'done';
+  const dueToday = task.dueDate && isDueToday(task.dueDate) && task.status !== 'done';
+
+  const statusLabels: Record<TaskStatus, string> = {
+    todo: 'To Do',
+    in_progress: 'In Progress',
+    done: 'Done',
+  };
+
+  const priorityLabels: Record<TaskPriority, string> = {
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+    urgent: 'Urgent',
+  };
+
+  return (
+    <article
+      className={cn(styles.card, styles[variant], styles[`priority-${task.priority}`])}
+      role="listitem"
+    >
+      {/* Priority indicator */}
+      <div className={styles.priorityBar} aria-hidden="true" />
+
+      {/* Main content */}
+      <div className={styles.content}>
+        <header className={styles.header}>
+          <h3 className={styles.title}>
+            {task.projectId ? (
+              <Link to={`/projects/${task.projectId}`} className={styles.titleLink}>
+                {task.title}
+              </Link>
+            ) : (
+              <span className={styles.titleLink}>{task.title}</span>
+            )}
+          </h3>
+          <div className={styles.actions}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEdit({ id: task.id })}
+              aria-label={`Edit ${task.title}`}
+            >
+              <Edit className="w-4 h-4" aria-hidden="true" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(task.id, task.title)}
+              aria-label={`Delete ${task.title}`}
+            >
+              <Trash2 className="w-4 h-4" aria-hidden="true" />
+            </Button>
+          </div>
+        </header>
+
+        {task.description && <p className={styles.description}>{task.description}</p>}
+
+        {/* Metadata */}
+        <div className={styles.meta}>
+          {/* Status badge */}
+          <span className={cn(styles.badge, styles[`status-${task.status}`])}>
+            {statusLabels[task.status]}
+          </span>
+
+          {/* Priority badge */}
+          <span className={cn(styles.badge, styles[`priority-${task.priority}`])}>
+            {priorityLabels[task.priority]}
+          </span>
+
+          {/* Due date */}
+          {task.dueDate && (
+            <time
+              className={cn(styles.dueDate, overdue && styles.overdue, dueToday && styles.dueToday)}
+              dateTime={task.dueDate}
+            >
+              <Calendar className="w-3 h-3" aria-hidden="true" />
+              {overdue ? 'Overdue' : dueToday ? 'Due today' : formatRelativeTime(task.dueDate)}
+            </time>
+          )}
+
+          {/* Assignee */}
+          {task.assignee && (
+            <span className={styles.assignee}>
+              <User className="w-3 h-3" aria-hidden="true" />
+              {task.assignee}
+            </span>
+          )}
+
+          {/* Tags */}
+          {task.tags.length > 0 && (
+            <div className={styles.tags}>
+              {task.tags.slice(0, 3).map((tag) => (
+                <span key={tag} className={styles.tag}>
+                  <Tag className="w-3 h-3" aria-hidden="true" />
+                  {tag}
+                </span>
+              ))}
+              {task.tags.length > 3 && (
+                <span className={styles.tagMore}>+{task.tags.length - 3}</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Updated time */}
+        <div className={styles.updated}>Updated {formatRelativeTime(task.updatedAt)}</div>
+      </div>
+
+      {/* Kanban-specific: status change buttons */}
+      {variant === 'kanban' && task.status !== 'done' && (
+        <footer className={styles.kanbanActions}>
+          {task.status === 'todo' && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onStatusChange(task.id, 'in_progress')}
+              className={styles.statusButton}
+            >
+              Start
+              <ChevronRight className="w-3 h-3" aria-hidden="true" />
+            </Button>
+          )}
+          {task.status === 'in_progress' && (
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => onStatusChange(task.id, 'done')}
+              className={styles.statusButton}
+            >
+              Complete
+              <CheckCircle className="w-3 h-3" aria-hidden="true" />
+            </Button>
+          )}
+        </footer>
+      )}
+    </article>
+  );
+}
