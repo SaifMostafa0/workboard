@@ -1,6 +1,15 @@
-import type { DomainError, StorageError } from '@/domain/errors';
-import { createNotFoundError } from '@/domain/errors';
-import type { Task, TaskInput, TaskPriority, TaskStatus, TaskUpdate } from '@/domain/task';
+import type { DomainError, StorageError, ValidationError } from '@/domain/errors';
+import { createNotFoundError, createValidationError } from '@/domain/errors';
+import type {
+  ParentAssignmentIssue,
+  Epic,
+  Task,
+  TaskInput,
+  TaskPriority,
+  TaskStatus,
+  TaskUpdate,
+} from '@/domain';
+import { PARENT_ASSIGNMENT_MESSAGES, validateParentAssignment } from '@/domain/task';
 import {
   safeValidateTaskInput,
   safeValidateTaskUpdate,
@@ -17,6 +26,8 @@ import {
 export interface ITaskRepository {
   list(projectId?: string): Promise<Result<Task[], DomainError>>;
   listDeleted(): Promise<Result<Task[], DomainError>>;
+  /** Active children of a parent task. */
+  listChildren(parentId: string): Promise<Result<Task[], DomainError>>;
   get(id: string): Promise<Result<Task, DomainError>>;
   create(input: TaskInput): Promise<Result<Task, DomainError>>;
   update(id: string, update: TaskUpdate): Promise<Result<Task, DomainError>>;
@@ -39,11 +50,24 @@ export interface ITaskRepository {
 }
 
 const TASK_PREFIX = createCollectionPrefix('tasks');
+const EPIC_PREFIX = createCollectionPrefix('epics');
 
 const toDomainError = (error: StorageError): DomainError => error;
 
+const parentIssueError = (issue: ParentAssignmentIssue): ValidationError =>
+  createValidationError([
+    { field: 'parentId', message: PARENT_ASSIGNMENT_MESSAGES[issue], code: issue },
+  ]);
+
 export class LocalTaskRepository implements ITaskRepository {
   constructor(private readonly adapter: StorageAdapter) {}
+
+  /** Number of active (not trashed) direct children of a task. */
+  private async countActiveChildren(id: string): Promise<Result<number, DomainError>> {
+    const result = await this.adapter.getAll<Task>(TASK_PREFIX);
+    if (!result.ok) return err(toDomainError(result.error));
+    return ok(result.value.filter((task) => task.parentId === id && !task.deletedAt).length);
+  }
 
   async list(projectId?: string): Promise<Result<Task[], DomainError>> {
     const result = await this.adapter.getAll<Task>(TASK_PREFIX);
@@ -90,6 +114,16 @@ export class LocalTaskRepository implements ITaskRepository {
     );
   }
 
+  async listChildren(parentId: string): Promise<Result<Task[], DomainError>> {
+    const result = await this.adapter.getAll<Task>(TASK_PREFIX);
+    if (!result.ok) return err(toDomainError(result.error));
+    return ok(
+      result.value
+        .filter((task) => task.parentId === parentId && !task.deletedAt)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    );
+  }
+
   async get(id: string): Promise<Result<Task, DomainError>> {
     const key = createStorageKey('tasks', id);
     const result = await this.adapter.get<Task>(key);
@@ -108,9 +142,37 @@ export class LocalTaskRepository implements ITaskRepository {
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
 
+    // Sub-tasks inherit their parent's project and must reference a valid,
+    // top-level task (depth is limited to one level).
+    let projectId = validatedInput.projectId;
+    if (validatedInput.parentId) {
+      const parentResult = await this.get(validatedInput.parentId);
+      if (!parentResult.ok) return err(parentIssueError('parent_not_found'));
+      const issue = validateParentAssignment({
+        taskId: '',
+        parentId: validatedInput.parentId,
+        parent: parentResult.value,
+        taskHasChildren: false,
+      });
+      if (issue) return err(parentIssueError(issue));
+      projectId = parentResult.value.projectId;
+    }
+
+    // Validate epic reference if provided.
+    let epicId: string | undefined;
+    if (validatedInput.epicId) {
+      const allEpicsResult = await this.adapter.getAll<Epic>(EPIC_PREFIX);
+      if (!allEpicsResult.ok) return err(toDomainError(allEpicsResult.error));
+      const epic = allEpicsResult.value.find((e) => e.id === validatedInput.epicId && !e.deletedAt);
+      if (!epic) {
+        return err(createValidationError([{ field: 'epicId', message: 'Referenced epic does not exist', code: 'invalid_epic_reference' }]));
+      }
+      epicId = validatedInput.epicId;
+    }
+
     const task: Task = {
       id,
-      projectId: validatedInput.projectId,
+      projectId,
       title: validatedInput.title,
       description: validatedInput.description,
       status: validatedInput.status,
@@ -118,6 +180,8 @@ export class LocalTaskRepository implements ITaskRepository {
       dueDate: validatedInput.dueDate,
       assignee: validatedInput.assignee,
       tags: validatedInput.tags,
+      parentId: validatedInput.parentId,
+      epicId,
       createdAt: now,
       updatedAt: now,
       completedAt: validatedInput.status === 'done' ? now : undefined,
@@ -141,6 +205,22 @@ export class LocalTaskRepository implements ITaskRepository {
 
     const task = getResult.value;
     const now = new Date().toISOString();
+
+    // Re-validate the hierarchy when a parent reference is being set.
+    if (validation.data.parentId) {
+      const parentResult = await this.get(validation.data.parentId);
+      if (!parentResult.ok) return err(parentIssueError('parent_not_found'));
+      const childrenResult = await this.countActiveChildren(id);
+      if (!childrenResult.ok) return err(childrenResult.error);
+      const issue = validateParentAssignment({
+        taskId: id,
+        parentId: validation.data.parentId,
+        parent: parentResult.value,
+        taskHasChildren: childrenResult.value > 0,
+      });
+      if (issue) return err(parentIssueError(issue));
+    }
+
     let completedAt = task.completedAt;
 
     if (update.status === 'done' && task.status !== 'done') {
@@ -194,6 +274,16 @@ export class LocalTaskRepository implements ITaskRepository {
     const setResult = await this.adapter.set(key, deletedTask);
     if (!setResult.ok) return err(toDomainError(setResult.error));
 
+    // Cascade: a parent's active sub-tasks move to the trash with it so the
+    // hierarchy is never left dangling. Restoring the parent restores them.
+    const childrenResult = await this.listChildren(id);
+    if (!childrenResult.ok) return err(childrenResult.error);
+    for (const child of childrenResult.value) {
+      const childTask: Task = { ...child, deletedAt: now, updatedAt: now };
+      const childSetResult = await this.adapter.set(createStorageKey('tasks', child.id), childTask);
+      if (!childSetResult.ok) return err(toDomainError(childSetResult.error));
+    }
+
     return ok(undefined);
   }
 
@@ -211,12 +301,25 @@ export class LocalTaskRepository implements ITaskRepository {
     const getResult = await this.get(id);
     if (!getResult.ok) return getResult;
 
+    const now = new Date().toISOString();
     const { deletedAt: _deletedAt, ...rest } = getResult.value;
-    const restoredTask: Task = { ...rest, updatedAt: new Date().toISOString() };
+    const restoredTask: Task = { ...rest, updatedAt: now };
 
     const key = createStorageKey('tasks', id);
     const setResult = await this.adapter.set(key, restoredTask);
     if (!setResult.ok) return err(toDomainError(setResult.error));
+
+    // Cascade: restore sub-tasks that were trashed with their parent so the
+    // hierarchy comes back whole.
+    const allResult = await this.adapter.getAll<Task>(TASK_PREFIX);
+    if (!allResult.ok) return err(toDomainError(allResult.error));
+    for (const child of allResult.value) {
+      if (child.parentId !== id || !child.deletedAt) continue;
+      const { deletedAt: _childDeletedAt, ...childRest } = child;
+      const childTask: Task = { ...childRest, updatedAt: now };
+      const childSetResult = await this.adapter.set(createStorageKey('tasks', child.id), childTask);
+      if (!childSetResult.ok) return err(toDomainError(childSetResult.error));
+    }
 
     return ok(restoredTask);
   }

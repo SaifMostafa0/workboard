@@ -26,6 +26,10 @@ interface TaskFormDialogProps {
   onSubmit: (data: TaskInputValidated | TaskUpdateValidated) => void;
   /** When provided and creating (not editing), a project selector is shown. */
   projects?: Array<{ id: string; name: string }>;
+  /** When set, the new task is created as a sub-task of this task. */
+  parentId?: string;
+  /** Display title of the parent task (for the sub-task context note). */
+  parentTitle?: string;
 }
 
 export function TaskFormDialog({
@@ -36,8 +40,11 @@ export function TaskFormDialog({
   isLoading,
   onSubmit,
   projects,
+  parentId,
+  parentTitle,
 }: TaskFormDialogProps) {
   const isEditing = !!taskId;
+  const isSubtask = !isEditing && !!parentId;
   const schema = isEditing ? taskUpdateSchema : taskInputSchema;
 
   const {
@@ -57,6 +64,7 @@ export function TaskFormDialog({
       dueDate: undefined,
       assignee: '',
       tags: [] as string[],
+      parentId,
     },
     mode: 'onChange',
   });
@@ -85,18 +93,26 @@ export function TaskFormDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title={isEditing ? 'Edit Task' : 'Create Task'}
+      title={isEditing ? 'Edit Task' : isSubtask ? 'Create Sub-task' : 'Create Task'}
       description={
         isEditing
           ? 'Update the task details below.'
-          : projectId
-            ? 'Add a new task to this project.'
-            : 'Choose a project and add a new task.'
+          : isSubtask
+            ? 'Break this task into a smaller step.'
+            : projectId
+              ? 'Add a new task to this project.'
+              : 'Choose a project and add a new task.'
       }
       size="lg"
     >
       <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-        {!isEditing && projects && (
+        {isSubtask && parentTitle && (
+          <p className={styles.subtaskNote}>
+            Sub-task of <strong>{parentTitle}</strong>
+          </p>
+        )}
+
+        {!isEditing && projects && !isSubtask && (
           <Select
             {...register('projectId')}
             label="Project"
@@ -183,7 +199,7 @@ export function TaskFormDialog({
             Cancel
           </Button>
           <Button type="submit" variant="primary" loading={isSubmitting || isLoading}>
-            {isEditing ? 'Save Changes' : 'Create Task'}
+            {isEditing ? 'Save Changes' : isSubtask ? 'Create Sub-task' : 'Create Task'}
           </Button>
         </div>
       </form>

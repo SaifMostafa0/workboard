@@ -3,13 +3,18 @@ import type { Task } from '../task';
 import {
   DEFAULT_TASK_PRIORITY,
   DEFAULT_TASK_STATUS,
+  getSubtaskProgress,
+  hasSubtaskProgress,
+  isSubtask,
   isValidTaskPriority,
   isValidTaskStatus,
+  MAX_SUBTASK_DEPTH,
   TASK_PRIORITIES,
   TASK_PRIORITY_LABELS,
   TASK_PRIORITY_ORDER,
   TASK_STATUS_LABELS,
   TASK_STATUSES,
+  validateParentAssignment,
 } from '../task';
 
 describe('Task Domain', () => {
@@ -135,6 +140,87 @@ describe('Task Domain', () => {
       expect(task.dueDate).toBeDefined();
       expect(task.assignee).toBeDefined();
       expect(task.completedAt).toBeDefined();
+    });
+  });
+
+  describe('Sub-tasks', () => {
+    it('limits nesting to a single level', () => {
+      expect(MAX_SUBTASK_DEPTH).toBe(1);
+    });
+
+    it('detects sub-tasks by parentId', () => {
+      expect(isSubtask({ parentId: 'parent-1' })).toBe(true);
+      expect(isSubtask({})).toBe(false);
+      expect(isSubtask({ parentId: undefined })).toBe(false);
+    });
+
+    it('counts done children for progress', () => {
+      expect(getSubtaskProgress([])).toEqual({ done: 0, total: 0 });
+      expect(
+        getSubtaskProgress([{ status: 'done' }, { status: 'todo' }, { status: 'done' }])
+      ).toEqual({ done: 2, total: 3 });
+    });
+
+    it('reports whether there is progress to show', () => {
+      expect(hasSubtaskProgress({ done: 0, total: 0 })).toBe(false);
+      expect(hasSubtaskProgress({ done: 1, total: 2 })).toBe(true);
+    });
+
+    describe('validateParentAssignment', () => {
+      it('accepts a valid top-level parent', () => {
+        expect(
+          validateParentAssignment({
+            taskId: 'child',
+            parentId: 'parent',
+            parent: { id: 'parent' },
+            taskHasChildren: false,
+          })
+        ).toBeNull();
+      });
+
+      it('rejects a task parenting itself', () => {
+        expect(
+          validateParentAssignment({
+            taskId: 'parent',
+            parentId: 'parent',
+            parent: { id: 'parent' },
+            taskHasChildren: false,
+          })
+        ).toBe('parent_is_self');
+      });
+
+      it('rejects a missing parent', () => {
+        expect(
+          validateParentAssignment({
+            taskId: 'child',
+            parentId: 'missing',
+            parent: null,
+            taskHasChildren: false,
+          })
+        ).toBe('parent_not_found');
+      });
+
+      it('rejects a parent that is itself a sub-task', () => {
+        expect(
+          validateParentAssignment({
+            taskId: 'child',
+            parentId: 'parent',
+            parent: { id: 'parent', parentId: 'grandparent' },
+            taskHasChildren: false,
+          })
+        ).toBe('parent_is_subtask');
+      });
+
+      it('rejects re-parenting a task that already has children', () => {
+        expect(
+          validateParentAssignment({
+            taskId: 'child',
+            parentId: 'parent',
+            parent: { id: 'parent' },
+            taskHasChildren: true,
+          })
+        ).toBe('task_has_children');
+      });
     });
   });
 });

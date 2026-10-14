@@ -1,0 +1,549 @@
+{
+  "version": 1,
+  "exportedAt": "2026-10-15T00:00:00.000Z",
+  "projects": [
+    {
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
+      "name": "WB — Roadmap T1 · Quick Wins",
+      "description": "Tier 1 roadmap: cheap, high-signal wins that close the most visible gaps.",
+      "color": "emerald",
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000102",
+      "name": "WB — Roadmap T2 · Differentiators",
+      "description": "Tier 2 roadmap: features that turn Workboard's gaps into differentiators.",
+      "color": "indigo",
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
+      "name": "WB — Roadmap T3 · Platform",
+      "description": "Tier 3 roadmap: platform and ecosystem work.",
+      "color": "purple",
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000104",
+      "name": "WB — Product Gaps",
+      "description": "Capability gaps versus Jira, Trello and Linear, plus gaps found in the codebase.",
+      "color": "red",
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "name": "WB — Engineering & AI-DX",
+      "description": "Dogfooding, documentation-as-code and agent-friendliness of the project itself.",
+      "color": "teal",
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000106",
+      "name": "WB — Quality & Accessibility",
+      "description": "Accessibility, performance budgets, and test-depth improvements.",
+      "color": "sky",
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "68240fee-8db6-4ae9-a0bf-e7ca2a17077e",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
+      "title": "WB-101 Finish Saved Views — apply saved filters on the Tasks page",
+      "description": "Saved Views currently have full CRUD (domain model, repository, hooks, page at `/saved-views`)\nbut a saved view's `filters` object is never applied anywhere. This is the one half-built\nfeature in the app and the highest-value quick win: it closes the gap without new domain work.\n\nApplying a view should push its filters into the Tasks page URL query state so the existing\nfilter/sort/pagination machinery does the rest.\n\n**Acceptance criteria**\n- [x] Selecting a saved view from `/saved-views` or the Tasks toolbar navigates to `/tasks` with the view's filters encoded in the URL.\n- [x] Applying a view sets search, status, priority, project, due, tags, sort and order exactly as stored.\n- [x] The active view name is visible on the Tasks page and can be cleared back to the default state.\n- [x] A \"Save current filters as view\" action on the Tasks page creates a view from the live URL state.\n- [x] Applying a view is keyboard accessible and announced to assistive tech.\n- [x] Unit tests cover the URL <-> filters mapping; an E2E test covers apply + clear.\n\n- `SavedView.filters` already mirrors the Tasks URL param names (`q`, `status`, `priority`, `project`, `due`, `sort`, `order`, `tags`), so no schema migration is needed.\n- Keep filter state URL-driven (see `CASE_STUDY.md` Decision 1); do not introduce a second source of truth.\n- Tag filtering was wired into the Tasks filter bar as toggle chips (multi-select); a view's `tags` array round-trips through the `tags` URL param.\n\nTicket file: tickets/WB-101-finish-saved-views.md\n\nSource: competitor-analysis",
+      "status": "done",
+      "priority": "high",
+      "tags": [
+        "workboard",
+        "wb-101",
+        "tier:1",
+        "area:ux",
+        "area:state",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "45d60bb4-af2f-46f0-8cf9-39a06d3e2ce8",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
+      "title": "WB-102 Add sub-tasks (parent/child tasks)",
+      "description": "Workboard has a flat task model, so there is no way to break a task into smaller steps.\nSub-tasks are the single most requested capability on a \"serious\" task tool and the clearest\ngap versus Jira, Linear and Asana. This adds a self-referential parent/child relationship.\n\n**Acceptance criteria**\n- [x] `Task` gains an optional `parentId?: string` (a task id) with validation that the parent exists and is not itself a child (max depth of one level).\n- [x] A task with children displays a progress indicator (done / total) in list and Kanban views.\n- [x] Tasks with a `parentId` are hidden from the top-level board/list by default, with a toggle to show them.\n- [x] Creating, editing and deleting a parent updates its children safely (deleting a parent either blocks with a warning or cascades to trash — decide and document).\n- [x] IndexedDB records remain backward compatible (missing `parentId` is valid).\n- [x] Domain, repository, and component tests cover nesting, depth limits and cascade behaviour.\n\n- Keep the storage schema additive; no migration should be required because `parentId` is optional.\n- Reuse the existing trash/soft-delete semantics for cascades rather than hard deletes.\n\nTicket file: tickets/WB-102-sub-tasks.md\n\nSource: readme-gaps",
+      "status": "done",
+      "priority": "high",
+      "tags": [
+        "workboard",
+        "wb-102",
+        "tier:1",
+        "area:domain",
+        "area:ui",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-15T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-15T00:00:00.000Z"
+    },
+    {
+      "id": "a7ebabe3-f24c-4582-8f81-d925ca43bfca",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
+      "title": "WB-103 Add task dependencies (blocked by / blocks)",
+      "description": "There is no way to express that one task blocks another. Dependencies are a core planning\nprimitive in Jira and Linear and let the app flag work that cannot start yet.\n\n**Acceptance criteria**\n- [ ] `Task` gains `blockedBy: string[]` (task ids), validated against existing tasks.\n- [ ] A task shows a \"Blocked\" indicator when any blocking task is not `done`.\n- [ ] The Task form lets a user add/remove blockers with keyboard support.\n- [ ] Cycles are prevented (A blocks B blocks A is rejected with a clear error).\n- [ ] Blocked tasks are visually distinct in list and Kanban views.\n- [ ] A dependency filter is available on the Tasks page (e.g. `blocked=true`).\n- [ ] Domain and component tests cover cycle rejection and blocked-state derivation.\n\n- Derive blocked state in a pure domain function; do not store a redundant \"isBlocked\" flag.\n- This is additive to `WB-102`; both touch the task domain model, so sequence them to avoid churn.\n\nTicket file: tickets/WB-103-task-dependencies.md\n\nSource: readme-gaps",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-103",
+        "tier:1",
+        "area:domain",
+        "area:ui",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "ff610e88-9367-4dc6-8f36-0b86f77f68bb",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
+      "title": "WB-104 Add CSV and Markdown export plus a printable board",
+      "description": "JSON export/import exists, but it is machine-oriented. Reinforce Workboard's data-ownership\nstory with human-friendly outputs: CSV for spreadsheets, Markdown for docs and status reports,\nand a print/PDF view of a board.\n\n**Acceptance criteria**\n- [ ] Settings offers CSV export of tasks (and projects) with stable column headers and RFC 4180 escaping.\n- [ ] Settings offers Markdown export of the current backlog (reuse the BACKLOG.md table shape).\n- [ ] A print stylesheet renders the project board and task list cleanly for PDF (no nav chrome).\n- [ ] Export actions are keyboard accessible and announce completion.\n- [ ] Round-trip unit tests prove exported CSV parses back to the same values.\n- [ ] Documentation in README and `docs/project-management.md` describes each format.\n\n- Keep generation in a pure function so it is unit-testable without the DOM.\n- Reuse `date-fns` formatting already used in the app; do not hand-roll date strings.\n\nTicket file: tickets/WB-104-csv-markdown-export.md\n\nSource: competitor-analysis",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-104",
+        "tier:1",
+        "area:storage",
+        "area:ux",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "bf14ac88-1471-490c-89a2-2027a62e6961",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000102",
+      "title": "WB-201 Spike — optional self-hostable sync behind the repository interface",
+      "description": "Workboard's biggest gap versus Jira, Trello and Linear is collaboration and multi-device use.\nRather than surrender the offline/local-first identity, add an **optional, self-hostable** sync\npath implemented behind the existing `IProjectRepository` / `ITaskRepository` interfaces. This is\na timeboxed spike to de-risk the approach before committing to a build.\n\n**Acceptance criteria**\n- [ ] A written spike report documents the options (CRDT via Yjs/Automerge vs a small REST API vs WebSocket relay) with trade-offs for an offline-first app.\n- [ ] A working prototype demonstrates `ApiRepository` (or a sync layer) satisfying the same repository contract used by hooks.\n- [ ] The prototype proves optimistic updates and the `Result<T, E>` error model still hold when a network is involved.\n- [ ] A recommendation with effort estimate and a migration path is recorded in `docs/decisions/`.\n- [ ] No change to existing behaviour when sync is disabled (local-only remains the default).\n\n- `docs/architecture.md` already lists \"Swap LocalRepository → ApiRepository\" as the intended extension point; validate that claim with real code.\n- Bedrock constraint: existing components and hooks must not change.\n- Explicitly out of scope: hosted SaaS, accounts, billing.\n\nTicket file: tickets/WB-201-sync-spike.md\n\nSource: competitor-analysis",
+      "status": "todo",
+      "priority": "high",
+      "tags": [
+        "workboard",
+        "wb-201",
+        "tier:2",
+        "area:sync",
+        "area:storage",
+        "type:spike"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "1ba7a544-bb5b-4f30-a0b4-b9df482278b6",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000102",
+      "title": "WB-202 Add a calendar view",
+      "description": "Due dates exist but can only be seen in a list. A calendar (month/week) view is table stakes in\nTrello Premium and Asana and makes due dates actionable.\n\n**Acceptance criteria**\n- [ ] A `/calendar` route renders tasks by `dueDate` in a month grid, with a week view.\n- [ ] Tasks are grouped and colour-coded by project; overdue tasks are visually distinct.\n- [ ] Clicking a day shows that day's tasks; clicking a task opens the task detail.\n- [ ] View state (range, project filter) is stored in the URL for shareable links.\n- [ ] Fully keyboard navigable and screen-reader friendly (grid semantics, roving tabindex or equivalent).\n- [ ] Empty and no-due-date states are handled explicitly.\n- [ ] Component tests for date bucketing; one E2E journey.\n\n- Reuse the existing date utilities and design tokens; do not add a calendar dependency unless the a11y story is verified.\n\nTicket file: tickets/WB-202-calendar-view.md\n\nSource: competitor-analysis",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-202",
+        "tier:2",
+        "area:ui",
+        "area:ux",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "d9fff0d7-9e42-457e-acfb-121d7074414c",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000102",
+      "title": "WB-203 Add a timeline / roadmap view",
+      "description": "A horizontal timeline showing tasks or epics across time gives planning context that the board\nand list lack. This is a common reason teams move to Asana or Monday.com.\n\n**Acceptance criteria**\n- [ ] A `/timeline` route renders project rows and task bars positioned by due date (and a start date if added later).\n- [ ] Bars scale across day/week/month zoom levels with a \"today\" marker.\n- [ ] Overdue and completed tasks are visually distinct; hovering/focusing a bar summarises the task.\n- [ ] Project and status filters apply, driven by the URL like other views.\n- [ ] Keyboard navigable; bars are focusable and announce their dates.\n- [ ] Handles empty projects and tasks without dates gracefully.\n- [ ] Component tests for the date-to-pixel scaling maths.\n\n- Depends conceptually on `WB-102` (parent/child) if timelines should roll up epics; can ship task-only first.\n- Keep the layout CSS-based; avoid a heavy Gantt library to protect the bundle budget.\n\nTicket file: tickets/WB-203-timeline-view.md\n\nSource: competitor-analysis",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-203",
+        "tier:2",
+        "area:ui",
+        "area:ux",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "5f45c777-577a-483e-87e4-f7fd33aacb06",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000102",
+      "title": "WB-204 Add basic reporting — cycle time, throughput and overdue trend",
+      "description": "The dashboard shows point-in-time counts. Add simple, trend-based reporting so the app is\nuseful for reflection, not just task entry.\n\n**Acceptance criteria**\n- [ ] Reports show throughput (tasks completed per week) over a selectable range.\n- [ ] Cycle time (created → completed) is reported per project over the range.\n- [ ] An overdue trend chart shows counted-overdue tasks over time.\n- [ ] All metrics are computed by pure domain functions from stored timestamps (`createdAt`, `completedAt`, `dueDate`).\n- [ ] Charts are accessible: values available as text/table, not colour alone, and keyboard reachable.\n- [ ] Unit tests cover the aggregation maths with fixed fixtures.\n- [ ] No new runtime dependency if a small SVG implementation suffices within the bundle budget.\n\n- Prefer dependency-free SVG charts; the app targets a ≤100 KB gzip JS budget.\n- Be explicit that metrics are derived locally from user data and never uploaded.\n\nTicket file: tickets/WB-204-reporting.md\n\nSource: competitor-analysis",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-204",
+        "tier:2",
+        "area:ui",
+        "area:domain",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "6800178f-4c17-4966-b8cf-c26911b3617a",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
+      "title": "WB-301 Add file attachments stored in IndexedDB",
+      "description": "Tasks cannot hold files. Attachments are expected in every comparable tool. Store blobs locally\nin IndexedDB so the offline, no-upload promise is preserved.\n\n**Acceptance criteria**\n- [ ] A task can hold zero or more attachments (name, type, size, blob).\n- [ ] Files are stored in a dedicated IndexedDB object store; metadata is validated with Zod.\n- [ ] A configurable per-file size limit and total-quota guard surface clear errors on `QUOTA_EXCEEDED`.\n- [ ] Attachments can be added via drag-and-drop and a file picker, downloaded, and removed.\n- [ ] Non-text files never render inline; downloads use safe `Content-Disposition` behaviour.\n- [ ] Import/export clearly states that attachments are local-only (see `WB-404` for the export gap).\n- [ ] Tests cover add/remove and error paths; the storage adapter's failure injection is exercised.\n\n- Keep blobs out of the JSON export by default to avoid multi-megabyte backups; document the trade-off.\n- Consider whether attachments live in the trash lifecycle with their task.\n\nTicket file: tickets/WB-301-file-attachments.md\n\nSource: readme-gaps",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-301",
+        "tier:3",
+        "area:storage",
+        "area:ui",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "299b404e-0b5e-4a4b-bec7-6dff724318fa",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
+      "title": "WB-302 Support recurring tasks",
+      "description": "Tasks that repeat (daily, weekly, monthly, custom interval) are unsupported. They are common\nfor maintenance and routine work.\n\n**Acceptance criteria**\n- [ ] `Task` gains an optional recurrence rule (frequency + interval + optional until date).\n- [ ] Completing a recurring task schedules the next occurrence rather than ending the series.\n- [ ] Recurrence is validated in the domain and rendered in the task form and list.\n- [ ] The next occurrence is computed by a pure, timezone-safe domain function.\n- [ ] A series can be stopped; past occurrences are retained as history.\n- [ ] Tests cover interval maths, DST/timezone edges, and completion behaviour.\n\n- Keep the rule shape simple (RFC 5545 RRULE is likely overkill); document the subset supported.\n- All dates in the app are calendar dates (`YYYY-MM-DD`); preserve that convention.\n\nTicket file: tickets/WB-302-recurring-tasks.md\n\nSource: readme-gaps",
+      "status": "todo",
+      "priority": "low",
+      "tags": [
+        "workboard",
+        "wb-302",
+        "tier:3",
+        "area:domain",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "4609da8e-1abb-4c1e-a1d7-0992a381c390",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
+      "title": "WB-303 Add due-date reminders and in-app notifications",
+      "description": "The app surfaces overdue tasks passively on the dashboard. Add reminders so upcoming due dates\nreach the user without them opening the app.\n\n**Acceptance criteria**\n- [ ] A notifications centre lists tasks that are due soon or overdue.\n- [ ] Optional browser notifications are requested and scheduled with user consent, degrading gracefully when denied.\n- [ ] Users can configure a lead time (e.g. remind 1 day before due).\n- [ ] Preferences persist with the existing settings repository.\n- [ ] No network calls; scheduling is local (Notification API / service worker if `WB-305` lands first).\n- [ ] Tests cover the \"which tasks are due for a reminder\" pure function.\n\n- Depends on `WB-305` (PWA/service worker) for reliable background reminders; in-app list can ship first.\n- Respect the reduced-motion and accessibility conventions used by toasts.\n\nTicket file: tickets/WB-303-reminders.md\n\nSource: readme-gaps",
+      "status": "todo",
+      "priority": "low",
+      "tags": [
+        "workboard",
+        "wb-303",
+        "tier:3",
+        "area:ux",
+        "area:storage",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "74869e8c-a0c6-438d-98f2-e9e108340a62",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
+      "title": "WB-304 Design a public API and webhooks for automation",
+      "description": "Workboard has no integration surface, which blocks automation and dev-tool wiring where Jira and\nLinear excel. The local-first architecture makes a hosted API a product decision, so start with a\ndesign spike rather than an implementation.\n\n**Acceptance criteria**\n- [ ] A design document defines resources, endpoints, auth model, and versioning.\n- [ ] At least one concrete integration scenario is walked through end-to-end (e.g. create task from a webhook payload).\n- [ ] The proposal states how a public API coexists with the offline/local-only default, including a self-hosted option.\n- [ ] Security review covers auth, rate limiting, and data exposure for a client-owned data model.\n- [ ] The recommendation is captured in `docs/decisions/` with an explicit decision on build vs defer.\n\n- This is deliberately a spike: it depends on the sync decision in `WB-201`.\n- Do not expose user data without an explicit, documented consent model.\n\nTicket file: tickets/WB-304-public-api.md\n\nSource: competitor-analysis",
+      "status": "todo",
+      "priority": "low",
+      "tags": [
+        "workboard",
+        "wb-304",
+        "tier:3",
+        "area:sync",
+        "area:docs",
+        "type:spike"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "c9f68f90-cc7a-4881-bca9-9af3e486c01b",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
+      "title": "WB-305 Ship a PWA with install and encrypted local backup",
+      "description": "Workboard works offline in the browser but is not installable. A PWA makes the offline-first\npromise tangible and closes part of the platform gap with native apps.\n\n**Acceptance criteria**\n- [ ] A service worker precaches the app shell and assets; the app loads offline after first visit.\n- [ ] A web app manifest (name, icons, theme colours) enables install on desktop and mobile.\n- [ ] An update flow prompts the user to reload when a new version is available.\n- [ ] An optional encrypted backup exports data protected by a user passphrase (Web Crypto).\n- [ ] Cache strategy is documented and does not break SPA deep links.\n- [ ] Lighthouse PWA checks pass and no performance budget regressions.\n\n- Coordinate with `WB-303` (notifications) which benefits from a service worker.\n- Encryption must be documented clearly: a lost passphrase means lost data.\n\nTicket file: tickets/WB-305-pwa-encrypted-backup.md\n\nSource: competitor-analysis",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-305",
+        "tier:3",
+        "area:ux",
+        "area:storage",
+        "type:feature"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "f77186c8-a539-44fe-9d93-efa3e5da1213",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000104",
+      "title": "WB-401 Add epics / milestones above tasks",
+      "description": "Workboard's model is Project → Task. Jira and Linear add a planning tier (epic / milestone) above\ntasks, which is essential for grouping work and rolling up progress. This is the largest\nproduct-model gap versus the enterprise tools.\n\n**Acceptance criteria**\n- [ ] A new `Epic` entity belongs to a project and can group tasks (`task.epicId?`).\n- [ ] Epics appear on the project detail view with rolled-up progress (done / total, % complete).\n- [ ] Tasks can be assigned to an epic in the task form; unassigned tasks remain valid.\n- [ ] An epic filter is available on the Tasks page and in saved views.\n- [ ] Deleting an epic detaches tasks rather than deleting them (documented behaviour).\n- [ ] Schema change is additive and backward compatible; migrations tested.\n- [ ] Domain and component tests cover roll-ups and detach-on-delete.\n\n- Sequence with `WB-102` (sub-tasks) to avoid two competing hierarchy mechanisms.\n- Decide and document the relationship: is an epic also a task type, or a separate entity? Recommendation: separate entity for clarity.\n\nTicket file: tickets/WB-401-epics-milestones.md\n\nSource: competitor-analysis",
+      "status": "todo",
+      "priority": "high",
+      "tags": [
+        "workboard",
+        "wb-401",
+        "area:domain",
+        "area:ui",
+        "type:feature",
+        "gap:hierarchy"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "6524de51-5b54-4dd3-8567-63939800374d",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000104",
+      "title": "WB-402 Add comments and an activity feed",
+      "description": "Every comparable tool lets you annotate work and see what changed. Workboard has neither\ncomments nor an audit trail. Even single-user, a per-task activity log improves recall and\nforms the foundation for future collaboration.\n\n**Acceptance criteria**\n- [ ] A task detail view shows a dated comment thread and a change history (status, priority, assignee, due date).\n- [ ] Comments and activity entries are persisted with the task or in a related store.\n- [ ] Changes made through the app (and via import) produce activity entries.\n- [ ] The feed is accessible: ordered list semantics, timestamps in readable form.\n- [ ] Tests cover activity generation on update and rendering of an empty thread.\n\n- Design the record shape so it can later carry an author id when accounts arrive (`WB-201` sync, future auth).\n- Keep the activity log out of the compact JSON export unless `WB-404` decides otherwise.\n\nTicket file: tickets/WB-402-comments-activity.md\n\nSource: competitor-analysis",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-402",
+        "area:domain",
+        "area:ui",
+        "type:feature",
+        "gap:collaboration"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "8650f284-7a81-4cf2-9eb0-3a112a913172",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000104",
+      "title": "WB-403 Virtualize long lists and raise the ~10k-task scale ceiling",
+      "description": "`README.md` lists \"~10,000 tasks before performance degrades\" as a known limitation because all\nrecords are loaded and filtered in memory. Virtualize rendering and move pagination to the\nrepository layer so the app stays smooth at scale.\n\n**Acceptance criteria**\n- [ ] Task and project lists render with windowing so DOM node count stays bounded.\n- [ ] A repository-level paged query avoids loading every record for list views.\n- [ ] Filtering/sorting remain correct and instant for datasets of at least 50k tasks (documented benchmark).\n- [ ] A repeatable benchmark script records render and filter timings in `docs/performance.md`.\n- [ ] No regression to keyboard navigation, focus order, or the a11y axe checks.\n- [ ] Update the \"Known Limitations\" section of README once the ceiling is raised.\n\n- `docs/performance.md` already anticipates virtualization \"if measured\"; this ticket makes it measured and required.\n- Keep the public filter/sort/paginate domain functions; change where they run, not what they do.\n\nTicket file: tickets/WB-403-virtualization-scale.md\n\nSource: readme-gaps",
+      "status": "todo",
+      "priority": "high",
+      "tags": [
+        "workboard",
+        "wb-403",
+        "area:perf",
+        "area:ui",
+        "type:feature",
+        "gap:scale"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "d99b4728-208c-4fbd-81ff-07b6b89c87c7",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000104",
+      "title": "WB-404 Include labels and saved views in export/import",
+      "description": "Foundation: the app exposes Labels and Saved Views, and both have repositories and full CRUD,\nbut the backup format silently omits them. `exportDataSchema` / `importDataSchema`\n(`src/domain/validation.ts`) only cover `projects`, `tasks` and `settings`, and\n`exportAllData` / `importData` (`src/infrastructure/storage/migrations.ts`) never touch the\nlabel or saved-view stores. A user who exports, clears, and re-imports loses their labels and\nsaved views without warning. That breaks the data-ownership promise.\n\n**Acceptance criteria**\n- [x] The export payload includes `labels` and `savedViews` (optional fields for backward compatibility with existing backups).\n- [x] Import restores labels and saved views, respecting merge vs replace semantics consistently with projects/tasks.\n- [x] Older backups without those fields still import successfully.\n- [x] Relationship validation covers any cross-references (e.g. a saved view referencing a label).\n- [x] Export/import round-trip tests include labels and saved views, plus a legacy-payload test.\n- [x] README documents exactly what a backup contains.\n\n- Verify how labels and saved views are keyed in storage (`workboard:labels:*`, `workboard:savedViews:*`) before wiring `getAll`/`set`.\n- This is a correctness bug disguised as a feature gap; treat it as high priority despite the small surface area.\n\nTicket file: tickets/WB-404-export-labels-saved-views.md\n\nSource: code-audit",
+      "status": "done",
+      "priority": "high",
+      "tags": [
+        "workboard",
+        "wb-404",
+        "area:storage",
+        "area:docs",
+        "type:bug",
+        "gap:data"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "404f52da-d1d0-407d-96e2-8b6b825daa8f",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "title": "WB-501 Publish a competitor analysis (Jira, Trello, Linear)",
+      "description": "The project lacked any market context. Add a competitor analysis positioning Workboard against\nJira (the enterprise anchor) and its two closest analogs — Trello (scope) and Linear\n(interaction quality) — and derive a roadmap from the findings.\n\n**Acceptance criteria**\n- [x] `COMPETITOR_ANALYSIS.md` documents positioning, a feature matrix, and dimension-by-dimension analysis.\n- [x] The two \"best similar products\" are justified (Trello for scope, Linear for UX), with Jira as the requested anchor.\n- [x] Honest gaps and a tiered roadmap are derived from the analysis.\n- [x] The README links to the analysis.\n- [x] Sources and 2026 pricing notes are included.\n\n- Sources are third-party pricing/comparison pages from 2026; treat figures as approximate.\n- Follow-up work derived from this analysis is tracked in the roadmap and product-gap projects.\n\nTicket file: tickets/WB-501-competitor-analysis.md\n\nSource: competitor-analysis",
+      "status": "done",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-501",
+        "area:docs",
+        "type:docs",
+        "source:competitor-analysis"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "09d6557c-936c-4bae-8147-f1717e894051",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "title": "WB-502 Establish a ticket system with a machine-readable backlog",
+      "description": "Work needs a durable home that both humans and agents can read. Drive the backlog from canonical\nmarkdown tickets (`tickets/WB-*.md`) with flat YAML frontmatter, and generate a human/agent index\n(`BACKLOG.md`) plus a Workboard-importable snapshot from that single source of truth.\n\n**Acceptance criteria**\n- [x] A ticket format is defined (frontmatter fields, allowed values, tag taxonomy) and documented.\n- [x] `scripts/tickets-build.mjs` deterministically generates `project-management/workboard-import.json` and `BACKLOG.md` from `tickets/WB-*.md`.\n- [x] The generated import validates against the app's own Zod import schema (projects, tasks, tags, statuses, dates).\n- [x] A `--check` mode fails when generated artifacts are stale.\n- [x] A machine-readable `project-management/ticket.schema.json` describes the frontmatter for external tooling.\n- [x] npm scripts `tickets:build` and `tickets:check` are wired up.\n\n- Frontmatter is intentionally flat `key: value` scalars so parsing stays trivial and stable under formatting.\n- Only `projects`, `tasks` and `settings` are importable; labels/saved views are a known export gap (`WB-404`).\n\nTicket file: tickets/WB-502-ticket-system.md\n\nSource: product-management",
+      "status": "done",
+      "priority": "high",
+      "tags": [
+        "workboard",
+        "wb-502",
+        "area:docs",
+        "area:ci",
+        "type:docs"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "464904bc-6e15-4f1f-9e73-3858e464b8ed",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "title": "WB-503 Add AGENTS.md and a documentation-as-code workflow",
+      "description": "Make the repository a first-class environment for AI agent teams. Add a root `AGENTS.md` that\nagents read first, and a `docs/project-management.md` process doc that defines the ticket\nworkflow, sources of truth, and the rule that documentation and tickets are updated as part of\nevery change.\n\n**Acceptance criteria**\n- [x] `AGENTS.md` documents project overview, commands, architecture map, conventions, quality gates, and the ticket workflow.\n- [x] `docs/project-management.md` defines sources of truth, ticket schema, tag taxonomy, status workflow, and the Workboard round-trip.\n- [x] `STATUS.md` provides a living progress snapshot with an update rule.\n- [x] The README links to the agent and project-management docs.\n- [x] Documentation clearly states that updating tickets and markdown is part of the definition of done.\n\n- `AGENTS.md` is the OpenCode/agent convention and is kept short, pointing to deeper docs.\n- Keep the workflow tool-agnostic so non-OpenCode agent teams can follow it.\n\nTicket file: tickets/WB-503-agents-md-workflow.md\n\nSource: product-management",
+      "status": "done",
+      "priority": "high",
+      "tags": [
+        "workboard",
+        "wb-503",
+        "area:docs",
+        "type:docs",
+        "ai:agent-friendly"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "1ccc302e-a2dc-4221-aa0f-3117f002011a",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "title": "WB-504 Enforce ticket/backlog sync in CI",
+      "description": "Generated artifacts drift the moment someone forgets to regenerate. Wire `tickets:check` into the\nlocal `ci` script and the GitHub Actions workflow so stale tickets or a stale backlog fail the\nbuild.\n\n**Acceptance criteria**\n- [x] `npm run tickets:check` verifies `BACKLOG.md` and `workboard-import.json` are up to date.\n- [x] The check is part of the `ci` npm script.\n- [x] The GitHub Actions `quality` job runs the check before tests.\n- [x] Generated files are excluded from Prettier so `format:check` stays green.\n- [x] The failure message tells the contributor exactly what to run.\n\n- `--check` normalizes CRLF vs LF so the gate is reliable on Windows and Linux.\n- Keep the check dependency-free and fast (no build required).\n\nTicket file: tickets/WB-504-ci-ticket-sync.md\n\nSource: product-management",
+      "status": "done",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-504",
+        "area:ci",
+        "type:chore",
+        "ai:agent-friendly"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "d862a20f-ff37-450d-ba33-211697ec184d",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "title": "WB-505 Add a Workboard-to-ticket sync script",
+      "description": "To dogfood Workboard as the daily driver, progress made in the app must flow back into the\ncanonical tickets. Add `scripts/tickets-sync.mjs` to fold a Workboard export back into ticket\nfrontmatter (status, priority, assignee, updated) and append an update-log entry.\n\n**Acceptance criteria**\n- [x] The script accepts a Workboard export JSON path and matches tasks to tickets by `WB-###` title prefix.\n- [x] Status, priority, assignee and updated date are written back to the correct ticket files.\n- [x] A dated entry is appended to `## Updates` when the status changes.\n- [x] Trashed tasks (`deletedAt`) and unmatched tickets are reported, not silently ignored.\n- [x] The recommended loop (import → work → export → sync → build) is documented in `docs/project-management.md`.\n\n- This closes the round-trip: ticketing in the app, truth in markdown.\n- The export now includes labels and saved views ([WB-404](WB-404-export-labels-saved-views.md) resolved), so an export is a complete backup.\n\nTicket file: tickets/WB-505-workboard-sync.md\n\nSource: product-management",
+      "status": "done",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-505",
+        "area:docs",
+        "area:storage",
+        "type:feature",
+        "ai:agent-friendly"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "2a2f487c-b7bf-4d37-89f9-cf374302f103",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "title": "WB-508 Un-skip and fix the mobile Kanban drag E2E tests",
+      "description": "`HANDOFF_COMPLETE.md` notes that the Kanban drag-and-drop E2E tests are skipped on mobile and\nthat drag is exercised via dispatched events. Mobile users currently rely on the status-button\nfallback. Close the test gap and make the mobile interaction genuinely usable.\n\n**Acceptance criteria**\n- [ ] Mobile Kanban E2E specs run unskipped against a touch/pointer emulation.\n- [ ] Drag works on touch devices, or the status-button fallback is proven sufficient and the skip is replaced by an explicit test of that path.\n- [ ] Keyboard-accessible status change is verified for parity.\n- [ ] The `jsx-a11y` relaxations taken for DnD are revisited now that the interaction is settled.\n- [ ] No flakiness: the suite passes repeatedly in CI.\n\n- Decide the mobile strategy first (real drag vs fallback) and document it; the accessibility story follows from that.\n- Keep any HTML5 DnD or pointer-event implementation consistent across desktop and mobile.\n\nTicket file: tickets/WB-508-mobile-dnd-e2e.md\n\nSource: handoff",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-508",
+        "area:ci",
+        "area:ux",
+        "type:test"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "191b7c3e-cb21-4324-ae2c-8e1d5f38dec9",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000106",
+      "title": "WB-601 Improve Select and DatePicker keyboard and ARIA support",
+      "description": "`docs/accessibility.md` tracks two high-severity debts: the custom Select dropdown and the date\npicker lack full keyboard and screen-reader support. Since Workboard claims WCAG 2.2 AA, these must\nbe closed.\n\n**Acceptance criteria**\n- [ ] The Select supports arrow-key navigation, typeahead, Home/End, Enter/Escape, and correct `aria-activedescendant` or roving focus.\n- [ ] The DatePicker is fully operable by keyboard, validates input, and announces the selected date.\n- [ ] Both expose correct roles/states and are covered by axe with zero violations.\n- [ ] Focus returns to the trigger on close; no keyboard traps.\n- [ ] Component tests assert keyboard behaviour for each.\n- [ ] `docs/accessibility.md` debt tracker is updated to close these rows.\n\n- Consider a native `<select>` fallback where the custom control adds no value; document the decision.\n- Reuse the existing `useFocusTrap` and live-region patterns.\n\nTicket file: tickets/WB-601-select-datepicker-a11y.md\n\nSource: a11y-debt",
+      "status": "todo",
+      "priority": "high",
+      "tags": [
+        "workboard",
+        "wb-601",
+        "area:a11y",
+        "area:ui",
+        "type:bug"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "eefd2a32-b18a-40c6-9c24-aa5c54d96821",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000106",
+      "title": "WB-602 Wire a Lighthouse CI performance budget gate",
+      "description": "`docs/performance.md` defines Lighthouse and Core Web Vitals targets and a `lighthouse-budget.json`,\nbut the numbers are aspirational because nothing runs them in CI. Turn the budgets into a gate.\n\n**Acceptance criteria**\n- [ ] A GitHub Actions job runs Lighthouse against the production preview for `/`, `/projects`, `/tasks`, `/settings`.\n- [ ] The existing `lighthouse-budget.json` is enforced; the job fails on regressions below target.\n- [ ] Measured results are recorded in `docs/performance.md` (replacing the template with real numbers).\n- [ ] The bundle-size budget check is part of the same job or a sibling job.\n- [ ] The job is documented in the README CI section.\n\n- Keep thresholds in the budget file, not hard-coded in the workflow.\n- If lab variance causes flakes, use median-of-runs with a small tolerance and document it.\n\nTicket file: tickets/WB-602-lighthouse-ci-gate.md\n\nSource: performance-doc",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-602",
+        "area:perf",
+        "area:ci",
+        "type:chore"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    },
+    {
+      "id": "bad587aa-d133-473f-93ae-ed14d4522cbf",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000106",
+      "title": "WB-603 Raise branch coverage and cover labels and saved views",
+      "description": "Coverage sits near ~89.6% statements / 78.5% branches. The newer label and saved-view\nrepositories and their hooks are the least-covered areas. Raise the branch threshold and close\nthose gaps so the numbers stop being a soft target.\n\n**Acceptance criteria**\n- [ ] Label and saved-view repositories and hooks have unit/integration tests for success, empty, and error (`Result` err) paths.\n- [ ] Import/export tests cover the restored labels and saved views once `WB-404` lands.\n- [ ] Branch coverage threshold in `vitest.config.ts` is raised (target ≥85%) without weakening existing thresholds.\n- [ ] CI enforces the new threshold on `src/domain`, `src/infrastructure` and `src/lib`.\n- [ ] No tests rely on implementation details; behaviour is asserted through public APIs.\n\n- Use the existing fake storage adapter and failure injection rather than mocks.\n- Coordinate with `WB-404`, which adds coverage-critical export/import paths.\n\nTicket file: tickets/WB-603-raise-coverage.md\n\nSource: handoff",
+      "status": "todo",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-603",
+        "area:ci",
+        "type:test",
+        "area:domain"
+      ],
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z",
+      "assignee": "unassigned"
+    }
+  ]
+}

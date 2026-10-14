@@ -39,6 +39,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Check ticket/backlog sync
+        run: npm run tickets:check
+
       - name: Unit & component tests
         run: npm run test:run -- --coverage
 

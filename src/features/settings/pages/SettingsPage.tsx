@@ -286,7 +286,7 @@ export function SettingsPage() {
               <div>
                 <h3 className={styles.dataCardTitle}>Export Data</h3>
                 <p className={styles.dataCardDesc}>
-                  Download all your projects and tasks as a JSON file
+                  Download all your projects, tasks, labels and saved views as a JSON file
                 </p>
               </div>
             </div>
@@ -471,7 +471,7 @@ export function SettingsPage() {
         open={resetDialogOpen}
         onClose={() => setResetDialogOpen(false)}
         title="Reset to Demo Data"
-        description="This will permanently delete all your projects and tasks and restore the sample data. This action cannot be undone."
+        description="This will permanently delete all your projects, tasks, labels and saved views and restore the sample data. This action cannot be undone."
         size="md"
       >
         <Alert type="warning" title="Warning">
@@ -493,7 +493,7 @@ export function SettingsPage() {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         title="Delete All Data"
-        description="This will permanently delete all your projects, tasks, and preferences. This action cannot be undone."
+        description="This will permanently delete all your projects, tasks, labels, saved views, and preferences. This action cannot be undone."
         size="md"
       >
         <Alert type="error" title="This cannot be undone">

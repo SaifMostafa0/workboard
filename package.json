@@ -18,10 +18,13 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "size": "node scripts/check-bundle-size.mjs",
+    "tickets:build": "node scripts/tickets-build.mjs",
+    "tickets:check": "node scripts/tickets-build.mjs --check",
+    "tickets:sync": "node scripts/tickets-sync.mjs",
     "typecheck": "tsc -b && tsc --noEmit -p tsconfig.test.json",
     "typecheck:test": "tsc --noEmit -p tsconfig.test.json",
     "prepare": "node .husky/install.mjs",
-    "ci": "npm run format:check && npm run lint && npm run typecheck && npm run test:run -- --coverage && npm run build && npm run test:e2e"
+    "ci": "npm run format:check && npm run lint && npm run typecheck && npm run tickets:check && npm run test:run -- --coverage && npm run build && npm run test:e2e"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

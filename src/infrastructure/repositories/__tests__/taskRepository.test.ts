@@ -566,4 +566,151 @@ describe('LocalTaskRepository', () => {
       }
     });
   });
+
+  describe('sub-tasks', () => {
+    const otherProjectId = '123e4567-e89b-42d3-a456-4266141740ff';
+
+    it('creates a sub-task that inherits its parent project', async () => {
+      const parent = await repository.create(validTaskInput);
+      if (!parent.ok) return;
+
+      const result = await repository.create({
+        ...validTaskInput,
+        projectId: otherProjectId,
+        title: 'Child',
+        parentId: parent.value.id,
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.parentId).toBe(parent.value.id);
+        expect(result.value.projectId).toBe(validTaskInput.projectId);
+      }
+    });
+
+    it('rejects a missing parent', async () => {
+      const result = await repository.create({
+        ...validTaskInput,
+        parentId: '123e4567-e89b-42d3-a456-4266141740aa',
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok && result.error.type === 'VALIDATION_ERROR') {
+        expect(result.error.issues[0]?.code).toBe('parent_not_found');
+      }
+    });
+
+    it('rejects nesting deeper than one level', async () => {
+      const parent = await repository.create(validTaskInput);
+      if (!parent.ok) return;
+      const child = await repository.create({ ...validTaskInput, parentId: parent.value.id });
+      if (!child.ok) return;
+
+      const result = await repository.create({ ...validTaskInput, parentId: child.value.id });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok && result.error.type === 'VALIDATION_ERROR') {
+        expect(result.error.issues[0]?.code).toBe('parent_is_subtask');
+      }
+    });
+
+    it('lists only active children of a parent', async () => {
+      const parent = await repository.create(validTaskInput);
+      if (!parent.ok) return;
+      const child = await repository.create({ ...validTaskInput, parentId: parent.value.id });
+      if (!child.ok) return;
+
+      const beforeDelete = await repository.listChildren(parent.value.id);
+      expect(beforeDelete.ok && beforeDelete.value).toHaveLength(1);
+
+      await repository.delete(child.value.id);
+      const afterDelete = await repository.listChildren(parent.value.id);
+      expect(afterDelete.ok && afterDelete.value).toHaveLength(0);
+    });
+
+    it('cascades delete to sub-tasks', async () => {
+      const parent = await repository.create(validTaskInput);
+      if (!parent.ok) return;
+      const child = await repository.create({ ...validTaskInput, parentId: parent.value.id });
+      if (!child.ok) return;
+
+      await repository.delete(parent.value.id);
+
+      const active = await repository.list();
+      expect(active.ok && active.value).toHaveLength(0);
+      const trashed = await repository.listDeleted();
+      expect(trashed.ok && trashed.value).toHaveLength(2);
+    });
+
+    it('restores sub-tasks along with their parent', async () => {
+      const parent = await repository.create(validTaskInput);
+      if (!parent.ok) return;
+      const child = await repository.create({ ...validTaskInput, parentId: parent.value.id });
+      if (!child.ok) return;
+
+      await repository.delete(parent.value.id);
+      const restoreResult = await repository.restore(parent.value.id);
+
+      expect(restoreResult.ok).toBe(true);
+      const active = await repository.list();
+      expect(active.ok && active.value).toHaveLength(2);
+      const trashed = await repository.listDeleted();
+      expect(trashed.ok && trashed.value).toHaveLength(0);
+    });
+
+    it('rejects making a task its own parent', async () => {
+      const task = await repository.create(validTaskInput);
+      if (!task.ok) return;
+
+      const result = await repository.update(task.value.id, { parentId: task.value.id });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok && result.error.type === 'VALIDATION_ERROR') {
+        expect(result.error.issues[0]?.code).toBe('parent_is_self');
+      }
+    });
+
+    it('rejects re-parenting a task that has children', async () => {
+      const parent = await repository.create(validTaskInput);
+      if (!parent.ok) return;
+      const child = await repository.create({ ...validTaskInput, parentId: parent.value.id });
+      if (!child.ok) return;
+      const other = await repository.create(validTaskInput);
+      if (!other.ok) return;
+
+      const result = await repository.update(parent.value.id, { parentId: other.value.id });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok && result.error.type === 'VALIDATION_ERROR') {
+        expect(result.error.issues[0]?.code).toBe('task_has_children');
+      }
+    });
+
+    it('validates a new parent when updating', async () => {
+      const task = await repository.create(validTaskInput);
+      if (!task.ok) return;
+
+      const result = await repository.update(task.value.id, {
+        parentId: '123e4567-e89b-42d3-a456-4266141740bb',
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok && result.error.type === 'VALIDATION_ERROR') {
+        expect(result.error.issues[0]?.code).toBe('parent_not_found');
+      }
+    });
+
+    it('moves a sub-task to another valid parent', async () => {
+      const parentA = await repository.create(validTaskInput);
+      const parentB = await repository.create(validTaskInput);
+      if (!parentA.ok || !parentB.ok) return;
+      const child = await repository.create({ ...validTaskInput, parentId: parentA.value.id });
+      if (!child.ok) return;
+
+      const result = await repository.update(child.value.id, { parentId: parentB.value.id });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.value.parentId).toBe(parentB.value.id);
+    });
+  });
 });

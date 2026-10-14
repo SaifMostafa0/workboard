@@ -80,4 +80,42 @@ describe('TaskCard', () => {
 
     expect(screen.queryByRole('button', { name: /Complete|Start/ })).not.toBeInTheDocument();
   });
+
+  it('shows a Sub-task badge for a sub-task', () => {
+    renderCard({ task: { ...baseTask, parentId: 'parent-1' } });
+
+    expect(screen.getByText('Sub-task')).toBeInTheDocument();
+  });
+
+  it('shows done/total progress for a task with sub-tasks', () => {
+    renderCard({ subtaskProgress: { done: 2, total: 3 } });
+
+    expect(screen.getByText('2/3')).toBeInTheDocument();
+  });
+
+  it('hides the progress badge when there are no sub-tasks', () => {
+    renderCard({ subtaskProgress: { done: 0, total: 0 } });
+
+    expect(screen.queryByText('0/0')).not.toBeInTheDocument();
+  });
+
+  it('renders an Add sub-task action for top-level tasks', async () => {
+    const user = userEvent.setup();
+    const onAddSubtask = vi.fn();
+    renderCard({ onAddSubtask });
+
+    await user.click(
+      screen.getByRole('button', { name: 'Add sub-task to Design the homepage hero' })
+    );
+
+    expect(onAddSubtask).toHaveBeenCalledWith({ id: 'task-1' });
+  });
+
+  it('does not offer Add sub-task for a sub-task', () => {
+    renderCard({ task: { ...baseTask, parentId: 'parent-1' }, onAddSubtask: vi.fn() });
+
+    expect(
+      screen.queryByRole('button', { name: 'Add sub-task to Design the homepage hero' })
+    ).not.toBeInTheDocument();
+  });
 });

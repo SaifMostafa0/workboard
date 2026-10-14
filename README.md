@@ -2,10 +2,13 @@
 
 A polished, responsive project and task management application demonstrating professional frontend engineering practices.
 
+> **Docs at a glance:** [Architecture](docs/architecture.md) · [Competitor analysis (Jira, Trello, Linear)](COMPETITOR_ANALYSIS.md) · [Backlog](BACKLOG.md) · [Status](STATUS.md) · [Agent guide](AGENTS.md)
+
 ## Features
 
 - **Project Management**: Create, edit, delete projects with color coding
 - **Task Management**: Full CRUD for tasks with status, priority, due dates, assignees, tags
+- **Sub-tasks**: Break a task into one level of sub-tasks with done/total progress and cascade delete/restore
 - **Kanban & List Views**: Switch between board and list layouts
 - **Advanced Filtering**: Search, filter by status/priority/project/due date, multi-column sorting
 - **Pagination**: Configurable page sizes with URL synchronization
@@ -13,7 +16,7 @@ A polished, responsive project and task management application demonstrating pro
 - **Bulk Actions**: Select multiple tasks to change their status or priority, or move them to Trash at once
 - **Command Palette**: `⌘/Ctrl + K` to jump anywhere or run actions, plus keyboard shortcuts (`?` for help, `g` then a letter to navigate)
 - **Data Persistence**: IndexedDB (with localStorage fallback) - works offline
-- **Import/Export**: JSON backup and restore with validation
+- **Import/Export**: JSON backup and restore with validation (projects, tasks, labels, saved views)
 - **Theme Support**: Light, dark, and system preference modes
 - **Accessibility**: WCAG 2.2 AA compliant
 - **Responsive Design**: Works on mobile, tablet, and desktop
@@ -127,7 +130,7 @@ src/
 ├── features/               # Feature modules
 │   ├── dashboard/          # Dashboard page
 │   ├── projects/           # Projects CRUD + detail
-│   ├── tasks/              # Tasks CRUD + filtering
+│   ├── tasks/              # Tasks CRUD + filtering + sub-tasks
 │   ├── trash/              # Trash page (restore / permanently delete)
 │   └── settings/           # Settings & data management
 ├── domain/                 # Domain types, validation, business logic
@@ -135,6 +138,12 @@ src/
 ├── hooks/                  # Custom React hooks
 ├── lib/                    # Utility functions
 └── styles/                 # Global styles & design tokens
+
+tickets/                    # Canonical backlog (WB-*.md, source of truth)
+project-management/         # Workboard config, generated import, ticket schema
+docs/                       # Architecture, testing, a11y, performance, project management
+e2e/                        # Playwright end-to-end specs
+scripts/                    # Node tooling (bundle size, ticket build/sync)
 ```
 
 ## Architecture
@@ -181,6 +190,7 @@ Covers critical user journeys:
 - First launch with demo data
 - Project CRUD
 - Task CRUD
+- Sub-tasks (create, progress, cascade trash)
 - Filtering, sorting, pagination
 - Data persistence
 - Import/export
@@ -215,7 +225,7 @@ Data is stored locally in your browser:
 - **Fallback**: localStorage
 - **No server**: Data never leaves your browser
 - **No sync**: Not synchronized across devices
-- **Export/Import**: Use JSON backup to transfer data
+- **Export/Import**: Use JSON backup to transfer data (includes projects, tasks, labels and saved views)
 
 ## Deployment
 
@@ -261,6 +271,22 @@ Ensure your host supports SPA fallback (redirect all routes to `index.html`).
 - Calendar view
 - Reporting & analytics
 - Mobile app (React Native)
+
+## Project Management
+
+Workboard is used to manage Workboard. The product backlog lives in [`tickets/`](tickets/README.md)
+as canonical markdown tickets; `npm run tickets:build` derives the human-readable [`BACKLOG.md`](BACKLOG.md)
+and an importable Workboard dataset ([`project-management/workboard-import.json`](project-management/workboard-import.json)).
+Progress made in the app flows back with `npm run tickets:sync`.
+
+| Command                              | Purpose                                              |
+| ------------------------------------ | ---------------------------------------------------- |
+| `npm run tickets:build`              | Regenerate `BACKLOG.md` and the Workboard import     |
+| `npm run tickets:check`              | Fail if generated artifacts are stale (runs in CI)   |
+| `npm run tickets:sync <export.json>` | Fold a Workboard export back into ticket frontmatter |
+
+See [docs/project-management.md](docs/project-management.md) for the workflow, and
+[AGENTS.md](AGENTS.md) for agent/contributor guidance.
 
 ## License
 

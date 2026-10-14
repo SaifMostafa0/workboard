@@ -279,6 +279,58 @@ describe('Validation', () => {
     it('rejects invalid version', () => {
       expect(() => validateImportData({ ...validImportData, version: 0 })).toThrow();
     });
+
+    it('defaults labels and saved views to empty arrays for legacy payloads', () => {
+      const result = validateImportData(validImportData);
+      expect(result.labels).toEqual([]);
+      expect(result.savedViews).toEqual([]);
+    });
+
+    it('parses labels and saved views when present', () => {
+      const result = validateImportData({
+        ...validImportData,
+        labels: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174010',
+            name: 'Bug',
+            color: '#e11d48',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+        savedViews: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174011',
+            name: 'Todo work',
+            filters: { status: 'todo', tags: ['bug'], order: 'asc' },
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      expect(result.labels).toHaveLength(1);
+      expect(result.labels[0]?.name).toBe('Bug');
+      expect(result.savedViews).toHaveLength(1);
+      expect(result.savedViews[0]?.filters.tags).toEqual(['bug']);
+    });
+
+    it('rejects a saved view with an invalid order', () => {
+      expect(() =>
+        validateImportData({
+          ...validImportData,
+          savedViews: [
+            {
+              id: '123e4567-e89b-12d3-a456-426614174011',
+              name: 'Bad view',
+              filters: { order: 'sideways' },
+              createdAt: '2024-01-01T00:00:00.000Z',
+              updatedAt: '2024-01-01T00:00:00.000Z',
+            },
+          ],
+        })
+      ).toThrow();
+    });
   });
 
   describe('Safe validation', () => {
@@ -371,6 +423,8 @@ describe('Validation', () => {
             updatedAt: '2024-01-01T00:00:00.000Z',
           },
         ],
+        labels: [],
+        savedViews: [],
       };
 
       const result = validateImportRelationships(data);
@@ -403,6 +457,8 @@ describe('Validation', () => {
             updatedAt: '2024-01-01T00:00:00.000Z',
           },
         ],
+        labels: [],
+        savedViews: [],
       };
 
       const result = validateImportRelationships(data);
@@ -432,11 +488,69 @@ describe('Validation', () => {
           },
         ],
         tasks: [],
+        labels: [],
+        savedViews: [],
       };
 
       const result = validateImportRelationships(data);
       expect(result).not.toBeNull();
       expect(result?.issues[0]?.code).toBe('duplicate_id');
+    });
+
+    it('returns error for duplicate label IDs', () => {
+      const data = {
+        version: 1,
+        projects: [],
+        tasks: [],
+        labels: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174020',
+            name: 'Bug',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+          {
+            id: '123e4567-e89b-12d3-a456-426614174020',
+            name: 'Bug again',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+        savedViews: [],
+      };
+
+      const result = validateImportRelationships(data);
+      expect(result).not.toBeNull();
+      expect(result?.issues[0]?.field).toBe('labels');
+    });
+
+    it('returns error for duplicate saved view IDs', () => {
+      const data = {
+        version: 1,
+        projects: [],
+        tasks: [],
+        labels: [],
+        savedViews: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174021',
+            name: 'View',
+            filters: {},
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+          {
+            id: '123e4567-e89b-12d3-a456-426614174021',
+            name: 'View again',
+            filters: {},
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+      };
+
+      const result = validateImportRelationships(data);
+      expect(result).not.toBeNull();
+      expect(result?.issues[0]?.field).toBe('savedViews');
     });
   });
 });

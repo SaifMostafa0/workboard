@@ -1,3 +1,4 @@
+export * from './epic';
 export * from './errors';
 export * from './label';
 export * from './project';

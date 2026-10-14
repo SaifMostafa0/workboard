@@ -14,8 +14,8 @@ import {
   useUpdateTask,
 } from '@/hooks/useData';
 import { cn } from '@/lib/cn';
-import { ArrowLeft, Kanban, List, Plus } from 'lucide-react';
-import { useState, type DragEvent } from 'react';
+import { ArrowLeft, Kanban, List, ListTree, Plus } from 'lucide-react';
+import { useMemo, useState, type DragEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import styles from './ProjectDetailPage.module.css';
 
@@ -28,6 +28,8 @@ export function ProjectDetailPage() {
   });
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [showSubtasks, setShowSubtasks] = useState(false);
+  const [subtaskParent, setSubtaskParent] = useState<Task | null>(null);
 
   const { data: project, isLoading: projectLoading } = useProject(projectId || '');
   const { data: tasks, isLoading: tasksLoading } = useTasks({ projectId });
@@ -37,6 +39,19 @@ export function ProjectDetailPage() {
   const deleteTask = useDeleteTask();
 
   const showCompleted = settings?.showCompletedTasks ?? true;
+
+  // Done/total of each parent's direct sub-tasks (used for the progress badge).
+  const subtaskProgressById = useMemo(() => {
+    const map = new Map<string, { done: number; total: number }>();
+    for (const task of tasks ?? []) {
+      if (!task.parentId) continue;
+      const entry = map.get(task.parentId) ?? { done: 0, total: 0 };
+      entry.total += 1;
+      if (task.status === 'done') entry.done += 1;
+      map.set(task.parentId, entry);
+    }
+    return map;
+  }, [tasks]);
 
   if (projectLoading) {
     return (
@@ -59,15 +74,23 @@ export function ProjectDetailPage() {
     );
   }
 
-  // Group tasks by status for kanban view.
+  // Group tasks by status. Sub-tasks are hidden from the top-level board/list
+  // unless the user opts in, and the "show completed" preference still applies.
   const allTasks = tasks ?? [];
-  const tasksByStatus = {
+  const allTasksByStatus = {
     todo: allTasks.filter((t) => t.status === 'todo'),
     in_progress: allTasks.filter((t) => t.status === 'in_progress'),
     done: allTasks.filter((t) => t.status === 'done'),
   };
-  // Respect the "Show completed tasks" preference in the board and list views.
-  const visibleTasks = showCompleted ? allTasks : allTasks.filter((t) => t.status !== 'done');
+  const topLevelTasks = showSubtasks ? allTasks : allTasks.filter((t) => !t.parentId);
+  const visibleTasks = showCompleted
+    ? topLevelTasks
+    : topLevelTasks.filter((t) => t.status !== 'done');
+  const tasksByStatus = {
+    todo: visibleTasks.filter((t) => t.status === 'todo'),
+    in_progress: visibleTasks.filter((t) => t.status === 'in_progress'),
+    done: visibleTasks.filter((t) => t.status === 'done'),
+  };
 
   const handleStatusChange = (taskId: string, newStatus: 'todo' | 'in_progress' | 'done') => {
     updateTask.mutate({ id: taskId, update: { status: newStatus } });
@@ -82,7 +105,12 @@ export function ProjectDetailPage() {
   };
 
   const handleDelete = (id: string, title: string) => {
-    if (window.confirm(`Move "${title}" to Trash?`)) {
+    const childCount = subtaskProgressById.get(id)?.total ?? 0;
+    const message =
+      childCount > 0
+        ? `Move "${title}" and its ${childCount} sub-task${childCount === 1 ? '' : 's'} to Trash?`
+        : `Move "${title}" to Trash?`;
+    if (window.confirm(message)) {
       deleteTask.mutate(id);
     }
   };
@@ -99,13 +127,20 @@ export function ProjectDetailPage() {
         status: data.status ?? 'todo',
         priority: data.priority ?? 'medium',
         tags: data.tags ?? [],
+        parentId: subtaskParent?.id ?? data.parentId,
       } as TaskInputValidated,
       {
         onSuccess: () => {
           setShowCreateTask(false);
+          setSubtaskParent(null);
         },
       }
     );
+  };
+
+  const handleAddSubtask = (task: { id: string }) => {
+    setSubtaskParent(tasks?.find((candidate) => candidate.id === task.id) ?? null);
+    setShowCreateTask(true);
   };
 
   const handleEditTask = (data: TaskInputValidated | TaskUpdateValidated, taskId: string) => {
@@ -152,6 +187,17 @@ export function ProjectDetailPage() {
               <span className={styles.viewLabel}>List</span>
             </Button>
           </div>
+          <Button
+            variant={showSubtasks ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => setShowSubtasks((prev) => !prev)}
+            aria-pressed={showSubtasks}
+          >
+            <ListTree className="w-4 h-4" aria-hidden="true" />
+            <span className={styles.viewLabel}>
+              {showSubtasks ? 'Hide sub-tasks' : 'Show sub-tasks'}
+            </span>
+          </Button>
           <Button variant="primary" onClick={() => setShowCreateTask(true)}>
             <Plus className="w-4 h-4" aria-hidden="true" />
             New Task
@@ -177,9 +223,11 @@ export function ProjectDetailPage() {
           )}
           <div className={styles.projectMeta}>
             <span className={styles.metaItem}>{allTasks.length} tasks</span>
-            <span className={styles.metaItem}>{tasksByStatus.todo.length} to do</span>
-            <span className={styles.metaItem}>{tasksByStatus.in_progress.length} in progress</span>
-            <span className={styles.metaItem}>{tasksByStatus.done.length} done</span>
+            <span className={styles.metaItem}>{allTasksByStatus.todo.length} to do</span>
+            <span className={styles.metaItem}>
+              {allTasksByStatus.in_progress.length} in progress
+            </span>
+            <span className={styles.metaItem}>{allTasksByStatus.done.length} done</span>
           </div>
         </div>
       </div>
@@ -228,6 +276,8 @@ export function ProjectDetailPage() {
               onDropTask={handleDropTask}
               onEdit={(t) => setEditingTask(tasks?.find((x) => x.id === t.id) ?? null)}
               onDelete={handleDelete}
+              subtaskProgressById={subtaskProgressById}
+              onAddSubtask={handleAddSubtask}
             />
           ))}
         </div>
@@ -238,14 +288,22 @@ export function ProjectDetailPage() {
           onEdit={(t) => setEditingTask(tasks?.find((x) => x.id === t.id) ?? null)}
           onDelete={handleDelete}
           onCreateTask={() => setShowCreateTask(true)}
+          subtaskProgressById={subtaskProgressById}
+          onAddSubtask={handleAddSubtask}
         />
       )}
 
       {/* Create Task Dialog */}
       <TaskFormDialog
+        key={subtaskParent?.id ?? 'new-task'}
         open={showCreateTask}
-        onClose={() => setShowCreateTask(false)}
-        projectId={projectId!}
+        onClose={() => {
+          setShowCreateTask(false);
+          setSubtaskParent(null);
+        }}
+        projectId={subtaskParent?.projectId ?? projectId!}
+        parentId={subtaskParent?.id}
+        parentTitle={subtaskParent?.title}
         isLoading={createTask.isPending}
         onSubmit={handleCreateTask}
       />
@@ -293,6 +351,8 @@ interface KanbanColumnProps {
   onDropTask: (taskId: string, status: TaskStatus) => void;
   onEdit: (task: { id: string }) => void;
   onDelete: (id: string, title: string) => void;
+  subtaskProgressById: Map<string, { done: number; total: number }>;
+  onAddSubtask: (task: { id: string }) => void;
 }
 
 function KanbanColumn({
@@ -304,6 +364,8 @@ function KanbanColumn({
   onDropTask,
   onEdit,
   onDelete,
+  subtaskProgressById,
+  onAddSubtask,
 }: KanbanColumnProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -375,6 +437,8 @@ function KanbanColumn({
                 setDraggingId(task.id);
               }}
               onDragEnd={() => setDraggingId(null)}
+              subtaskProgress={subtaskProgressById.get(task.id)}
+              onAddSubtask={onAddSubtask}
             />
           ))
         )}
@@ -399,6 +463,8 @@ interface TaskListViewProps {
   onEdit: (task: { id: string }) => void;
   onDelete: (id: string, title: string) => void;
   onCreateTask: () => void;
+  subtaskProgressById: Map<string, { done: number; total: number }>;
+  onAddSubtask: (task: { id: string }) => void;
 }
 
 function TaskListView({
@@ -407,6 +473,8 @@ function TaskListView({
   onEdit,
   onDelete,
   onCreateTask,
+  subtaskProgressById,
+  onAddSubtask,
 }: TaskListViewProps) {
   if (tasks.length === 0) {
     return (
@@ -429,6 +497,8 @@ function TaskListView({
           onEdit={onEdit}
           onDelete={onDelete}
           variant="list"
+          subtaskProgress={subtaskProgressById.get(task.id)}
+          onAddSubtask={onAddSubtask}
         />
       ))}
     </div>

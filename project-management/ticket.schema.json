@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://workboard.local/schemas/ticket.json",
+  "title": "Workboard ticket frontmatter",
+  "description": "Machine-readable schema for the YAML frontmatter of tickets/WB-*.md. The canonical ticket files are validated by scripts/tickets-build.mjs; this schema exists so external agents and editors can validate and autocomplete the same shape.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "status", "priority", "project", "created", "updated"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Ticket id; must match the filename prefix.",
+      "pattern": "^WB-[0-9]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Short imperative summary. Avoid colons so the flat frontmatter stays unambiguous."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["todo", "in_progress", "done"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "urgent"]
+    },
+    "project": {
+      "type": "string",
+      "description": "Project slug defined in project-management/workboard.config.json.",
+      "enum": ["t1-quick-wins", "t2-differentiators", "t3-platform", "product-gaps", "eng-ai-dx", "quality-a11y"]
+    },
+    "assignee": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Display name, e.g. \"unassigned\", \"human:seif\", or \"agent:opencode\"."
+    },
+    "tags": {
+      "type": "string",
+      "description": "Comma-separated tags. At most 10 tags, each ≤30 chars, lowercase (kebab-case or namespace:value)."
+    },
+    "created": {
+      "type": "string",
+      "format": "date",
+      "description": "Creation date (YYYY-MM-DD)."
+    },
+    "updated": {
+      "type": "string",
+      "format": "date",
+      "description": "Last meaningful update (YYYY-MM-DD)."
+    },
+    "source": {
+      "type": "string",
+      "description": "Where the work came from, e.g. competitor-analysis, readme-gaps, a11y-debt, code-audit, handoff."
+    }
+  }
+}

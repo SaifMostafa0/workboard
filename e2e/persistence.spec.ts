@@ -122,6 +122,8 @@ test.describe('Import/Export', () => {
     expect(parsed.tasks).toBeDefined();
     expect(Array.isArray(parsed.projects)).toBe(true);
     expect(Array.isArray(parsed.tasks)).toBe(true);
+    expect(Array.isArray(parsed.labels)).toBe(true);
+    expect(Array.isArray(parsed.savedViews)).toBe(true);
   });
 
   test('imports valid JSON data', async ({ page }) => {
@@ -166,6 +168,45 @@ test.describe('Import/Export', () => {
   test('rejects file too large', async () => {
     // The >1MB guard is covered by unit tests; building a large fixture here
     // would only slow the browser suite down.
+  });
+
+  test('restores labels through an export/import round-trip', async ({ page }) => {
+    // Create a label that is not part of the demo data.
+    await page.goto('/labels');
+    await page.waitForLoadState('networkidle');
+    await page.click('button:has-text("New Label")');
+    await page.getByPlaceholder('Label name').fill('Regression');
+    await page.getByRole('button', { name: 'Create' }).click();
+    await expect(page.getByText('Regression')).toBeVisible();
+
+    // Export the backup that should now contain the label.
+    await page.goto('/settings');
+    await page.waitForLoadState('networkidle');
+    const downloadPromise = page.waitForEvent('download');
+    await page.click('button:has-text("Export JSON")');
+    const download = await downloadPromise;
+    const exportPath = test.info().outputPath('workboard-export-labels.json');
+    await download.saveAs(exportPath);
+
+    // Delete everything and confirm the label is gone.
+    await page.click('button:has-text("Delete All Data")');
+    await page.click('button:has-text("Delete Everything")');
+    await expect(page.locator('text=All data deleted')).toBeVisible();
+    await page.goto('/labels');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Regression')).toHaveCount(0);
+
+    // Import the backup and confirm the label is restored.
+    await page.goto('/settings');
+    await page.waitForLoadState('networkidle');
+    await page.click('button:has-text("Import JSON")');
+    await page.setInputFiles('input[type="file"]', exportPath);
+    await page.click('button:has-text("Import Data")');
+    await expect(page.locator('text=Import complete')).toBeVisible();
+
+    await page.goto('/labels');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Regression')).toBeVisible();
   });
 });
 

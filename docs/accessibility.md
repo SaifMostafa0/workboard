@@ -295,8 +295,8 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
 
 | Issue                                   | Severity | Milestone | Status   |
 | --------------------------------------- | -------- | --------- | -------- |
-| Custom select dropdown keyboard support | High     | 3         | Planned  |
-| Date picker accessibility               | High     | 5         | Planned  |
+| Custom select dropdown keyboard support | High     | 3         | Fixed (native `<select>`) |
+| Date picker accessibility               | High     | 5         | Fixed (native `<input type="date">`) |
 | Drag-drop task reordering (if added)    | Medium   | Future    | Deferred |
 | Toast stack screen reader handling      | Medium   | 8         | Planned  |
 

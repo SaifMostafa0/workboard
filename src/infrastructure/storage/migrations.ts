@@ -1,14 +1,26 @@
-import type { Project, Task } from '@/domain';
-import type { StorageError } from '@/domain/errors';
+import type { Epic, Label, Project, SavedView, Task } from '@/domain';
+import type { StorageError, ValidationError } from '@/domain/errors';
 import type { ExportDataValidated, ImportDataValidated } from '@/domain/validation';
-import { validateExportData, validateImportData } from '@/domain/validation';
+import {
+  validateExportData,
+  validateImportData,
+  validateImportRelationships,
+} from '@/domain/validation';
 import { createDemoData } from './demoData';
 import type { Result, StorageAdapter } from './storageAdapter';
-import { createStorageKey, ok } from './storageAdapter';
+import { createStorageKey, err, ok } from './storageAdapter';
 
 const SCHEMA_VERSION_KEY = 'workboard:meta:schema';
 const SEEDED_KEY = 'workboard:meta:seeded';
 const CURRENT_SCHEMA_VERSION = 1;
+
+const PROJECT_PREFIX = 'workboard:projects:';
+const TASK_PREFIX = 'workboard:tasks:';
+const LABEL_PREFIX = 'workboard:labels:';
+const SAVED_VIEW_PREFIX = 'workboard:savedViews:';
+const EPIC_PREFIX = 'workboard:epics:';
+const SETTINGS_PREFIX = 'workboard:settings:';
+const SETTINGS_KEY = 'workboard:settings:preferences';
 
 export interface StoredProject extends Project {
   _version?: number;
@@ -16,6 +28,15 @@ export interface StoredProject extends Project {
 
 export interface StoredTask extends Task {
   _version?: number;
+}
+
+/** Counts of records written by an import, for user-facing feedback. */
+export interface ImportResult {
+  projectsCreated: number;
+  tasksCreated: number;
+  labelsCreated: number;
+  savedViewsCreated: number;
+  epicsCreated: number;
 }
 
 export interface MigrationContext {
@@ -73,15 +94,22 @@ export const runMigrations = async (
 export const exportAllData = async (
   adapter: StorageAdapter
 ): Promise<Result<ExportDataValidated, StorageError>> => {
-  const projectsResult = await adapter.getAll<StoredProject>('workboard:projects:');
+  const projectsResult = await adapter.getAll<StoredProject>(PROJECT_PREFIX);
   if (!projectsResult.ok) return projectsResult;
 
-  const tasksResult = await adapter.getAll<StoredTask>('workboard:tasks:');
+  const tasksResult = await adapter.getAll<StoredTask>(TASK_PREFIX);
   if (!tasksResult.ok) return tasksResult;
 
-  const settingsResult = await adapter.get<Record<string, unknown>>(
-    'workboard:settings:preferences'
-  );
+  const labelsResult = await adapter.getAll<Label>(LABEL_PREFIX);
+  if (!labelsResult.ok) return labelsResult;
+
+  const savedViewsResult = await adapter.getAll<SavedView>(SAVED_VIEW_PREFIX);
+  if (!savedViewsResult.ok) return savedViewsResult;
+
+  const epicsResult = await adapter.getAll<Epic>(EPIC_PREFIX);
+  if (!epicsResult.ok) return epicsResult;
+
+  const settingsResult = await adapter.get<Record<string, unknown>>(SETTINGS_KEY);
   if (!settingsResult.ok) return settingsResult;
 
   const exportData = {
@@ -95,7 +123,10 @@ export const exportAllData = async (
       const { _version, ...task } = t;
       return task;
     }),
-    settings: settingsResult.value,
+    labels: labelsResult.value,
+    savedViews: savedViewsResult.value,
+    epics: epicsResult.value,
+    settings: settingsResult.value ?? undefined,
   };
 
   const validation = validateExportData(exportData);
@@ -107,21 +138,27 @@ export const importData = async (
   adapter: StorageAdapter,
   data: ImportDataValidated,
   options: { mode: 'merge' | 'replace' } = { mode: 'merge' }
-): Promise<Result<{ projectsCreated: number; tasksCreated: number }, StorageError>> => {
+): Promise<Result<ImportResult, StorageError | ValidationError>> => {
   validateImportData(data);
 
+  const relationshipError = validateImportRelationships(data);
+  if (relationshipError) return err(relationshipError);
+
   if (options.mode === 'replace') {
-    const clearProjects = await adapter.clear('workboard:projects:');
-    if (!clearProjects.ok) return clearProjects;
-    const clearTasks = await adapter.clear('workboard:tasks:');
-    if (!clearTasks.ok) return clearTasks;
+    for (const prefix of [PROJECT_PREFIX, TASK_PREFIX, LABEL_PREFIX, SAVED_VIEW_PREFIX]) {
+      const clearResult = await adapter.clear(prefix);
+      if (!clearResult.ok) return clearResult;
+    }
   }
 
   let projectsCreated = 0;
   let tasksCreated = 0;
+  let labelsCreated = 0;
+  let savedViewsCreated = 0;
+  let epicsCreated = 0;
 
   for (const project of data.projects) {
-    const key = `workboard:projects:${project.id}`;
+    const key = createStorageKey('projects', project.id);
     const existingResult = await adapter.get(key);
     if (!existingResult.ok) return existingResult;
     if (existingResult.value && options.mode === 'merge') continue;
@@ -132,7 +169,7 @@ export const importData = async (
   }
 
   for (const task of data.tasks) {
-    const key = `workboard:tasks:${task.id}`;
+    const key = createStorageKey('tasks', task.id);
     const existingResult = await adapter.get(key);
     if (!existingResult.ok) return existingResult;
     if (existingResult.value && options.mode === 'merge') continue;
@@ -142,31 +179,66 @@ export const importData = async (
     tasksCreated++;
   }
 
+  for (const label of data.labels) {
+    const key = createStorageKey('labels', label.id);
+    const existingResult = await adapter.get(key);
+    if (!existingResult.ok) return existingResult;
+    if (existingResult.value && options.mode === 'merge') continue;
+
+    const setResult = await adapter.set(key, label);
+    if (!setResult.ok) return setResult;
+    labelsCreated++;
+  }
+
+  for (const savedView of data.savedViews) {
+    const key = createStorageKey('savedViews', savedView.id);
+    const existingResult = await adapter.get(key);
+    if (!existingResult.ok) return existingResult;
+    if (existingResult.value && options.mode === 'merge') continue;
+
+    const setResult = await adapter.set(key, savedView);
+    if (!setResult.ok) return setResult;
+    savedViewsCreated++;
+  }
+
+  for (const epic of data.epics) {
+    const key = createStorageKey('epics', epic.id);
+    const existingResult = await adapter.get(key);
+    if (!existingResult.ok) return existingResult;
+    if (existingResult.value && options.mode === 'merge') continue;
+    const setResult = await adapter.set(key, epic);
+    if (!setResult.ok) return setResult;
+    epicsCreated++;
+  }
+
   if (data.settings) {
-    const settingsResult = await adapter.set('workboard:settings:preferences', data.settings);
+    const settingsResult = await adapter.set(SETTINGS_KEY, data.settings);
     if (!settingsResult.ok) return settingsResult;
   }
 
-  return ok({ projectsCreated, tasksCreated });
+  return ok({ projectsCreated, tasksCreated, labelsCreated, savedViewsCreated, epicsCreated });
 };
 
 export { validateImportData } from '@/domain/validation';
 
 /**
- * Removes every project, task and stored preference.
+ * Removes every project, task, label, saved view and stored preference.
  * Leaves the schema metadata intact so the app stays migrated.
  */
 export const clearAllData = async (
   adapter: StorageAdapter
 ): Promise<Result<void, StorageError>> => {
-  const clearProjects = await adapter.clear('workboard:projects:');
-  if (!clearProjects.ok) return clearProjects;
-
-  const clearTasks = await adapter.clear('workboard:tasks:');
-  if (!clearTasks.ok) return clearTasks;
-
-  const clearSettings = await adapter.clear('workboard:settings:');
-  if (!clearSettings.ok) return clearSettings;
+  for (const prefix of [
+    PROJECT_PREFIX,
+    TASK_PREFIX,
+    LABEL_PREFIX,
+    SAVED_VIEW_PREFIX,
+    EPIC_PREFIX,
+    SETTINGS_PREFIX,
+  ]) {
+    const clearResult = await adapter.clear(prefix);
+    if (!clearResult.ok) return clearResult;
+  }
 
   return ok(undefined);
 };
@@ -221,7 +293,7 @@ export const initializeApp = async (
   if (!seededResult.ok) return seededResult;
   if (seededResult.value) return ok(undefined);
 
-  const projectsResult = await adapter.getAll<StoredProject>('workboard:projects:');
+  const projectsResult = await adapter.getAll<StoredProject>(PROJECT_PREFIX);
   if (!projectsResult.ok) return projectsResult;
 
   if (projectsResult.value.length === 0) {

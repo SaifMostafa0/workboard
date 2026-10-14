@@ -2,7 +2,16 @@ import { Button } from '@/components/ui/Button';
 import type { TaskPriority, TaskStatus } from '@/domain/task';
 import { cn } from '@/lib/cn';
 import { formatRelativeTime, isDueToday, isOverdue } from '@/lib/date';
-import { Calendar, CheckCircle, ChevronRight, Edit, Tag, Trash2, User } from 'lucide-react';
+import {
+  Calendar,
+  CheckCircle,
+  ChevronRight,
+  Edit,
+  ListTree,
+  Tag,
+  Trash2,
+  User,
+} from 'lucide-react';
 import type { DragEvent } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './TaskCard.module.css';
@@ -19,6 +28,7 @@ interface TaskCardProps {
     assignee?: string;
     tags: string[];
     updatedAt: string;
+    parentId?: string;
   };
   onStatusChange: (id: string, status: TaskStatus) => void;
   onEdit: (task: { id: string }) => void;
@@ -33,6 +43,10 @@ interface TaskCardProps {
   onDragStart?: (event: DragEvent<HTMLElement>) => void;
   onDragEnd?: (event: DragEvent<HTMLElement>) => void;
   isDragging?: boolean;
+  /** Done/total of this task's direct sub-tasks, when it has any. */
+  subtaskProgress?: { done: number; total: number };
+  /** When provided (and the task is top-level), renders an "Add sub-task" action. */
+  onAddSubtask?: (task: { id: string }) => void;
 }
 
 export function TaskCard({
@@ -48,9 +62,12 @@ export function TaskCard({
   onDragStart,
   onDragEnd,
   isDragging = false,
+  subtaskProgress,
+  onAddSubtask,
 }: TaskCardProps) {
   const overdue = task.dueDate && isOverdue(task.dueDate) && task.status !== 'done';
   const dueToday = task.dueDate && isDueToday(task.dueDate) && task.status !== 'done';
+  const hasSubtasks = Boolean(subtaskProgress && subtaskProgress.total > 0);
 
   const statusLabels: Record<TaskStatus, string> = {
     todo: 'To Do',
@@ -107,6 +124,16 @@ export function TaskCard({
             </h3>
           </div>
           <div className={styles.actions}>
+            {!task.parentId && onAddSubtask && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onAddSubtask({ id: task.id })}
+                aria-label={`Add sub-task to ${task.title}`}
+              >
+                <ListTree className="w-4 h-4" aria-hidden="true" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -139,6 +166,25 @@ export function TaskCard({
           <span className={cn(styles.badge, styles[`priority-${task.priority}`])}>
             {priorityLabels[task.priority]}
           </span>
+
+          {/* Sub-task badge */}
+          {task.parentId && (
+            <span className={styles.subtaskBadge}>
+              <ListTree className="w-3 h-3" aria-hidden="true" />
+              Sub-task
+            </span>
+          )}
+
+          {/* Sub-task progress */}
+          {hasSubtasks && subtaskProgress && (
+            <span
+              className={styles.subtaskProgress}
+              aria-label={`${subtaskProgress.done} of ${subtaskProgress.total} sub-tasks done`}
+            >
+              <ListTree className="w-3 h-3" aria-hidden="true" />
+              {subtaskProgress.done}/{subtaskProgress.total}
+            </span>
+          )}
 
           {/* Due date */}
           {task.dueDate && (

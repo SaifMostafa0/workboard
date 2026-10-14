@@ -1,0 +1,48 @@
+{
+  "readme": "Source of truth for generated Workboard artifacts. Edit this file and tickets/*.md, then run `npm run tickets:build`. Do not hand-edit project-management/workboard-import.json or BACKLOG.md.",
+  "boardName": "Workboard — Product Backlog",
+  "projects": [
+    {
+      "slug": "t1-quick-wins",
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
+      "name": "WB — Roadmap T1 · Quick Wins",
+      "description": "Tier 1 roadmap: cheap, high-signal wins that close the most visible gaps.",
+      "color": "emerald"
+    },
+    {
+      "slug": "t2-differentiators",
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000102",
+      "name": "WB — Roadmap T2 · Differentiators",
+      "description": "Tier 2 roadmap: features that turn Workboard's gaps into differentiators.",
+      "color": "indigo"
+    },
+    {
+      "slug": "t3-platform",
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
+      "name": "WB — Roadmap T3 · Platform",
+      "description": "Tier 3 roadmap: platform and ecosystem work.",
+      "color": "purple"
+    },
+    {
+      "slug": "product-gaps",
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000104",
+      "name": "WB — Product Gaps",
+      "description": "Capability gaps versus Jira, Trello and Linear, plus gaps found in the codebase.",
+      "color": "red"
+    },
+    {
+      "slug": "eng-ai-dx",
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "name": "WB — Engineering & AI-DX",
+      "description": "Dogfooding, documentation-as-code and agent-friendliness of the project itself.",
+      "color": "teal"
+    },
+    {
+      "slug": "quality-a11y",
+      "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000106",
+      "name": "WB — Quality & Accessibility",
+      "description": "Accessibility, performance budgets, and test-depth improvements.",
+      "color": "sky"
+    }
+  ]
+}

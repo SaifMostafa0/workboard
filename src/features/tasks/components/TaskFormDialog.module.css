@@ -34,6 +34,19 @@
   color: var(--color-text-muted);
 }
 
+.subtaskNote {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.subtaskNote strong {
+  color: var(--color-text);
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;

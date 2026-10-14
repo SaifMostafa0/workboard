@@ -2,6 +2,9 @@ import { useToastHelpers } from '@/components/feedback/Toast';
 import type {
   LabelInput,
   LabelUpdate,
+  Epic,
+  EpicInput,
+  EpicUpdate,
   Project,
   ProjectInput,
   ProjectUpdate,
@@ -13,6 +16,7 @@ import type {
 } from '@/domain';
 import {
   createLabelRepository,
+  createEpicRepository,
   createProjectRepository,
   createSavedViewRepository,
   createSettingsRepository,
@@ -42,6 +46,7 @@ let projectRepository: ReturnType<typeof createProjectRepository> | null = null;
 let taskRepository: ReturnType<typeof createTaskRepository> | null = null;
 let settingsRepository: ReturnType<typeof createSettingsRepository> | null = null;
 let labelRepository: ReturnType<typeof createLabelRepository> | null = null;
+let epicRepository: ReturnType<typeof createEpicRepository> | null = null;
 let savedViewRepository: ReturnType<typeof createSavedViewRepository> | null = null;
 
 const getProjectRepository = () => {
@@ -79,6 +84,13 @@ const getSavedViewRepository = () => {
   return savedViewRepository;
 };
 
+const getEpicRepository = () => {
+  if (!epicRepository) {
+    epicRepository = createEpicRepository(getStorageAdapter());
+  }
+  return epicRepository;
+};
+
 // Query keys
 export const queryKeys = {
   projects: ['projects'] as const,
@@ -90,6 +102,7 @@ export const queryKeys = {
   settings: ['settings'] as const,
   labels: ['labels'] as const,
   savedViews: ['savedViews'] as const,
+  epics: ['epics'] as const,
 };
 
 // Project hooks
@@ -703,9 +716,12 @@ export function useImportData() {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
       queryClient.invalidateQueries({ queryKey: queryKeys.settings });
+      queryClient.invalidateQueries({ queryKey: queryKeys.labels });
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedViews });
       success(
         'Import complete',
-        `Added ${result.projectsCreated} projects and ${result.tasksCreated} tasks.`
+        `Added ${result.projectsCreated} projects, ${result.tasksCreated} tasks, ` +
+          `${result.labelsCreated} labels and ${result.savedViewsCreated} saved views.`
       );
     },
     onError: (err: Error) => {
@@ -728,7 +744,12 @@ export function useClearAllData() {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
       queryClient.invalidateQueries({ queryKey: queryKeys.settings });
-      success('All data deleted', 'Your projects, tasks, and preferences have been deleted.');
+      queryClient.invalidateQueries({ queryKey: queryKeys.labels });
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedViews });
+      success(
+        'All data deleted',
+        'Your projects, tasks, labels, saved views and preferences have been deleted.'
+      );
     },
     onError: (err: Error) => {
       error('Delete failed', err.message);
@@ -750,6 +771,8 @@ export function useResetDemoData() {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
       queryClient.invalidateQueries({ queryKey: queryKeys.settings });
+      queryClient.invalidateQueries({ queryKey: queryKeys.labels });
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedViews });
       success('Demo data reset', 'Sample projects and tasks have been restored.');
     },
     onError: (err: Error) => {
@@ -891,6 +914,83 @@ export function useDeleteSavedView() {
 }
 
 // Combined hook for convenience
+export function useEpics() {
+  return useQuery({
+    queryKey: queryKeys.epics,
+    queryFn: async () => {
+      const repo = getEpicRepository();
+      const result = await repo.list();
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+  });
+}
+
+export function useCreateEpic() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+  return useMutation({
+    mutationFn: async (input: EpicInput) => {
+      const repo = getEpicRepository();
+      const result = await repo.create(input);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.epics });
+      success('Epic created');
+    },
+    onError: (err: Error) => error('Failed to create epic', err.message),
+  });
+}
+
+export function useUpdateEpic() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+  return useMutation({
+    mutationFn: async ({ id, update }: { id: string; update: EpicUpdate }) => {
+      const repo = getEpicRepository();
+      const result = await repo.update(id, update);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.epics });
+      success('Epic updated');
+    },
+    onError: (err: Error) => error('Failed to update epic', err.message),
+  });
+}
+
+export function useDeleteEpic() {
+  const queryClient = useQueryClient();
+  const { success, error, info } = useToastHelpers();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const repo = getEpicRepository();
+      const result = await repo.delete(id);
+      if (!result.ok) throw new Error(result.error.message);
+
+      // Detach epic from all tasks (documented behaviour — delete = detach)
+      const taskRepo = getTaskRepository();
+      const tasks = await taskRepo.list();
+      if (tasks.ok) {
+        for (const task of tasks.value) {
+          if (task.epicId === id) {
+            await taskRepo.update(task.id, { epicId: undefined });
+          }
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.epics });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      success('Epic moved to trash', 'Tasks have been detached from the epic.');
+    },
+    onError: (err: Error) => error('Failed to delete epic', err.message),
+  });
+}
+
 export function useData() {
   const projects = useProjects();
   const tasks = useTasks();

@@ -2,8 +2,11 @@ import { EmptyState, Loading } from '@/components/feedback';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select, type SelectOption } from '@/components/ui/Select';
+import type { SavedView } from '@/domain/savedView';
 import type { Task, TaskPriority, TaskStatus } from '@/domain/task';
 import type { TaskInputValidated, TaskUpdateValidated } from '@/domain/validation';
+import { SavedViewsBar } from '@/features/saved-views/components/SavedViewsBar';
+import { TagFilter } from '@/features/tasks/components/TagFilter';
 import { TaskCard } from '@/features/tasks/components/TaskCard';
 import { TaskFormDialog, TaskFormDialogWithData } from '@/features/tasks/components/TaskFormDialog';
 import {
@@ -12,16 +15,24 @@ import {
   useCreateTask,
   useDeleteTask,
   useProjects,
+  useSavedViews,
   useSettings,
   useTasks,
   useUpdateTask,
 } from '@/hooks/useData';
+import {
+  hasActiveTaskFilters,
+  parseTagsParam,
+  viewToTaskFilters,
+  type TaskFilterState,
+} from '@/lib/savedViewFilters';
 import {
   AlertCircle,
   CheckSquare,
   ChevronDown,
   ChevronUp,
   ListTodo,
+  ListTree,
   Plus,
   Search,
   Trash2,
@@ -121,6 +132,7 @@ export function TasksPage() {
   const sortOrder = searchParams.get('order') || 'desc';
   const page = parseInt(searchParams.get('page') || '1', 10);
   const pageSize = parseInt(searchParams.get('pageSize') || '20', 10);
+  const viewParam = searchParams.get('view');
 
   // Local state for filters (synced with URL)
   const [localSearch, setLocalSearch] = useState(search);
@@ -128,10 +140,16 @@ export function TasksPage() {
   const [localPriority, setLocalPriority] = useState(priorityFilter);
   const [localProject, setLocalProject] = useState(projectFilter);
   const [localDue, setLocalDue] = useState(dueFilter);
+  const [localTags, setLocalTags] = useState<string[]>(() =>
+    parseTagsParam(searchParams.get('tags'))
+  );
   const [localSortBy, setLocalSortBy] = useState(sortBy);
   const [localSortOrder, setLocalSortOrder] = useState(sortOrder);
   const [localPage, setLocalPage] = useState(page);
   const [localPageSize, setLocalPageSize] = useState(pageSize);
+  const [activeViewId, setActiveViewId] = useState<string | null>(viewParam);
+  // Sub-tasks are hidden from the top-level list unless this is toggled on.
+  const [showSubtasks, setShowSubtasks] = useState(false);
 
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState(localSearch);
@@ -139,6 +157,15 @@ export function TasksPage() {
   // Fetch data
   const { data: tasks, isLoading: tasksLoading, error: tasksError } = useTasks();
   const { data: projects, error: projectsError } = useProjects();
+  const { data: views } = useSavedViews();
+  const activeView = views?.find((view) => view.id === activeViewId) ?? null;
+  const availableTags = useMemo(() => {
+    const tags = new Set<string>();
+    for (const task of tasks ?? []) {
+      for (const tag of task.tags) tags.add(tag);
+    }
+    return [...tags].sort((a, b) => a.localeCompare(b));
+  }, [tasks]);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -154,8 +181,10 @@ export function TasksPage() {
   // route. Deriving it from the URL avoids an effect that mirrors route state
   // into component state (and the cascading render that causes).
   const wantsNewTask = isNewRoute || searchParams.get('new') === '1';
-  const showCreateTask = dialogOpen || wantsNewTask;
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  // The task that a new sub-task is being created under, if any.
+  const [subtaskParent, setSubtaskParent] = useState<Task | null>(null);
+  const showCreateTask = dialogOpen || wantsNewTask || subtaskParent !== null;
 
   const handleEditTask = (data: TaskInputValidated | TaskUpdateValidated) => {
     if (!editingTask) return;
@@ -177,13 +206,15 @@ export function TasksPage() {
 
   const closeCreateTask = () => {
     setDialogOpen(false);
+    setSubtaskParent(null);
     clearNewTaskIntent();
   };
 
   const handleCreateTask = (data: TaskInputValidated | TaskUpdateValidated) => {
     createTask.mutate(
       {
-        projectId: data.projectId ?? '',
+        // A sub-task always lives in its parent's project.
+        projectId: subtaskParent?.projectId ?? data.projectId ?? '',
         title: data.title ?? '',
         description: data.description ?? '',
         status: data.status ?? 'todo',
@@ -191,21 +222,43 @@ export function TasksPage() {
         dueDate: data.dueDate || undefined,
         assignee: data.assignee || undefined,
         tags: data.tags ?? [],
+        parentId: subtaskParent?.id ?? data.parentId,
       },
       {
         onSuccess: () => {
           setDialogOpen(false);
+          setSubtaskParent(null);
           clearNewTaskIntent();
         },
       }
     );
   };
 
+  const handleAddSubtask = (task: { id: string }) => {
+    setSubtaskParent(tasks?.find((candidate) => candidate.id === task.id) ?? null);
+  };
+
+  // Done/total of each parent's direct sub-tasks (used for the progress badge).
+  const subtaskProgressById = useMemo(() => {
+    const map = new Map<string, { done: number; total: number }>();
+    for (const task of tasks ?? []) {
+      if (!task.parentId) continue;
+      const entry = map.get(task.parentId) ?? { done: 0, total: 0 };
+      entry.total += 1;
+      if (task.status === 'done') entry.done += 1;
+      map.set(task.parentId, entry);
+    }
+    return map;
+  }, [tasks]);
+
   // Filter tasks
   const filteredTasks = useMemo(() => {
     if (!tasks) return [];
 
     return tasks.filter((task) => {
+      // Sub-tasks are hidden from the top-level list unless toggled on.
+      if (!showSubtasks && task.parentId) return false;
+
       // Respect the "Show completed tasks" preference.
       if (!showCompleted && task.status === 'done') return false;
 
@@ -227,6 +280,9 @@ export function TasksPage() {
       // Project filter
       if (localProject && task.projectId !== localProject) return false;
 
+      // Tag filter — a task matches when it carries any selected tag.
+      if (localTags.length > 0 && !task.tags.some((tag) => localTags.includes(tag))) return false;
+
       // Due date filter
       if (localDue) {
         const now = new Date();
@@ -246,7 +302,17 @@ export function TasksPage() {
 
       return true;
     });
-  }, [tasks, showCompleted, debouncedSearch, localStatus, localPriority, localProject, localDue]);
+  }, [
+    tasks,
+    showCompleted,
+    showSubtasks,
+    debouncedSearch,
+    localStatus,
+    localPriority,
+    localProject,
+    localDue,
+    localTags,
+  ]);
 
   // Sort tasks
   const sortedTasks = useMemo(() => {
@@ -367,10 +433,12 @@ export function TasksPage() {
     if (localPriority) params.set('priority', localPriority);
     if (localProject) params.set('project', localProject);
     if (localDue) params.set('due', localDue);
+    if (localTags.length > 0) params.set('tags', localTags.join(','));
     if (localSortBy !== 'updatedAt') params.set('sort', localSortBy);
     if (localSortOrder !== 'desc') params.set('order', localSortOrder);
     if (currentPage > 1) params.set('page', String(currentPage));
     if (localPageSize !== 20) params.set('pageSize', String(localPageSize));
+    if (activeViewId) params.set('view', activeViewId);
     setSearchParams(params, { replace: true });
   }, [
     debouncedSearch,
@@ -378,10 +446,12 @@ export function TasksPage() {
     localPriority,
     localProject,
     localDue,
+    localTags,
     localSortBy,
     localSortOrder,
     currentPage,
     localPageSize,
+    activeViewId,
     setSearchParams,
   ]);
 
@@ -390,6 +460,7 @@ export function TasksPage() {
     setLocalSearch(value);
     setDebouncedSearch(value);
     setLocalPage(1);
+    setActiveViewId(null);
   };
 
   const handleFilterChange = (filter: string, value: string) => {
@@ -408,6 +479,13 @@ export function TasksPage() {
         break;
     }
     setLocalPage(1);
+    setActiveViewId(null);
+  };
+
+  const handleTagsChange = (tags: string[]) => {
+    setLocalTags(tags);
+    setLocalPage(1);
+    setActiveViewId(null);
   };
 
   const handleSortChange = (sort: string) => {
@@ -417,6 +495,7 @@ export function TasksPage() {
       setLocalSortBy(sort);
       setLocalSortOrder('asc');
     }
+    setActiveViewId(null);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -435,13 +514,40 @@ export function TasksPage() {
     setLocalPriority('');
     setLocalProject('');
     setLocalDue('');
+    setLocalTags([]);
     setLocalSortBy('updatedAt');
     setLocalSortOrder('desc');
     setLocalPage(1);
+    setActiveViewId(null);
   };
 
-  const hasActiveFilters =
-    debouncedSearch || localStatus || localPriority || localProject || localDue;
+  const currentFilters: TaskFilterState = {
+    q: debouncedSearch,
+    status: localStatus,
+    priority: localPriority,
+    project: localProject,
+    due: localDue,
+    tags: localTags,
+    sort: localSortBy,
+    order: localSortOrder === 'asc' ? 'asc' : 'desc',
+  };
+
+  const handleApplyView = (view: SavedView) => {
+    const next = viewToTaskFilters(view.filters);
+    setLocalSearch(next.q);
+    setDebouncedSearch(next.q);
+    setLocalStatus(next.status);
+    setLocalPriority(next.priority);
+    setLocalProject(next.project);
+    setLocalDue(next.due);
+    setLocalTags(next.tags);
+    setLocalSortBy(next.sort);
+    setLocalSortOrder(next.order);
+    setLocalPage(1);
+    setActiveViewId(view.id);
+  };
+
+  const hasActiveFilters = hasActiveTaskFilters(currentFilters);
 
   if (tasksLoading) {
     return (
@@ -474,6 +580,7 @@ export function TasksPage() {
           <p className={styles.subtitle}>
             {totalItems} {totalItems === 1 ? 'task' : 'tasks'}
             {hasActiveFilters && ` (filtered from ${tasks?.length || 0})`}
+            {activeView && ` · View: ${activeView.name}`}
           </p>
         </div>
         <Button variant="primary" onClick={() => setDialogOpen(true)}>
@@ -546,6 +653,25 @@ export function TasksPage() {
             </Button>
           )}
         </div>
+
+        <div className={styles.tagFilterRow}>
+          <TagFilter tags={availableTags} selected={localTags} onChange={handleTagsChange} />
+        </div>
+      </section>
+
+      {/* Saved views */}
+      <section className={styles.savedViewsBar} aria-label="Saved views">
+        <SavedViewsBar
+          views={views ?? []}
+          activeViewId={activeViewId}
+          currentFilters={currentFilters}
+          onApply={handleApplyView}
+          onSaved={(view) => setActiveViewId(view.id)}
+          onClear={clearFilters}
+        />
+        <Button variant="ghost" size="sm" onClick={() => navigate('/saved-views')}>
+          Manage views
+        </Button>
       </section>
 
       {/* Sort & View Controls */}
@@ -577,6 +703,16 @@ export function TasksPage() {
         </div>
 
         <div className={styles.controlsRight}>
+          <Button
+            variant={showSubtasks ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setShowSubtasks((prev) => !prev)}
+            aria-pressed={showSubtasks}
+          >
+            <ListTree className="w-4 h-4" aria-hidden="true" />
+            {showSubtasks ? 'Hide sub-tasks' : 'Show sub-tasks'}
+          </Button>
+
           <div className={styles.pageSizeControl}>
             <label htmlFor="page-size" className={styles.pageSizeLabel}>
               Per page:
@@ -689,7 +825,12 @@ export function TasksPage() {
                 onStatusChange={(id, status) => updateTask.mutate({ id, update: { status } })}
                 onEdit={(t) => setEditingTask(tasks?.find((x) => x.id === t.id) ?? null)}
                 onDelete={(id, title) => {
-                  if (window.confirm(`Move "${title}" to Trash?`)) {
+                  const childCount = subtaskProgressById.get(id)?.total ?? 0;
+                  const message =
+                    childCount > 0
+                      ? `Move "${title}" and its ${childCount} sub-task${childCount === 1 ? '' : 's'} to Trash?`
+                      : `Move "${title}" to Trash?`;
+                  if (window.confirm(message)) {
                     deleteTask.mutate(id);
                   }
                 }}
@@ -697,6 +838,8 @@ export function TasksPage() {
                 selectable={selectionMode}
                 selected={selectedIds.has(task.id)}
                 onSelect={toggleTaskSelected}
+                subtaskProgress={subtaskProgressById.get(task.id)}
+                onAddSubtask={handleAddSubtask}
               />
             ))}
           </div>
@@ -733,10 +876,13 @@ export function TasksPage() {
       )}
 
       <TaskFormDialog
+        key={subtaskParent?.id ?? 'new-task'}
         open={showCreateTask}
         onClose={closeCreateTask}
-        projectId={localProject}
+        projectId={subtaskParent?.projectId ?? localProject}
         projects={projects?.map((p) => ({ id: p.id, name: p.name }))}
+        parentId={subtaskParent?.id}
+        parentTitle={subtaskParent?.title}
         isLoading={createTask.isPending}
         onSubmit={handleCreateTask}
       />
