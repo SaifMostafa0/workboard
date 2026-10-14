@@ -1,6 +1,10 @@
 import { useTheme } from '@/app/providers';
+import { CommandPalette } from '@/components/command-palette/CommandPalette';
+import { KeyboardShortcutsDialog } from '@/components/command-palette/KeyboardShortcutsDialog';
 import { useSettings, useUpdateSettings } from '@/hooks/useData';
+import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys';
 import { cn } from '@/lib/cn';
+import { isApplePlatform } from '@/lib/hotkeys';
 import {
   FolderKanban,
   LayoutDashboard,
@@ -8,6 +12,7 @@ import {
   Menu,
   Monitor,
   Moon,
+  Search,
   Settings,
   Sun,
   Trash2,
@@ -31,6 +36,8 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings({ silent: true });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   // Hydrate synchronously from localStorage so the sidebar doesn't flash
   // open/closed before the persisted settings query resolves.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -61,6 +68,11 @@ export function Layout({ children }: { children?: React.ReactNode }) {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
+
+  const openPalette = () => setPaletteOpen(true);
+  const openShortcuts = () => setShortcutsOpen(true);
+  useGlobalHotkeys({ onOpenPalette: openPalette, onOpenShortcuts: openShortcuts });
+
   const toggleCollapse = () => {
     const next = !sidebarCollapsed;
     setSidebarCollapsed(next);
@@ -165,6 +177,16 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           <div className={styles.headerSpacer} />
 
           <button
+            className={styles.searchBtn}
+            onClick={openPalette}
+            aria-label="Open command palette"
+          >
+            <Search className="w-4 h-4" aria-hidden="true" />
+            <span className={styles.searchLabel}>Search</span>
+            <kbd className={styles.searchKbd}>{isApplePlatform() ? '⌘' : 'Ctrl'} K</kbd>
+          </button>
+
+          <button
             className={styles.themeToggle}
             onClick={handleThemeCycle}
             aria-label={`Current theme: ${getThemeLabel()}. Click to cycle.`}
@@ -180,6 +202,9 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           {children ?? <Outlet />}
         </main>
       </div>
+
+      {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
+      <KeyboardShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   );
 }

@@ -9,6 +9,8 @@ A polished, responsive project and task management application demonstrating pro
 - **Kanban & List Views**: Switch between board and list layouts
 - **Advanced Filtering**: Search, filter by status/priority/project/due date, multi-column sorting
 - **Pagination**: Configurable page sizes with URL synchronization
+- **Trash & Undo**: Deleting is reversible — an inline Undo toast plus a Trash page to restore or remove items for good
+- **Command Palette**: `⌘/Ctrl + K` to jump anywhere or run actions, plus keyboard shortcuts (`?` for help, `g` then a letter to navigate)
 - **Data Persistence**: IndexedDB (with localStorage fallback) - works offline
 - **Import/Export**: JSON backup and restore with validation
 - **Theme Support**: Light, dark, and system preference modes
@@ -19,7 +21,7 @@ A polished, responsive project and task management application demonstrating pro
 
 - **Framework**: React 18 + TypeScript
 - **Build Tool**: Vite
-- **Routing**: React Router v6
+- **Routing**: React Router v7
 - **State Management**: TanStack Query (React Query)
 - **Forms**: React Hook Form + Zod
 - **Storage**: IndexedDB via `idb` (localStorage fallback)
@@ -93,6 +95,24 @@ npm run ci
 To keep changes reviewable, prefer small commits; the pre-commit hook will format and
 lint the files you stage.
 
+## Keyboard Shortcuts
+
+| Shortcut           | Action                                       |
+| ------------------ | -------------------------------------------- |
+| `Ctrl` / `⌘` + `K` | Open the command palette                     |
+| `?`                | Show the shortcuts help dialog               |
+| `g` then `d`       | Go to Dashboard                              |
+| `g` then `p`       | Go to Projects                               |
+| `g` then `t`       | Go to Tasks                                  |
+| `g` then `r`       | Go to Trash                                  |
+| `g` then `s`       | Go to Settings                               |
+| `↑` / `↓`, `Enter` | Move through and run command palette results |
+| `Esc`              | Close the palette or a dialog                |
+
+Press `Ctrl` / `⌘` + `K` (or the **Search** button in the header) to open the command
+palette, which can also create a new project or task, toggle the theme, and switch
+compact mode.
+
 ## Project Structure
 
 ```
@@ -101,11 +121,13 @@ src/
 ├── components/             # Shared UI components
 │   ├── ui/                 # Base components (Button, Input, Select, Dialog)
 │   ├── layout/             # Layout components (Layout, Sidebar, Header)
+│   ├── command-palette/    # ⌘K palette + keyboard shortcuts dialog
 │   └── feedback/           # Feedback components (Toast, Alert, Loading, ErrorBoundary)
 ├── features/               # Feature modules
 │   ├── dashboard/          # Dashboard page
 │   ├── projects/           # Projects CRUD + detail
 │   ├── tasks/              # Tasks CRUD + filtering
+│   ├── trash/              # Trash page (restore / permanently delete)
 │   └── settings/           # Settings & data management
 ├── domain/                 # Domain types, validation, business logic
 ├── infrastructure/         # Storage & repository implementations
