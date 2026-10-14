@@ -10,6 +10,7 @@ export interface SavedView {
     sort?: string;
     order?: 'asc' | 'desc';
     tags?: string[];
+    epic?: string;
   };
   createdAt: string;
   updatedAt: string;

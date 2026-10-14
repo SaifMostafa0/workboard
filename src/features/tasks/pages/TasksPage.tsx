@@ -14,6 +14,7 @@ import {
   useBulkUpdateTasks,
   useCreateTask,
   useDeleteTask,
+  useEpics,
   useProjects,
   useSavedViews,
   useSettings,
@@ -143,6 +144,7 @@ export function TasksPage() {
   const [localTags, setLocalTags] = useState<string[]>(() =>
     parseTagsParam(searchParams.get('tags'))
   );
+  const [localEpic, setLocalEpic] = useState(searchParams.get('epic') || '');
   const [localSortBy, setLocalSortBy] = useState(sortBy);
   const [localSortOrder, setLocalSortOrder] = useState(sortOrder);
   const [localPage, setLocalPage] = useState(page);
@@ -158,6 +160,7 @@ export function TasksPage() {
   const { data: tasks, isLoading: tasksLoading, error: tasksError } = useTasks();
   const { data: projects, error: projectsError } = useProjects();
   const { data: views } = useSavedViews();
+  const { data: epics } = useEpics();
   const activeView = views?.find((view) => view.id === activeViewId) ?? null;
   const availableTags = useMemo(() => {
     const tags = new Set<string>();
@@ -279,6 +282,9 @@ export function TasksPage() {
 
       // Project filter
       if (localProject && task.projectId !== localProject) return false;
+
+      // Epic filter
+      if (localEpic && task.epicId !== localEpic) return false;
 
       // Tag filter — a task matches when it carries any selected tag.
       if (localTags.length > 0 && !task.tags.some((tag) => localTags.includes(tag))) return false;
@@ -434,6 +440,7 @@ export function TasksPage() {
     if (localProject) params.set('project', localProject);
     if (localDue) params.set('due', localDue);
     if (localTags.length > 0) params.set('tags', localTags.join(','));
+    if (localEpic) params.set('epic', localEpic);
     if (localSortBy !== 'updatedAt') params.set('sort', localSortBy);
     if (localSortOrder !== 'desc') params.set('order', localSortOrder);
     if (currentPage > 1) params.set('page', String(currentPage));
@@ -477,6 +484,9 @@ export function TasksPage() {
       case 'due':
         setLocalDue(value);
         break;
+      case 'epic':
+        setLocalEpic(value);
+        break;
     }
     setLocalPage(1);
     setActiveViewId(null);
@@ -515,6 +525,7 @@ export function TasksPage() {
     setLocalProject('');
     setLocalDue('');
     setLocalTags([]);
+    setLocalEpic('');
     setLocalSortBy('updatedAt');
     setLocalSortOrder('desc');
     setLocalPage(1);
@@ -528,6 +539,7 @@ export function TasksPage() {
     project: localProject,
     due: localDue,
     tags: localTags,
+    epic: localEpic,
     sort: localSortBy,
     order: localSortOrder === 'asc' ? 'asc' : 'desc',
   };
@@ -643,6 +655,17 @@ export function TasksPage() {
               { value: 'no-date', label: 'No Due Date' },
             ]}
             aria-label="Filter by due date"
+            className={styles.filterSelect}
+          />
+
+          <Select
+            value={localEpic}
+            onChange={(e) => handleFilterChange('epic', e.target.value)}
+            options={[
+              { value: '', label: 'All Epics' },
+              ...(epics?.map((e: { id: string; name: string }) => ({ value: e.id, label: e.name })) || []),
+            ]}
+            aria-label="Filter by epic"
             className={styles.filterSelect}
           />
 

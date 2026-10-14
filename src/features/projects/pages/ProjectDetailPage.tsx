@@ -8,6 +8,7 @@ import { TaskFormDialog, TaskFormDialogWithData } from '@/features/tasks/compone
 import {
   useCreateTask,
   useDeleteTask,
+  useEpics,
   useProject,
   useSettings,
   useTasks,
@@ -32,6 +33,7 @@ export function ProjectDetailPage() {
   const [subtaskParent, setSubtaskParent] = useState<Task | null>(null);
 
   const { data: project, isLoading: projectLoading } = useProject(projectId || '');
+  const { data: epics, isLoading: epicsLoading } = useEpics();
   const { data: tasks, isLoading: tasksLoading } = useTasks({ projectId });
   const { data: settings } = useSettings();
   const createTask = useCreateTask();
@@ -231,6 +233,28 @@ export function ProjectDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Epic progress roll-up */}
+      <section className={styles.epicsBar} aria-label="Epic progress">
+        <h2 className={styles.epicsTitle}>Epics</h2>
+        <div className={styles.epicsList}>
+          {epics?.map((epic) => {
+            const epicTasks = allTasks.filter((t) => t.epicId === epic.id);
+            const done = epicTasks.filter((t) => t.status === 'done').length;
+            const total = epicTasks.length;
+            return (
+              <div key={epic.id} className={styles.epicItem}>
+                <span className={styles.epicName}>{epic.name}</span>
+                <span className={styles.epicProgress}>{done}/{total}</span>
+                <progress value={total > 0 ? done / total : 0} max={1} aria-label={`${epic.name}: ${done} of ${total} complete`} />
+              </div>
+            );
+          })}
+          {(!epics || epics.length === 0) && (
+            <p className={styles.epicEmpty}>No epics yet. Create one to group tasks.</p>
+          )}
+        </div>
+      </section>
 
       {/* Task Board / List */}
       {tasksLoading ? (

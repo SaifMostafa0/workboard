@@ -2,7 +2,6 @@ import { useToastHelpers } from '@/components/feedback/Toast';
 import type {
   LabelInput,
   LabelUpdate,
-  Epic,
   EpicInput,
   EpicUpdate,
   Project,
@@ -964,7 +963,7 @@ export function useUpdateEpic() {
 
 export function useDeleteEpic() {
   const queryClient = useQueryClient();
-  const { success, error, info } = useToastHelpers();
+  const { success, error } = useToastHelpers();
   return useMutation({
     mutationFn: async (id: string) => {
       const repo = getEpicRepository();

@@ -298,7 +298,7 @@ export const validateImportRelationships = (data: ImportDataValidated): Validati
   }
 
   // Check for orphan tasks (missing epic)
-  const taskEpicIds = new Set(data.tasks.map((t) => t.epicId).filter(Boolean));
+  const taskEpicIds = new Set(data.tasks.map((t) => t.epicId).filter((id): id is string => !!id));
   const orphanEpicIds = [...taskEpicIds].filter((id) => !epicIds.has(id));
   if (orphanEpicIds.length > 0) {
     return createValidationError(
