@@ -10,6 +10,7 @@ A polished, responsive project and task management application demonstrating pro
 - **Advanced Filtering**: Search, filter by status/priority/project/due date, multi-column sorting
 - **Pagination**: Configurable page sizes with URL synchronization
 - **Trash & Undo**: Deleting is reversible — an inline Undo toast plus a Trash page to restore or remove items for good
+- **Bulk Actions**: Select multiple tasks to change their status or priority, or move them to Trash at once
 - **Command Palette**: `⌘/Ctrl + K` to jump anywhere or run actions, plus keyboard shortcuts (`?` for help, `g` then a letter to navigate)
 - **Data Persistence**: IndexedDB (with localStorage fallback) - works offline
 - **Import/Export**: JSON backup and restore with validation

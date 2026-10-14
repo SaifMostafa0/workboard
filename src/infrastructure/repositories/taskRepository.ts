@@ -20,9 +20,15 @@ export interface ITaskRepository {
   get(id: string): Promise<Result<Task, DomainError>>;
   create(input: TaskInput): Promise<Result<Task, DomainError>>;
   update(id: string, update: TaskUpdate): Promise<Result<Task, DomainError>>;
+  /** Apply the same update to many tasks, returning the updated records. */
+  updateMany(ids: string[], update: TaskUpdate): Promise<Result<Task[], DomainError>>;
   /** Soft-delete: stamps `deletedAt` so the task can be restored. */
   delete(id: string): Promise<Result<void, DomainError>>;
+  /** Soft-delete many tasks, returning how many were moved to trash. */
+  deleteMany(ids: string[]): Promise<Result<number, DomainError>>;
   restore(id: string): Promise<Result<Task, DomainError>>;
+  /** Restore many trashed tasks, returning how many were restored. */
+  restoreMany(ids: string[]): Promise<Result<number, DomainError>>;
   /** Hard-delete: removes the record permanently. */
   purge(id: string): Promise<Result<void, DomainError>>;
   deleteByProject(projectId: string): Promise<Result<number, DomainError>>;
@@ -159,6 +165,24 @@ export class LocalTaskRepository implements ITaskRepository {
     return ok(updatedTask);
   }
 
+  async updateMany(ids: string[], update: TaskUpdate): Promise<Result<Task[], DomainError>> {
+    // Validate once up front so an invalid payload fails fast (and error paths
+    // stay covered) instead of relying on the per-task validation.
+    const validation = safeValidateTaskUpdate(update);
+    if (!validation.success) {
+      return err(zodErrorToValidationError(validation.error));
+    }
+
+    const updated: Task[] = [];
+    for (const id of ids) {
+      const result = await this.update(id, validation.data);
+      if (!result.ok) return result;
+      updated.push(result.value);
+    }
+
+    return ok(updated);
+  }
+
   async delete(id: string): Promise<Result<void, DomainError>> {
     const getResult = await this.get(id);
     if (!getResult.ok) return getResult;
@@ -173,6 +197,16 @@ export class LocalTaskRepository implements ITaskRepository {
     return ok(undefined);
   }
 
+  async deleteMany(ids: string[]): Promise<Result<number, DomainError>> {
+    let deletedCount = 0;
+    for (const id of ids) {
+      const result = await this.delete(id);
+      if (!result.ok) return result;
+      deletedCount++;
+    }
+    return ok(deletedCount);
+  }
+
   async restore(id: string): Promise<Result<Task, DomainError>> {
     const getResult = await this.get(id);
     if (!getResult.ok) return getResult;
@@ -185,6 +219,16 @@ export class LocalTaskRepository implements ITaskRepository {
     if (!setResult.ok) return err(toDomainError(setResult.error));
 
     return ok(restoredTask);
+  }
+
+  async restoreMany(ids: string[]): Promise<Result<number, DomainError>> {
+    let restoredCount = 0;
+    for (const id of ids) {
+      const result = await this.restore(id);
+      if (!result.ok) return result;
+      restoredCount++;
+    }
+    return ok(restoredCount);
   }
 
   async purge(id: string): Promise<Result<void, DomainError>> {

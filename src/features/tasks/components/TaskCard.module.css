@@ -14,6 +14,15 @@
   box-shadow: var(--shadow-md);
 }
 
+.selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.selected:hover {
+  border-color: var(--color-primary);
+}
+
 /* Priority border */
 .priorityBar {
   position: absolute;
@@ -90,6 +99,28 @@
   justify-content: space-between;
   gap: var(--space-2);
   margin-bottom: var(--space-2);
+}
+
+.titleGroup {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  padding-top: 2px;
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
 }
 
 .title {

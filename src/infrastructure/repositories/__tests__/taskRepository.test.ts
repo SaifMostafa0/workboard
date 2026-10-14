@@ -1,5 +1,5 @@
 import { createStorageError } from '@/domain/errors';
-import type { TaskInput } from '@/domain/task';
+import type { TaskInput, TaskUpdate } from '@/domain/task';
 import { createTaskRepository } from '@/infrastructure/repositories/taskRepository';
 import { FakeStorageAdapter } from '@/test/factories/fakeStorageAdapter';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -227,6 +227,95 @@ describe('LocalTaskRepository', () => {
       const result = await repository.update('non-existent', { title: 'Test' });
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.error.type).toBe('NOT_FOUND');
+    });
+  });
+
+  describe('updateMany', () => {
+    it('applies the same update to many tasks', async () => {
+      const a = await repository.create({ ...validTaskInput, title: 'A' });
+      const b = await repository.create({ ...validTaskInput, title: 'B' });
+      if (!a.ok || !b.ok) return;
+
+      const result = await repository.updateMany([a.value.id, b.value.id], { priority: 'high' });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value).toHaveLength(2);
+        expect(result.value.every((t) => t.priority === 'high')).toBe(true);
+      }
+    });
+
+    it('returns an empty array when given no ids', async () => {
+      const result = await repository.updateMany([], { status: 'done' });
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.value).toEqual([]);
+    });
+
+    it('rejects an invalid update', async () => {
+      const result = await repository.updateMany(['any-id'], {
+        priority: 'nope',
+      } as unknown as TaskUpdate);
+      expect(result.ok).toBe(false);
+    });
+
+    it('returns NOT_FOUND when any id is missing', async () => {
+      const created = await repository.create(validTaskInput);
+      if (!created.ok) return;
+
+      const result = await repository.updateMany([created.value.id, 'missing'], {
+        status: 'done',
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error.type).toBe('NOT_FOUND');
+    });
+  });
+
+  describe('deleteMany', () => {
+    it('soft-deletes many tasks', async () => {
+      const a = await repository.create({ ...validTaskInput, title: 'A' });
+      const b = await repository.create({ ...validTaskInput, title: 'B' });
+      if (!a.ok || !b.ok) return;
+
+      const result = await repository.deleteMany([a.value.id, b.value.id]);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.value).toBe(2);
+
+      const active = await repository.list();
+      if (active.ok) expect(active.value).toHaveLength(0);
+    });
+
+    it('returns an error when a delete write fails mid-loop', async () => {
+      const created = await repository.create(validTaskInput);
+      if (!created.ok) return;
+
+      adapter.setFailMode('set', createStorageError('PERMISSION_DENIED', 'write failed'));
+      const result = await repository.deleteMany([created.value.id]);
+
+      expect(result.ok).toBe(false);
+    });
+  });
+
+  describe('restoreMany', () => {
+    it('restores many tasks', async () => {
+      const a = await repository.create({ ...validTaskInput, title: 'A' });
+      const b = await repository.create({ ...validTaskInput, title: 'B' });
+      if (!a.ok || !b.ok) return;
+      await repository.deleteMany([a.value.id, b.value.id]);
+
+      const result = await repository.restoreMany([a.value.id, b.value.id]);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.value).toBe(2);
+
+      const active = await repository.list();
+      if (active.ok) expect(active.value).toHaveLength(2);
+    });
+
+    it('returns an error when restoring a missing task', async () => {
+      const result = await repository.restoreMany(['missing']);
+      expect(result.ok).toBe(false);
     });
   });
 

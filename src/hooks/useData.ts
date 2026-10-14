@@ -508,6 +508,73 @@ export function useUpdateTask() {
   });
 }
 
+/**
+ * Apply the same change (e.g. status or priority) to a batch of tasks at once.
+ */
+export function useBulkUpdateTasks() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async ({ ids, update }: { ids: string[]; update: TaskUpdate }) => {
+      const repo = getTaskRepository();
+      const result = await repo.updateMany(ids, update);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      const count = updated.length;
+      success('Tasks updated', `${count} ${count === 1 ? 'task' : 'tasks'} updated.`);
+    },
+    onError: (err: Error) => {
+      error('Failed to update tasks', err.message);
+    },
+  });
+}
+
+/**
+ * Move a batch of tasks to trash, with a single Undo action on the toast.
+ */
+export function useBulkDeleteTasks() {
+  const queryClient = useQueryClient();
+  const { success, error, info } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const repo = getTaskRepository();
+      const result = await repo.deleteMany(ids);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    onSuccess: (count, ids) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.trash });
+
+      const undo = async () => {
+        const repo = getTaskRepository();
+        const restoreResult = await repo.restoreMany(ids);
+        if (!restoreResult.ok) {
+          error('Failed to restore tasks', restoreResult.error.message);
+          return;
+        }
+        queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.trash });
+        success('Tasks restored', `${count} ${count === 1 ? 'task is' : 'tasks are'} back.`);
+      };
+
+      info(
+        `${count} ${count === 1 ? 'task' : 'tasks'} moved to trash`,
+        'Undo now, or restore later from Trash.',
+        { duration: 8000, action: { label: 'Undo', onClick: () => void undo() } }
+      );
+    },
+    onError: (err: Error) => {
+      error('Failed to delete tasks', err.message);
+    },
+  });
+}
+
 export function useTaskCounts(projectId?: string) {
   return useQuery({
     queryKey: ['taskCounts', projectId],

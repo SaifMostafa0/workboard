@@ -23,6 +23,10 @@ interface TaskCardProps {
   onEdit: (task: { id: string }) => void;
   onDelete: (id: string, title: string) => void;
   variant?: 'kanban' | 'list';
+  /** When true, renders a selection checkbox for bulk actions. */
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: (id: string, selected: boolean) => void;
 }
 
 export function TaskCard({
@@ -31,6 +35,9 @@ export function TaskCard({
   onEdit,
   onDelete,
   variant = 'kanban',
+  selectable = false,
+  selected = false,
+  onSelect,
 }: TaskCardProps) {
   const overdue = task.dueDate && isOverdue(task.dueDate) && task.status !== 'done';
   const dueToday = task.dueDate && isDueToday(task.dueDate) && task.status !== 'done';
@@ -50,7 +57,12 @@ export function TaskCard({
 
   return (
     <article
-      className={cn(styles.card, styles[variant], styles[`priority-${task.priority}`])}
+      className={cn(
+        styles.card,
+        styles[variant],
+        styles[`priority-${task.priority}`],
+        selected && styles.selected
+      )}
       role="listitem"
     >
       {/* Priority indicator */}
@@ -59,15 +71,27 @@ export function TaskCard({
       {/* Main content */}
       <div className={styles.content}>
         <header className={styles.header}>
-          <h3 className={styles.title}>
-            {task.projectId ? (
-              <Link to={`/projects/${task.projectId}`} className={styles.titleLink}>
-                {task.title}
-              </Link>
-            ) : (
-              <span className={styles.titleLink}>{task.title}</span>
+          <div className={styles.titleGroup}>
+            {selectable && (
+              <label className={styles.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={(e) => onSelect?.(task.id, e.target.checked)}
+                  aria-label={`Select ${task.title}`}
+                />
+              </label>
             )}
-          </h3>
+            <h3 className={styles.title}>
+              {task.projectId ? (
+                <Link to={`/projects/${task.projectId}`} className={styles.titleLink}>
+                  {task.title}
+                </Link>
+              ) : (
+                <span className={styles.titleLink}>{task.title}</span>
+              )}
+            </h3>
+          </div>
           <div className={styles.actions}>
             <Button
               variant="ghost"

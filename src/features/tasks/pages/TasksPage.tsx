@@ -2,11 +2,13 @@ import { EmptyState, Loading } from '@/components/feedback';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select, type SelectOption } from '@/components/ui/Select';
-import type { Task, TaskPriority } from '@/domain/task';
+import type { Task, TaskPriority, TaskStatus } from '@/domain/task';
 import type { TaskInputValidated, TaskUpdateValidated } from '@/domain/validation';
 import { TaskCard } from '@/features/tasks/components/TaskCard';
 import { TaskFormDialog, TaskFormDialogWithData } from '@/features/tasks/components/TaskFormDialog';
 import {
+  useBulkDeleteTasks,
+  useBulkUpdateTasks,
   useCreateTask,
   useDeleteTask,
   useProjects,
@@ -14,8 +16,18 @@ import {
   useTasks,
   useUpdateTask,
 } from '@/hooks/useData';
-import { AlertCircle, ChevronDown, ChevronUp, ListTodo, Plus, Search, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  AlertCircle,
+  CheckSquare,
+  ChevronDown,
+  ChevronUp,
+  ListTodo,
+  Plus,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './TasksPage.module.css';
 
@@ -43,6 +55,53 @@ const SORT_OPTIONS = [
 ] as const;
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+const BULK_STATUS_OPTIONS: SelectOption[] = [
+  { value: 'todo', label: 'To Do' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'done', label: 'Done' },
+];
+
+const BULK_PRIORITY_OPTIONS: SelectOption[] = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'urgent', label: 'Urgent' },
+];
+
+/**
+ * A tri-state checkbox ("select all"). The indeterminate state can only be set
+ * through the DOM, hence the ref + effect.
+ */
+function SelectAllCheckbox({
+  checked,
+  indeterminate,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  indeterminate: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+
+  return (
+    <label className={styles.selectAllCheckbox}>
+      <input
+        ref={ref}
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        aria-label={label}
+      />
+    </label>
+  );
+}
 
 export function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -83,6 +142,12 @@ export function TasksPage() {
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const bulkUpdateTasks = useBulkUpdateTasks();
+  const bulkDeleteTasks = useBulkDeleteTasks();
+
+  // Bulk selection
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const [dialogOpen, setDialogOpen] = useState(false);
   // The create dialog opens either explicitly or via `?new=1` / the `/tasks/new`
@@ -232,6 +297,66 @@ export function TasksPage() {
     (currentPage - 1) * localPageSize,
     currentPage * localPageSize
   );
+
+  // Selection only counts tasks that still exist, so a task deleted elsewhere
+  // (or by a bulk action) silently drops out of the selection.
+  const selectedTasks = useMemo(
+    () => (tasks ?? []).filter((task) => selectedIds.has(task.id)),
+    [tasks, selectedIds]
+  );
+  const selectedOnPage = paginatedTasks.filter((task) => selectedIds.has(task.id)).length;
+  const allOnPageSelected = paginatedTasks.length > 0 && selectedOnPage === paginatedTasks.length;
+
+  const toggleSelectionMode = () => {
+    setSelectionMode((prev) => !prev);
+    setSelectedIds(new Set());
+  };
+
+  const toggleTaskSelected = (id: string, selected: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (selected) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllOnPage = (selected: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const task of paginatedTasks) {
+        if (selected) next.add(task.id);
+        else next.delete(task.id);
+      }
+      return next;
+    });
+  };
+
+  const selectedIdList = selectedTasks.map((task) => task.id);
+
+  const handleBulkStatus = (status: TaskStatus) => {
+    bulkUpdateTasks.mutate(
+      { ids: selectedIdList, update: { status } },
+      { onSuccess: () => setSelectedIds(new Set()) }
+    );
+  };
+
+  const handleBulkPriority = (priority: TaskPriority) => {
+    bulkUpdateTasks.mutate(
+      { ids: selectedIdList, update: { priority } },
+      { onSuccess: () => setSelectedIds(new Set()) }
+    );
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIdList.length === 0) return;
+    const count = selectedIdList.length;
+    if (window.confirm(`Move ${count} selected ${count === 1 ? 'task' : 'tasks'} to Trash?`)) {
+      bulkDeleteTasks.mutate(selectedIdList, {
+        onSuccess: () => setSelectedIds(new Set()),
+      });
+    }
+  };
 
   // Keep the URL in sync with the active filters, sort and pagination so that
   // a task view can be shared, bookmarked and restored after a reload.
@@ -451,22 +576,89 @@ export function TasksPage() {
           </Button>
         </div>
 
-        <div className={styles.pageSizeControl}>
-          <label htmlFor="page-size" className={styles.pageSizeLabel}>
-            Per page:
-          </label>
-          <Select
-            id="page-size"
-            value={localPageSize.toString()}
-            onChange={(e) => handlePageSizeChange(parseInt(e.target.value, 10))}
-            options={PAGE_SIZE_OPTIONS.map((s) => ({
-              value: s.toString(),
-              label: `${s} per page`,
-            }))}
-            className={styles.pageSizeSelect}
-          />
+        <div className={styles.controlsRight}>
+          <div className={styles.pageSizeControl}>
+            <label htmlFor="page-size" className={styles.pageSizeLabel}>
+              Per page:
+            </label>
+            <Select
+              id="page-size"
+              value={localPageSize.toString()}
+              onChange={(e) => handlePageSizeChange(parseInt(e.target.value, 10))}
+              options={PAGE_SIZE_OPTIONS.map((s) => ({
+                value: s.toString(),
+                label: `${s} per page`,
+              }))}
+              className={styles.pageSizeSelect}
+            />
+          </div>
+
+          <Button
+            variant={selectionMode ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={toggleSelectionMode}
+            aria-pressed={selectionMode}
+          >
+            <CheckSquare className="w-4 h-4" aria-hidden="true" />
+            {selectionMode ? 'Cancel' : 'Select'}
+          </Button>
         </div>
       </div>
+
+      {/* Bulk actions */}
+      {selectionMode && (
+        <section className={styles.bulkBar} aria-label="Bulk actions">
+          <div className={styles.bulkInfo}>
+            <SelectAllCheckbox
+              checked={allOnPageSelected}
+              indeterminate={selectedOnPage > 0 && !allOnPageSelected}
+              onChange={toggleSelectAllOnPage}
+              label="Select all tasks on this page"
+            />
+            <span className={styles.bulkCount} aria-live="polite">
+              {selectedIdList.length} selected
+            </span>
+          </div>
+
+          <div className={styles.bulkActions}>
+            <Select
+              value=""
+              onChange={(e) => e.target.value && handleBulkStatus(e.target.value as TaskStatus)}
+              options={BULK_STATUS_OPTIONS}
+              placeholder="Set status…"
+              aria-label="Set status for selected tasks"
+              disabled={selectedIdList.length === 0}
+              className={styles.bulkSelect}
+            />
+            <Select
+              value=""
+              onChange={(e) => e.target.value && handleBulkPriority(e.target.value as TaskPriority)}
+              options={BULK_PRIORITY_OPTIONS}
+              placeholder="Set priority…"
+              aria-label="Set priority for selected tasks"
+              disabled={selectedIdList.length === 0}
+              className={styles.bulkSelect}
+            />
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={selectedIdList.length === 0}
+            >
+              <Trash2 className="w-4 h-4" aria-hidden="true" />
+              Delete
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+              disabled={selectedIdList.length === 0}
+            >
+              Clear
+            </Button>
+          </div>
+        </section>
+      )}
 
       {/* Task List */}
       {paginatedTasks.length === 0 ? (
@@ -502,6 +694,9 @@ export function TasksPage() {
                   }
                 }}
                 variant="list"
+                selectable={selectionMode}
+                selected={selectedIds.has(task.id)}
+                onSelect={toggleTaskSelected}
               />
             ))}
           </div>
