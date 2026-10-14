@@ -27,33 +27,31 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return 'system';
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(() =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  );
 
+  // Derived from state rather than stored in state, so there is nothing to keep
+  // in sync and no cascading render when the preference changes.
+  const resolvedTheme: 'light' | 'dark' = theme === 'system' ? systemTheme : theme;
+
+  // Keep the DOM and the persisted preference in sync with the resolved theme.
   useEffect(() => {
     const root = document.documentElement;
-    let resolved: 'light' | 'dark' = 'light';
-
-    if (theme === 'system') {
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } else {
-      resolved = theme;
-    }
-
-    setResolvedTheme(resolved);
     root.classList.remove('light', 'dark');
-    root.classList.add(resolved);
+    root.classList.add(resolvedTheme);
     localStorage.setItem('workboard:theme', theme);
-  }, [theme]);
+  }, [resolvedTheme, theme]);
 
+  // Track OS-level theme changes while the user follows the system preference.
   useEffect(() => {
     if (theme !== 'system') return;
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => {
-      const resolved = e.matches ? 'dark' : 'light';
-      setResolvedTheme(resolved);
-      document.documentElement.classList.remove('light', 'dark');
-      document.documentElement.classList.add(resolved);
+    const handler = (event: MediaQueryListEvent) => {
+      setSystemTheme(event.matches ? 'dark' : 'light');
     };
 
     mediaQuery.addEventListener('change', handler);

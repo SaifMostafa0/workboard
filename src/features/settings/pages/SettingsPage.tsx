@@ -26,7 +26,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import styles from './SettingsPage.module.css';
 
@@ -66,7 +66,7 @@ export function SettingsPage() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<SettingsFormData>({
@@ -92,7 +92,7 @@ export function SettingsPage() {
     });
   }, [settings, reset]);
 
-  const theme = watch('theme');
+  const theme = useWatch({ control, name: 'theme' });
 
   const handleSubmitSettings = (data: SettingsFormData) => {
     setTheme(data.theme);

@@ -84,7 +84,12 @@ export function TasksPage() {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
 
-  const [showCreateTask, setShowCreateTask] = useState(isNewRoute);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  // The create dialog opens either explicitly or via `?new=1` / the `/tasks/new`
+  // route. Deriving it from the URL avoids an effect that mirrors route state
+  // into component state (and the cascading render that causes).
+  const wantsNewTask = isNewRoute || searchParams.get('new') === '1';
+  const showCreateTask = dialogOpen || wantsNewTask;
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const handleEditTask = (data: TaskInputValidated | TaskUpdateValidated) => {
@@ -95,24 +100,19 @@ export function TasksPage() {
     );
   };
 
-  // Open the create dialog when navigated to with ?new=1 (e.g. from a link)
-  useEffect(() => {
-    if (searchParams.get('new') === '1') {
-      setShowCreateTask(true);
+  const clearNewTaskIntent = () => {
+    if (isNewRoute) {
+      navigate('/tasks', { replace: true });
+    } else if (searchParams.get('new') === '1') {
       const params = new URLSearchParams(searchParams);
       params.delete('new');
       setSearchParams(params, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
-
-  // Reflect the /tasks/new route in the dialog state.
-  useEffect(() => {
-    if (isNewRoute) setShowCreateTask(true);
-  }, [isNewRoute]);
+  };
 
   const closeCreateTask = () => {
-    setShowCreateTask(false);
-    if (isNewRoute) navigate('/tasks', { replace: true });
+    setDialogOpen(false);
+    clearNewTaskIntent();
   };
 
   const handleCreateTask = (data: TaskInputValidated | TaskUpdateValidated) => {
@@ -129,8 +129,8 @@ export function TasksPage() {
       },
       {
         onSuccess: () => {
-          setShowCreateTask(false);
-          if (isNewRoute) navigate('/tasks', { replace: true });
+          setDialogOpen(false);
+          clearNewTaskIntent();
         },
       }
     );
@@ -351,7 +351,7 @@ export function TasksPage() {
             {hasActiveFilters && ` (filtered from ${tasks?.length || 0})`}
           </p>
         </div>
-        <Button variant="primary" onClick={() => setShowCreateTask(true)}>
+        <Button variant="primary" onClick={() => setDialogOpen(true)}>
           <Plus className="w-4 h-4" aria-hidden="true" />
           New Task
         </Button>
@@ -480,7 +480,7 @@ export function TasksPage() {
           }
           action={
             totalItems === 0
-              ? { label: 'Create Task', onClick: () => setShowCreateTask(true) }
+              ? { label: 'Create Task', onClick: () => setDialogOpen(true) }
               : undefined
           }
           secondaryAction={

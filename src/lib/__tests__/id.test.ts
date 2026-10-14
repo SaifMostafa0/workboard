@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { generateId, isValidUUID, shortId } from '../id';
 
 describe('ID Utilities', () => {
@@ -19,6 +19,12 @@ describe('ID Utilities', () => {
     it('returns string with correct format', () => {
       const id = generateId();
       expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    });
+
+    it('falls back to a generated UUID when crypto.randomUUID is unavailable', () => {
+      vi.stubGlobal('crypto', {});
+      const id = generateId();
+      expect(isValidUUID(id)).toBe(true);
     });
   });
 

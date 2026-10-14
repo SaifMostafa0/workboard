@@ -45,5 +45,13 @@ export default defineConfig({
     },
     globals: true,
     css: true,
+    // The error-boundary tests deliberately throw during render. jsdom surfaces
+    // that through its virtual console, which Vitest would otherwise report as
+    // an unhandled error and fail the run on. The throw is asserted on in the
+    // test itself, so ignore only that specific synthetic error.
+    onUnhandledError(error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes('kaboom')) return false;
+    },
   },
 });

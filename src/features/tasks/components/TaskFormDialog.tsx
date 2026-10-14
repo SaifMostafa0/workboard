@@ -13,7 +13,7 @@ import type { TaskInputValidated, TaskUpdateValidated } from '@/domain/validatio
 import { taskInputSchema, taskUpdateSchema } from '@/domain/validation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import styles from './TaskFormDialog.module.css';
 
 interface TaskFormDialogProps {
@@ -43,7 +43,7 @@ export function TaskFormDialog({
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<TaskInputValidated | TaskUpdateValidated>({
     resolver: zodResolver(schema),
@@ -61,7 +61,7 @@ export function TaskFormDialog({
   });
 
   // Handle tags as comma-separated string in input, but array in form data
-  const tagsString = watch('tags', []) as string[];
+  const tagsString = useWatch({ control, name: 'tags', defaultValue: [] }) as string[];
   const tagsInputValue = tagsString.join(', ');
 
   const handleTagsChange = (value: string) => {
@@ -210,7 +210,7 @@ export function TaskFormDialogWithData({
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<TaskInputValidated | TaskUpdateValidated>({
     resolver: zodResolver(schema),
@@ -229,7 +229,7 @@ export function TaskFormDialogWithData({
   });
 
   // Handle tags as comma-separated string in input, but array in form data
-  const tagsString = watch('tags', []) as string[];
+  const tagsString = useWatch({ control, name: 'tags', defaultValue: [] }) as string[];
   const tagsInputValue = tagsString.join(', ');
 
   const handleTagsChange = (value: string) => {

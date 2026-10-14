@@ -7,7 +7,7 @@ import { safeValidateProjectInput } from '@/domain/validation';
 import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } from '@/hooks/useData';
 import { formatRelativeTime } from '@/lib/date';
 import { AlertCircle, Edit, FolderKanban, Plus, Search, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './ProjectsPage.module.css';
 
@@ -17,7 +17,13 @@ export function ProjectsPage() {
   const location = useLocation();
   const isNewRoute = location.pathname === '/projects/new';
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [showCreateDialog, setShowCreateDialog] = useState(isNewRoute);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  // The create dialog opens either explicitly (button/empty state) or via
+  // `?new=1` / the `/projects/new` route. Deriving it from the URL avoids an
+  // effect that mirrors route state into component state (and the cascading
+  // render that causes).
+  const wantsNewProject = isNewRoute || searchParams.get('new') === '1';
+  const showCreateDialog = dialogOpen || wantsNewProject;
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -27,26 +33,21 @@ export function ProjectsPage() {
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
 
-  // Open the create dialog when navigated to with ?new=1 (e.g. from a link)
-  useEffect(() => {
-    if (searchParams.get('new') === '1') {
-      setShowCreateDialog(true);
+  const clearNewProjectIntent = () => {
+    if (isNewRoute) {
+      navigate('/projects', { replace: true });
+    } else if (searchParams.get('new') === '1') {
       const params = new URLSearchParams(searchParams);
       params.delete('new');
       setSearchParams(params, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
-
-  // Reflect the /projects/new route in the dialog state.
-  useEffect(() => {
-    if (isNewRoute) setShowCreateDialog(true);
-  }, [isNewRoute]);
+  };
 
   const closeCreateDialog = () => {
-    setShowCreateDialog(false);
+    setDialogOpen(false);
     setEditingProject(null);
     setFormError(null);
-    if (isNewRoute) navigate('/projects', { replace: true });
+    clearNewProjectIntent();
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -78,9 +79,9 @@ export function ProjectsPage() {
 
     createProject.mutate(result.data, {
       onSuccess: () => {
-        setShowCreateDialog(false);
+        setDialogOpen(false);
         form.reset();
-        if (isNewRoute) navigate('/projects', { replace: true });
+        clearNewProjectIntent();
       },
     });
   };
@@ -155,7 +156,7 @@ export function ProjectsPage() {
             {searchQuery && ` matching "${searchQuery}"`}
           </p>
         </div>
-        <Button variant="primary" onClick={() => setShowCreateDialog(true)}>
+        <Button variant="primary" onClick={() => setDialogOpen(true)}>
           <Plus className="w-4 h-4" aria-hidden="true" />
           New Project
         </Button>
@@ -188,7 +189,7 @@ export function ProjectsPage() {
               ? `No projects match "${searchQuery}". Try a different search term.`
               : 'Create your first project to start organizing tasks.'
           }
-          action={{ label: 'Create Project', onClick: () => setShowCreateDialog(true) }}
+          action={{ label: 'Create Project', onClick: () => setDialogOpen(true) }}
         />
       ) : (
         <div className={styles.grid} role="list">
