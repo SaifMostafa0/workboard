@@ -11,6 +11,7 @@ import {
 } from '@/domain/task';
 import type { TaskInputValidated, TaskUpdateValidated } from '@/domain/validation';
 import { taskInputSchema, taskUpdateSchema } from '@/domain/validation';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useRef } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -211,7 +212,7 @@ export function TaskFormDialogWithData({
     handleSubmit,
     setValue,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<TaskInputValidated | TaskUpdateValidated>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -227,6 +228,8 @@ export function TaskFormDialogWithData({
     },
     mode: 'onChange',
   });
+
+  useUnsavedChangesWarning(open && isDirty);
 
   // Handle tags as comma-separated string in input, but array in form data
   const tagsString = useWatch({ control, name: 'tags', defaultValue: [] }) as string[];

@@ -1,4 +1,5 @@
-import type { StorageError } from '@/domain/errors';
+import { createStorageError, type StorageError } from '@/domain/errors';
+import { shouldFailWrites } from './failureInjection';
 import type { Result, StorageAdapter } from './storageAdapter';
 import { STORAGE_PREFIX, err, handleStorageError, ok } from './storageAdapter';
 
@@ -36,6 +37,9 @@ export const localStorageAdapter: StorageAdapter = {
   },
 
   async set<T>(key: string, value: T): Promise<Result<void, StorageError>> {
+    if (shouldFailWrites()) {
+      return err(createStorageError('QUOTA_EXCEEDED', 'Injected storage write failure', { key }));
+    }
     try {
       if (!isLocalStorageAvailable()) {
         return err({ type: 'UNSUPPORTED_OPERATION', message: 'localStorage not available', key });
@@ -51,6 +55,9 @@ export const localStorageAdapter: StorageAdapter = {
   },
 
   async delete(key: string): Promise<Result<void, StorageError>> {
+    if (shouldFailWrites()) {
+      return err(createStorageError('QUOTA_EXCEEDED', 'Injected storage delete failure', { key }));
+    }
     try {
       if (!isLocalStorageAvailable()) {
         return err({ type: 'UNSUPPORTED_OPERATION', message: 'localStorage not available', key });

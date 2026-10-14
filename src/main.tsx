@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { App } from './app/App';
 import { Providers } from './app/providers';
 import { ErrorBoundary } from './components/feedback/ErrorBoundary';
@@ -19,6 +19,10 @@ const queryClient = new QueryClient({
   },
 });
 
+// A data router (rather than <BrowserRouter>) is required for the
+// navigation-blocker used by the unsaved-changes guard.
+const router = createBrowserRouter([{ path: '*', element: <App /> }]);
+
 const storageAdapter =
   typeof window !== 'undefined' && 'indexedDB' in window ? indexedDBAdapter : localStorageAdapter;
 
@@ -28,13 +32,11 @@ initializeApp(storageAdapter).finally(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Providers>
-            <ErrorBoundary>
-              <App />
-            </ErrorBoundary>
-          </Providers>
-        </BrowserRouter>
+        <Providers>
+          <ErrorBoundary>
+            <RouterProvider router={router} />
+          </ErrorBoundary>
+        </Providers>
       </QueryClientProvider>
     </StrictMode>
   );

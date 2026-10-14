@@ -5,6 +5,7 @@ import type { Project } from '@/domain/project';
 import { PROJECT_COLORS, PROJECT_COLOR_HEX, isValidProjectColor } from '@/domain/project';
 import { safeValidateProjectInput } from '@/domain/validation';
 import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } from '@/hooks/useData';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning';
 import { formatRelativeTime } from '@/lib/date';
 import { AlertCircle, Edit, FolderKanban, Plus, Search, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
@@ -27,11 +28,16 @@ export function ProjectsPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  // Tracks whether the create/edit form has been touched, so navigating away
+  // can prompt before discarding input.
+  const [formDirty, setFormDirty] = useState(false);
 
   const { data: projects, isLoading, error } = useProjects();
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
+
+  useUnsavedChangesWarning((showCreateDialog || editingProject !== null) && formDirty);
 
   const clearNewProjectIntent = () => {
     if (isNewRoute) {
@@ -47,6 +53,7 @@ export function ProjectsPage() {
     setDialogOpen(false);
     setEditingProject(null);
     setFormError(null);
+    setFormDirty(false);
     clearNewProjectIntent();
   };
 
@@ -81,6 +88,7 @@ export function ProjectsPage() {
       onSuccess: () => {
         setDialogOpen(false);
         form.reset();
+        setFormDirty(false);
         clearNewProjectIntent();
       },
     });
@@ -104,7 +112,12 @@ export function ProjectsPage() {
 
     updateProject.mutate(
       { id: editingProject.id, update: result.data },
-      { onSuccess: () => setEditingProject(null) }
+      {
+        onSuccess: () => {
+          setEditingProject(null);
+          setFormDirty(false);
+        },
+      }
     );
   };
 
@@ -212,6 +225,7 @@ export function ProjectsPage() {
         onClose={closeCreateDialog}
         isLoading={createProject.isPending || updateProject.isPending}
         nameError={formError}
+        onDirty={() => setFormDirty(true)}
         onSubmit={editingProject ? handleEditSubmit : handleCreate}
       />
     </div>
@@ -277,6 +291,7 @@ function CreateProjectDialog({
   onClose,
   isLoading,
   nameError,
+  onDirty,
   onSubmit,
 }: {
   open: boolean;
@@ -284,6 +299,7 @@ function CreateProjectDialog({
   onClose: () => void;
   isLoading: boolean;
   nameError?: string | null;
+  onDirty: () => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }) {
   if (!open) return null;
@@ -313,7 +329,7 @@ function CreateProjectDialog({
             <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </header>
-        <form onSubmit={onSubmit} className={styles.dialogForm} noValidate>
+        <form onSubmit={onSubmit} className={styles.dialogForm} onInput={onDirty} noValidate>
           <Input
             name="name"
             label="Project Name"

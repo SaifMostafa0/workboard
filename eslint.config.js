@@ -37,14 +37,12 @@ export default tseslint.config(
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       'jsx-a11y': jsxA11y,
-      'testing-library': testingLibrary,
     },
     rules: {
       ...reactPlugin.configs.recommended.rules,
       ...reactPlugin.configs['jsx-runtime'].rules,
       ...reactHooks.configs.recommended.rules,
       ...jsxA11y.configs.recommended.rules,
-      ...testingLibrary.configs['flat/react'].rules,
       'react/jsx-no-target-blank': 'off',
       'react/prop-types': 'off',
       'react-refresh/only-export-components': [
@@ -63,7 +61,17 @@ export default tseslint.config(
       'jsx-a11y/anchor-is-valid': 'off',
       'jsx-a11y/click-events-have-key-events': 'warn',
       'jsx-a11y/no-noninteractive-element-interactions': 'warn',
-      'testing-library/prefer-screen-queries': 'warn',
+    },
+  },
+  {
+    // React Testing Library rules only apply to unit tests. Playwright E2E
+    // specs use their own query API and would otherwise false-positive.
+    files: ['src/**/*.{test,spec}.{ts,tsx}'],
+    plugins: {
+      'testing-library': testingLibrary,
+    },
+    rules: {
+      ...testingLibrary.configs['flat/react'].rules,
     },
   },
   {

@@ -1,6 +1,7 @@
-import type { StorageError } from '@/domain/errors';
+import { createStorageError, type StorageError } from '@/domain/errors';
 import type { DBSchema, IDBPDatabase } from 'idb';
 import { openDB } from 'idb';
+import { shouldFailWrites } from './failureInjection';
 import type { Result, StorageAdapter } from './storageAdapter';
 import { err, handleStorageError, ok } from './storageAdapter';
 
@@ -50,6 +51,9 @@ export const indexedDBAdapter: StorageAdapter = {
   },
 
   async set<T>(key: string, value: T): Promise<Result<void, StorageError>> {
+    if (shouldFailWrites()) {
+      return err(createStorageError('QUOTA_EXCEEDED', 'Injected storage write failure', { key }));
+    }
     try {
       const db = await getDB();
       await db.put(DATA_STORE, value, key);
@@ -65,6 +69,9 @@ export const indexedDBAdapter: StorageAdapter = {
   },
 
   async delete(key: string): Promise<Result<void, StorageError>> {
+    if (shouldFailWrites()) {
+      return err(createStorageError('QUOTA_EXCEEDED', 'Injected storage delete failure', { key }));
+    }
     try {
       const db = await getDB();
       await db.delete(DATA_STORE, key);
