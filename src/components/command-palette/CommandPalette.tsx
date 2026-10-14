@@ -88,6 +88,22 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
         run: go('/trash'),
       },
       {
+        id: 'nav-labels',
+        group: 'Navigation',
+        label: 'Go to Labels',
+        keywords: 'tags labels',
+        icon: <span>🏷</span>,
+        run: go('/labels'),
+      },
+      {
+        id: 'nav-saved-views',
+        group: 'Navigation',
+        label: 'Go to Saved Views',
+        keywords: 'views filters saved',
+        icon: <span>💾</span>,
+        run: go('/saved-views'),
+      },
+      {
         id: 'nav-settings',
         group: 'Navigation',
         label: 'Go to Settings',

@@ -1,7 +1,20 @@
 import { useToastHelpers } from '@/components/feedback/Toast';
-import type { Project, ProjectInput, ProjectUpdate, Task, TaskInput, TaskUpdate } from '@/domain';
+import type {
+  LabelInput,
+  LabelUpdate,
+  Project,
+  ProjectInput,
+  ProjectUpdate,
+  SavedViewInput,
+  SavedViewUpdate,
+  Task,
+  TaskInput,
+  TaskUpdate,
+} from '@/domain';
 import {
+  createLabelRepository,
   createProjectRepository,
+  createSavedViewRepository,
   createSettingsRepository,
   createTaskRepository,
 } from '@/infrastructure/repositories';
@@ -28,6 +41,8 @@ const getStorageAdapter = () => {
 let projectRepository: ReturnType<typeof createProjectRepository> | null = null;
 let taskRepository: ReturnType<typeof createTaskRepository> | null = null;
 let settingsRepository: ReturnType<typeof createSettingsRepository> | null = null;
+let labelRepository: ReturnType<typeof createLabelRepository> | null = null;
+let savedViewRepository: ReturnType<typeof createSavedViewRepository> | null = null;
 
 const getProjectRepository = () => {
   if (!projectRepository) {
@@ -50,6 +65,20 @@ const getSettingsRepository = () => {
   return settingsRepository;
 };
 
+const getLabelRepository = () => {
+  if (!labelRepository) {
+    labelRepository = createLabelRepository(getStorageAdapter());
+  }
+  return labelRepository;
+};
+
+const getSavedViewRepository = () => {
+  if (!savedViewRepository) {
+    savedViewRepository = createSavedViewRepository(getStorageAdapter());
+  }
+  return savedViewRepository;
+};
+
 // Query keys
 export const queryKeys = {
   projects: ['projects'] as const,
@@ -59,6 +88,8 @@ export const queryKeys = {
   task: (id: string) => ['tasks', id] as const,
   trash: ['trash'] as const,
   settings: ['settings'] as const,
+  labels: ['labels'] as const,
+  savedViews: ['savedViews'] as const,
 };
 
 // Project hooks
@@ -724,6 +755,138 @@ export function useResetDemoData() {
     onError: (err: Error) => {
       error('Reset failed', err.message);
     },
+  });
+}
+
+// Label hooks
+export function useLabels() {
+  return useQuery({
+    queryKey: queryKeys.labels,
+    queryFn: async () => {
+      const repo = getLabelRepository();
+      const result = await repo.list();
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+  });
+}
+
+export function useCreateLabel() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+  return useMutation({
+    mutationFn: async (input: LabelInput) => {
+      const repo = getLabelRepository();
+      const result = await repo.create(input);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.labels });
+      success('Label created');
+    },
+    onError: (err: Error) => error('Failed to create label', err.message),
+  });
+}
+
+export function useUpdateLabel() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+  return useMutation({
+    mutationFn: async ({ id, update }: { id: string; update: LabelUpdate }) => {
+      const repo = getLabelRepository();
+      const result = await repo.update(id, update);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.labels });
+      success('Label updated');
+    },
+    onError: (err: Error) => error('Failed to update label', err.message),
+  });
+}
+
+export function useDeleteLabel() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const repo = getLabelRepository();
+      const result = await repo.delete(id);
+      if (!result.ok) throw new Error(result.error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.labels });
+      success('Label deleted');
+    },
+    onError: (err: Error) => error('Failed to delete label', err.message),
+  });
+}
+
+// Saved views hooks
+export function useSavedViews() {
+  return useQuery({
+    queryKey: queryKeys.savedViews,
+    queryFn: async () => {
+      const repo = getSavedViewRepository();
+      const result = await repo.list();
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+  });
+}
+
+export function useCreateSavedView() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+  return useMutation({
+    mutationFn: async (input: SavedViewInput) => {
+      const repo = getSavedViewRepository();
+      const result = await repo.create(input);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedViews });
+      success('Saved view created');
+    },
+    onError: (err: Error) => error('Failed to save view', err.message),
+  });
+}
+
+export function useUpdateSavedView() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+  return useMutation({
+    mutationFn: async ({ id, update }: { id: string; update: SavedViewUpdate }) => {
+      const repo = getSavedViewRepository();
+      const result = await repo.update(id, update);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedViews });
+      success('Saved view updated');
+    },
+    onError: (err: Error) => error('Failed to update view', err.message),
+  });
+}
+
+export function useDeleteSavedView() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const repo = getSavedViewRepository();
+      const result = await repo.delete(id);
+      if (!result.ok) throw new Error(result.error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedViews });
+      success('Saved view deleted');
+    },
+    onError: (err: Error) => error('Failed to delete view', err.message),
   });
 }
 

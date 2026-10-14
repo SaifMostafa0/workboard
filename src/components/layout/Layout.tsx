@@ -12,9 +12,11 @@ import {
   Menu,
   Monitor,
   Moon,
+  Save,
   Search,
   Settings,
   Sun,
+  Tag,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -25,6 +27,8 @@ const navigation = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/projects', label: 'Projects', icon: FolderKanban },
   { path: '/tasks', label: 'Tasks', icon: ListTodo },
+  { path: '/labels', label: 'Labels', icon: Tag },
+  { path: '/saved-views', label: 'Saved Views', icon: Save },
   { path: '/trash', label: 'Trash', icon: Trash2 },
   { path: '/settings', label: 'Settings', icon: Settings },
 ] as const;
