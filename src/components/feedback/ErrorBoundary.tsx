@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/Button';
+import { reportError } from '@/lib/errorReporting';
 import { AlertOctagon } from 'lucide-react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component } from 'react';
@@ -17,8 +18,9 @@ interface ErrorBoundaryState {
  * instead of leaving the user on a blank screen.
  *
  * Note: error boundaries do not catch errors thrown in event handlers, async
- * callbacks, or the boundary itself. Wire a monitoring service (e.g. Sentry)
- * into `componentDidCatch` to capture what does surface here in production.
+ * callbacks, or the boundary itself. Errors that do surface here are handed to
+ * `reportError`, so a monitoring service can be attached via `setErrorReporter`
+ * without touching this component.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   override state: ErrorBoundaryState = { error: null };
@@ -28,7 +30,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('Unhandled UI error:', error, info);
+    reportError(error, { componentStack: info.componentStack ?? undefined });
   }
 
   private handleReload = (): void => {

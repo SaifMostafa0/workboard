@@ -150,6 +150,12 @@ export const test = base.extend<{
 // Each test gets isolated storage
 ```
 
+#### Accessibility (axe)
+
+`e2e/accessibility.spec.ts` runs [axe-core](https://github.com/dequelabs/axe-core) against
+every page (Dashboard, Projects, Tasks, Settings) and fails on any WCAG 2.1 A/AA
+violation. Colour-contrast and landmark/label regressions are therefore caught in CI.
+
 ### 4. Visual Regression (Optional)
 
 - Playwright screenshot comparison for key pages

@@ -228,8 +228,11 @@ export function SettingsPage() {
           </div>
 
           <div className={styles.fieldGroup}>
-            <span className={styles.fieldLabel}>Page Size</span>
+            <label className={styles.fieldLabel} htmlFor="settings-page-size">
+              Page Size
+            </label>
             <Select
+              id="settings-page-size"
               {...register('pageSize', { valueAsNumber: true })}
               options={[
                 { value: '10', label: '10 per page' },

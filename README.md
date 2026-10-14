@@ -54,27 +54,29 @@ The app will be available at `http://localhost:5173`
 
 ### Available Scripts
 
-| Command                  | Description                             |
-| ------------------------ | --------------------------------------- |
-| `npm run dev`            | Start development server                |
-| `npm run build`          | Build for production                    |
-| `npm run preview`        | Preview production build                |
-| `npm run test`           | Run unit/integration tests (watch mode) |
-| `npm run test:run`       | Run tests once                          |
-| `npm run test:coverage`  | Run tests with coverage report          |
-| `npm run test:e2e`       | Run Playwright E2E tests                |
-| `npm run lint`           | Run ESLint                              |
-| `npm run format`         | Format with Prettier                    |
-| `npm run format:check`   | Check formatting                        |
-| `npm run typecheck`      | TypeScript type check (app + tests)     |
-| `npm run typecheck:test` | Type check the test project only        |
-| `npm run ci`             | Run all CI checks locally               |
+| Command                  | Description                              |
+| ------------------------ | ---------------------------------------- |
+| `npm run dev`            | Start development server                 |
+| `npm run build`          | Build for production                     |
+| `npm run preview`        | Preview production build                 |
+| `npm run test`           | Run unit/integration tests (watch mode)  |
+| `npm run test:run`       | Run tests once                           |
+| `npm run test:coverage`  | Run tests with coverage report           |
+| `npm run test:e2e`       | Run Playwright E2E tests                 |
+| `npm run lint`           | Run ESLint                               |
+| `npm run format`         | Format with Prettier                     |
+| `npm run format:check`   | Check formatting                         |
+| `npm run typecheck`      | TypeScript type check (app + tests)      |
+| `npm run typecheck:test` | Type check the test project only         |
+| `npm run size`           | Check the bundle against its size budget |
+| `npm run ci`             | Run all CI checks locally                |
 
 ## Continuous Integration
 
 - **CI** (`.github/workflows/ci.yml`): on every push to `main` and every PR it runs
   formatting, lint, typecheck, unit/integration tests with coverage, the production
-  build, and Playwright E2E tests (Chromium). Reports are uploaded as artifacts.
+  build, a bundle-size budget check, and Playwright E2E tests (Chromium), including
+  automated accessibility (axe) scans of every page. Reports are uploaded as artifacts.
 - **Dependabot** (`.github/dependabot.yml`): weekly grouped npm and GitHub Actions
   update PRs.
 - **Git hooks** (Husky + lint-staged): `pre-commit` runs ESLint and Prettier on staged
