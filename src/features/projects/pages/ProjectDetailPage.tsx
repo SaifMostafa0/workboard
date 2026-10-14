@@ -73,7 +73,7 @@ export function ProjectDetailPage() {
   };
 
   const handleDelete = (id: string, title: string) => {
-    if (window.confirm(`Delete "${title}"? This cannot be undone.`)) {
+    if (window.confirm(`Move "${title}" to Trash?`)) {
       deleteTask.mutate(id);
     }
   };

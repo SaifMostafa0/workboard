@@ -57,6 +57,7 @@ export const queryKeys = {
   tasks: (filters?: Record<string, unknown>) =>
     filters ? (['tasks', filters] as const) : (['tasks'] as const),
   task: (id: string) => ['tasks', id] as const,
+  trash: ['trash'] as const,
   settings: ['settings'] as const,
 };
 
@@ -167,18 +168,18 @@ export function useUpdateProject() {
 
 export function useDeleteProject() {
   const queryClient = useQueryClient();
-  const { success, error } = useToastHelpers();
+  const { success, error, info } = useToastHelpers();
 
   return useMutation({
     mutationFn: async (id: string) => {
       const repo = getProjectRepository();
       const taskRepo = getTaskRepository();
 
-      // Delete associated tasks first
+      // Move associated tasks to trash first so the project can be restored as a whole.
       const deleteTasksResult = await taskRepo.deleteByProject(id);
       if (!deleteTasksResult.ok) throw new Error(deleteTasksResult.error.message);
 
-      // Delete project
+      // Move project to trash
       const result = await repo.delete(id);
       if (!result.ok) throw new Error(result.error.message);
 
@@ -187,11 +188,207 @@ export function useDeleteProject() {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects });
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.trash });
       queryClient.removeQueries({ queryKey: queryKeys.project(id) });
-      success('Project deleted', 'Project and its tasks have been deleted.');
+
+      const undo = async () => {
+        const repo = getProjectRepository();
+        const taskRepo = getTaskRepository();
+        const restoreResult = await repo.restore(id);
+        if (!restoreResult.ok) {
+          error('Failed to restore project', restoreResult.error.message);
+          return;
+        }
+        await taskRepo.restoreByProject(id);
+        queryClient.invalidateQueries({ queryKey: queryKeys.projects });
+        queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.trash });
+        success('Project restored', 'The project and its tasks are back.');
+      };
+
+      info('Project moved to trash', 'Undo now, or restore it later from Trash.', {
+        duration: 8000,
+        action: { label: 'Undo', onClick: () => void undo() },
+      });
     },
     onError: (err: Error) => {
       error('Failed to delete project', err.message);
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+  const { success, error, info } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const repo = getTaskRepository();
+      const result = await repo.delete(id);
+      if (!result.ok) throw new Error(result.error.message);
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.trash });
+
+      const undo = async () => {
+        const repo = getTaskRepository();
+        const restoreResult = await repo.restore(id);
+        if (!restoreResult.ok) {
+          error('Failed to restore task', restoreResult.error.message);
+          return;
+        }
+        queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.trash });
+        success('Task restored', 'The task is back.');
+      };
+
+      info('Task moved to trash', 'Undo now, or restore it later from Trash.', {
+        duration: 8000,
+        action: { label: 'Undo', onClick: () => void undo() },
+      });
+    },
+    onError: (err: Error) => {
+      error('Failed to delete task', err.message);
+    },
+  });
+}
+
+// Trash hooks
+export function useTrash() {
+  return useQuery({
+    queryKey: queryKeys.trash,
+    queryFn: async () => {
+      const projectResult = await getProjectRepository().listDeleted();
+      if (!projectResult.ok) throw new Error(projectResult.error.message);
+      const taskResult = await getTaskRepository().listDeleted();
+      if (!taskResult.ok) throw new Error(taskResult.error.message);
+      return { projects: projectResult.value, tasks: taskResult.value };
+    },
+  });
+}
+
+export function useRestoreProject() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const projectResult = await getProjectRepository().restore(id);
+      if (!projectResult.ok) throw new Error(projectResult.error.message);
+      await getTaskRepository().restoreByProject(id);
+      return projectResult.value;
+    },
+    onSuccess: (project) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.trash });
+      success('Project restored', `"${project.name}" and its tasks are back.`);
+    },
+    onError: (err: Error) => {
+      error('Failed to restore project', err.message);
+    },
+  });
+}
+
+export function useRestoreTask() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const result = await getTaskRepository().restore(id);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    onSuccess: (task) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.trash });
+      success('Task restored', `"${task.title}" is back.`);
+    },
+    onError: (err: Error) => {
+      error('Failed to restore task', err.message);
+    },
+  });
+}
+
+export function usePurgeProject() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const taskResult = await getTaskRepository().purgeByProject(id);
+      if (!taskResult.ok) throw new Error(taskResult.error.message);
+      const result = await getProjectRepository().purge(id);
+      if (!result.ok) throw new Error(result.error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.trash });
+      success('Deleted permanently', 'The project and its tasks were removed for good.');
+    },
+    onError: (err: Error) => {
+      error('Failed to delete project permanently', err.message);
+    },
+  });
+}
+
+export function usePurgeTask() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const result = await getTaskRepository().purge(id);
+      if (!result.ok) throw new Error(result.error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.trash });
+      success('Deleted permanently', 'The task was removed for good.');
+    },
+    onError: (err: Error) => {
+      error('Failed to delete task permanently', err.message);
+    },
+  });
+}
+
+export function useEmptyTrash() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async () => {
+      const projectRepo = getProjectRepository();
+      const taskRepo = getTaskRepository();
+
+      const [projectsResult, tasksResult] = await Promise.all([
+        projectRepo.listDeleted(),
+        taskRepo.listDeleted(),
+      ]);
+      if (!projectsResult.ok) throw new Error(projectsResult.error.message);
+      if (!tasksResult.ok) throw new Error(tasksResult.error.message);
+
+      for (const project of projectsResult.value) {
+        const result = await projectRepo.purge(project.id);
+        if (!result.ok) throw new Error(result.error.message);
+      }
+      for (const task of tasksResult.value) {
+        const result = await taskRepo.purge(task.id);
+        if (!result.ok) throw new Error(result.error.message);
+      }
+
+      return { projects: projectsResult.value.length, tasks: tasksResult.value.length };
+    },
+    onSuccess: ({ projects, tasks }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.trash });
+      success('Trash emptied', `Removed ${projects} projects and ${tasks} tasks permanently.`);
+    },
+    onError: (err: Error) => {
+      error('Failed to empty trash', err.message);
     },
   });
 }
@@ -307,26 +504,6 @@ export function useUpdateTask() {
     onSettled: (_, __, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
       queryClient.invalidateQueries({ queryKey: queryKeys.task(id) });
-    },
-  });
-}
-
-export function useDeleteTask() {
-  const queryClient = useQueryClient();
-  const { success, error } = useToastHelpers();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const repo = getTaskRepository();
-      const result = await repo.delete(id);
-      if (!result.ok) throw new Error(result.error.message);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
-      success('Task deleted', 'Task has been deleted.');
-    },
-    onError: (err: Error) => {
-      error('Failed to delete task', err.message);
     },
   });
 }

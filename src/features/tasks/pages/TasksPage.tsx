@@ -497,7 +497,7 @@ export function TasksPage() {
                 onStatusChange={(id, status) => updateTask.mutate({ id, update: { status } })}
                 onEdit={(t) => setEditingTask(tasks?.find((x) => x.id === t.id) ?? null)}
                 onDelete={(id, title) => {
-                  if (window.confirm(`Delete "${title}"?`)) {
+                  if (window.confirm(`Move "${title}" to Trash?`)) {
                     deleteTask.mutate(id);
                   }
                 }}

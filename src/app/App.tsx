@@ -5,6 +5,7 @@ import { ProjectDetailPage } from '@/features/projects/pages/ProjectDetailPage';
 import { ProjectsPage } from '@/features/projects/pages/ProjectsPage';
 import { SettingsPage } from '@/features/settings/pages/SettingsPage';
 import { TasksPage } from '@/features/tasks/pages/TasksPage';
+import { TrashPage } from '@/features/trash/pages/TrashPage';
 import { Route, Routes } from 'react-router-dom';
 
 export function App() {
@@ -18,6 +19,7 @@ export function App() {
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/tasks/new" element={<TasksPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/trash" element={<TrashPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Layout>

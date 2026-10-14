@@ -178,7 +178,7 @@ describe('LocalProjectRepository', () => {
   });
 
   describe('delete', () => {
-    it('deletes project', async () => {
+    it('soft-deletes project (moves to trash)', async () => {
       const createResult = await repository.create({
         name: 'Test',
         description: '',
@@ -190,16 +190,95 @@ describe('LocalProjectRepository', () => {
       const result = await repository.delete(createResult.value.id);
 
       expect(result.ok).toBe(true);
-      if (result.ok) {
-        const getResult = await repository.get(createResult.value.id);
-        expect(getResult.ok).toBe(false);
+
+      const active = await repository.list();
+      expect(active.ok).toBe(true);
+      if (active.ok) expect(active.value).toHaveLength(0);
+
+      const trashed = await repository.listDeleted();
+      expect(trashed.ok).toBe(true);
+      if (trashed.ok) {
+        expect(trashed.value).toHaveLength(1);
+        expect(trashed.value[0]?.id).toBe(createResult.value.id);
+        expect(trashed.value[0]?.deletedAt).toBeTruthy();
       }
+    });
+
+    it('restores a deleted project', async () => {
+      const createResult = await repository.create({
+        name: 'Test',
+        description: '',
+        color: 'blue',
+      });
+      if (!createResult.ok) return;
+
+      await repository.delete(createResult.value.id);
+      const restoreResult = await repository.restore(createResult.value.id);
+
+      expect(restoreResult.ok).toBe(true);
+      if (restoreResult.ok) expect(restoreResult.value.deletedAt).toBeUndefined();
+
+      const active = await repository.list();
+      if (active.ok) expect(active.value).toHaveLength(1);
+    });
+
+    it('purges a project permanently', async () => {
+      const createResult = await repository.create({
+        name: 'Test',
+        description: '',
+        color: 'blue',
+      });
+      if (!createResult.ok) return;
+
+      await repository.delete(createResult.value.id);
+      const purgeResult = await repository.purge(createResult.value.id);
+      expect(purgeResult.ok).toBe(true);
+
+      const getResult = await repository.get(createResult.value.id);
+      expect(getResult.ok).toBe(false);
     });
 
     it('returns NOT_FOUND for non-existent ID', async () => {
       const result = await repository.delete('non-existent');
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.error.type).toBe('NOT_FOUND');
+    });
+  });
+
+  describe('error handling', () => {
+    it('returns an error when a soft delete write fails', async () => {
+      const createResult = await repository.create({
+        name: 'Test',
+        description: '',
+        color: 'blue',
+      });
+      if (!createResult.ok) return;
+
+      adapter.setFailMode('set', createStorageError('PERMISSION_DENIED', 'write failed'));
+      const result = await repository.delete(createResult.value.id);
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('returns an error when restore read fails', async () => {
+      adapter.setFailMode('get', createStorageError('PERMISSION_DENIED', 'read failed'));
+      const result = await repository.restore('any-id');
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('returns an error when purge fails', async () => {
+      adapter.setFailMode('delete', createStorageError('PERMISSION_DENIED', 'delete failed'));
+      const result = await repository.purge('any-id');
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('propagates errors from listDeleted', async () => {
+      adapter.setFailMode('getAll', createStorageError('PERMISSION_DENIED', 'read failed'));
+      const result = await repository.listDeleted();
+
+      expect(result.ok).toBe(false);
     });
   });
 

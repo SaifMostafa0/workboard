@@ -16,11 +16,18 @@ import {
 
 export interface ITaskRepository {
   list(projectId?: string): Promise<Result<Task[], DomainError>>;
+  listDeleted(): Promise<Result<Task[], DomainError>>;
   get(id: string): Promise<Result<Task, DomainError>>;
   create(input: TaskInput): Promise<Result<Task, DomainError>>;
   update(id: string, update: TaskUpdate): Promise<Result<Task, DomainError>>;
+  /** Soft-delete: stamps `deletedAt` so the task can be restored. */
   delete(id: string): Promise<Result<void, DomainError>>;
+  restore(id: string): Promise<Result<Task, DomainError>>;
+  /** Hard-delete: removes the record permanently. */
+  purge(id: string): Promise<Result<void, DomainError>>;
   deleteByProject(projectId: string): Promise<Result<number, DomainError>>;
+  restoreByProject(projectId: string): Promise<Result<number, DomainError>>;
+  purgeByProject(projectId: string): Promise<Result<number, DomainError>>;
   count(projectId?: string): Promise<Result<number, DomainError>>;
   countByStatus(projectId: string): Promise<Result<Record<TaskStatus, number>, DomainError>>;
 }
@@ -36,7 +43,7 @@ export class LocalTaskRepository implements ITaskRepository {
     const result = await this.adapter.getAll<Task>(TASK_PREFIX);
     if (!result.ok) return err(toDomainError(result.error));
 
-    let tasks = result.value;
+    let tasks = result.value.filter((task) => !task.deletedAt);
 
     if (projectId) {
       tasks = tasks.filter((task) => task.projectId === projectId);
@@ -64,6 +71,16 @@ export class LocalTaskRepository implements ITaskRepository {
         // Finally by creation date (newest first)
         return b.createdAt.localeCompare(a.createdAt);
       })
+    );
+  }
+
+  async listDeleted(): Promise<Result<Task[], DomainError>> {
+    const result = await this.adapter.getAll<Task>(TASK_PREFIX);
+    if (!result.ok) return err(toDomainError(result.error));
+    return ok(
+      result.value
+        .filter((task) => task.deletedAt)
+        .sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
     );
   }
 
@@ -146,6 +163,31 @@ export class LocalTaskRepository implements ITaskRepository {
     const getResult = await this.get(id);
     if (!getResult.ok) return getResult;
 
+    const now = new Date().toISOString();
+    const deletedTask: Task = { ...getResult.value, deletedAt: now, updatedAt: now };
+
+    const key = createStorageKey('tasks', id);
+    const setResult = await this.adapter.set(key, deletedTask);
+    if (!setResult.ok) return err(toDomainError(setResult.error));
+
+    return ok(undefined);
+  }
+
+  async restore(id: string): Promise<Result<Task, DomainError>> {
+    const getResult = await this.get(id);
+    if (!getResult.ok) return getResult;
+
+    const { deletedAt: _deletedAt, ...rest } = getResult.value;
+    const restoredTask: Task = { ...rest, updatedAt: new Date().toISOString() };
+
+    const key = createStorageKey('tasks', id);
+    const setResult = await this.adapter.set(key, restoredTask);
+    if (!setResult.ok) return err(toDomainError(setResult.error));
+
+    return ok(restoredTask);
+  }
+
+  async purge(id: string): Promise<Result<void, DomainError>> {
     const key = createStorageKey('tasks', id);
     const deleteResult = await this.adapter.delete(key);
     if (!deleteResult.ok) return err(toDomainError(deleteResult.error));
@@ -165,6 +207,36 @@ export class LocalTaskRepository implements ITaskRepository {
     }
 
     return ok(deletedCount);
+  }
+
+  async restoreByProject(projectId: string): Promise<Result<number, DomainError>> {
+    const result = await this.adapter.getAll<Task>(TASK_PREFIX);
+    if (!result.ok) return err(toDomainError(result.error));
+
+    let restoredCount = 0;
+    for (const task of result.value) {
+      if (task.projectId !== projectId || !task.deletedAt) continue;
+      const restoreResult = await this.restore(task.id);
+      if (!restoreResult.ok) return restoreResult;
+      restoredCount++;
+    }
+
+    return ok(restoredCount);
+  }
+
+  async purgeByProject(projectId: string): Promise<Result<number, DomainError>> {
+    const result = await this.adapter.getAll<Task>(TASK_PREFIX);
+    if (!result.ok) return err(toDomainError(result.error));
+
+    let purgedCount = 0;
+    for (const task of result.value) {
+      if (task.projectId !== projectId) continue;
+      const purgeResult = await this.purge(task.id);
+      if (!purgeResult.ok) return purgeResult;
+      purgedCount++;
+    }
+
+    return ok(purgedCount);
   }
 
   async count(projectId?: string): Promise<Result<number, DomainError>> {

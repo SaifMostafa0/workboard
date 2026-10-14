@@ -122,7 +122,7 @@ export function ProjectsPage() {
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (window.confirm(`Delete "${name}" and all its tasks? This cannot be undone.`)) {
+    if (window.confirm(`Move "${name}" and its tasks to Trash?`)) {
       setDeletingId(id);
       deleteProject.mutate(id, {
         onSettled: () => setDeletingId(null),

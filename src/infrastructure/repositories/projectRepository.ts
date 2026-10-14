@@ -16,10 +16,15 @@ import {
 
 export interface IProjectRepository {
   list(): Promise<Result<Project[], DomainError>>;
+  listDeleted(): Promise<Result<Project[], DomainError>>;
   get(id: string): Promise<Result<Project, DomainError>>;
   create(input: ProjectInput): Promise<Result<Project, DomainError>>;
   update(id: string, update: ProjectUpdate): Promise<Result<Project, DomainError>>;
+  /** Soft-delete: stamps `deletedAt` so the project can be restored. */
   delete(id: string): Promise<Result<void, DomainError>>;
+  restore(id: string): Promise<Result<Project, DomainError>>;
+  /** Hard-delete: removes the record permanently. */
+  purge(id: string): Promise<Result<void, DomainError>>;
   search(query: string): Promise<Result<Project[], DomainError>>;
   count(): Promise<Result<number, DomainError>>;
 }
@@ -34,7 +39,21 @@ export class LocalProjectRepository implements IProjectRepository {
   async list(): Promise<Result<Project[], DomainError>> {
     const result = await this.adapter.getAll<Project>(PROJECT_PREFIX);
     if (!result.ok) return err(toDomainError(result.error));
-    return ok(result.value.sort((a, b) => a.name.localeCompare(b.name)));
+    return ok(
+      result.value
+        .filter((project) => !project.deletedAt)
+        .sort((a, b) => a.name.localeCompare(b.name))
+    );
+  }
+
+  async listDeleted(): Promise<Result<Project[], DomainError>> {
+    const result = await this.adapter.getAll<Project>(PROJECT_PREFIX);
+    if (!result.ok) return err(toDomainError(result.error));
+    return ok(
+      result.value
+        .filter((project) => project.deletedAt)
+        .sort((a, b) => (b.deletedAt ?? '').localeCompare(a.deletedAt ?? ''))
+    );
   }
 
   async get(id: string): Promise<Result<Project, DomainError>> {
@@ -98,6 +117,31 @@ export class LocalProjectRepository implements IProjectRepository {
     const getResult = await this.get(id);
     if (!getResult.ok) return getResult;
 
+    const now = new Date().toISOString();
+    const deletedProject: Project = { ...getResult.value, deletedAt: now, updatedAt: now };
+
+    const key = createStorageKey('projects', id);
+    const setResult = await this.adapter.set(key, deletedProject);
+    if (!setResult.ok) return err(toDomainError(setResult.error));
+
+    return ok(undefined);
+  }
+
+  async restore(id: string): Promise<Result<Project, DomainError>> {
+    const getResult = await this.get(id);
+    if (!getResult.ok) return getResult;
+
+    const { deletedAt: _deletedAt, ...rest } = getResult.value;
+    const restoredProject: Project = { ...rest, updatedAt: new Date().toISOString() };
+
+    const key = createStorageKey('projects', id);
+    const setResult = await this.adapter.set(key, restoredProject);
+    if (!setResult.ok) return err(toDomainError(setResult.error));
+
+    return ok(restoredProject);
+  }
+
+  async purge(id: string): Promise<Result<void, DomainError>> {
     const key = createStorageKey('projects', id);
     const deleteResult = await this.adapter.delete(key);
     if (!deleteResult.ok) return err(toDomainError(deleteResult.error));

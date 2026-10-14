@@ -30,6 +30,7 @@ export const projectSchema = z.object({
   color: projectColorSchema,
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
+  deletedAt: z.string().datetime({ offset: true }).optional(),
 });
 
 // Task schemas
@@ -68,6 +69,7 @@ export const taskSchema = z.object({
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
   completedAt: z.string().datetime({ offset: true }).optional(),
+  deletedAt: z.string().datetime({ offset: true }).optional(),
 });
 
 // Import/Export schemas

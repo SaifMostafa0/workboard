@@ -10,6 +10,7 @@ import {
   Moon,
   Settings,
   Sun,
+  Trash2,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
@@ -19,6 +20,7 @@ const navigation = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/projects', label: 'Projects', icon: FolderKanban },
   { path: '/tasks', label: 'Tasks', icon: ListTodo },
+  { path: '/trash', label: 'Trash', icon: Trash2 },
   { path: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 

@@ -55,6 +55,8 @@ export interface Project {
   color: ProjectColor;
   createdAt: string;
   updatedAt: string;
+  /** Set when the project is moved to trash; omitted for active projects. */
+  deletedAt?: string;
 }
 
 export interface ProjectInput {

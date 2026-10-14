@@ -37,6 +37,8 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  /** Set when the task is moved to trash; omitted for active tasks. */
+  deletedAt?: string;
 }
 
 export interface TaskInput {
