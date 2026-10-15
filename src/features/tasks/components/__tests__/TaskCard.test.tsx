@@ -99,6 +99,24 @@ describe('TaskCard', () => {
     expect(screen.queryByText('0/0')).not.toBeInTheDocument();
   });
 
+  it('shows a Blocked badge when the task is blocked', () => {
+    renderCard({ blocked: true });
+
+    expect(screen.getByTestId('blocked-badge')).toHaveTextContent('Blocked');
+  });
+
+  it('hides the Blocked badge when the task is not blocked', () => {
+    renderCard({ blocked: false });
+
+    expect(screen.queryByTestId('blocked-badge')).not.toBeInTheDocument();
+  });
+
+  it('never shows the Blocked badge on a completed task', () => {
+    renderCard({ task: { ...baseTask, status: 'done' }, blocked: true });
+
+    expect(screen.queryByTestId('blocked-badge')).not.toBeInTheDocument();
+  });
+
   it('renders an Add sub-task action for top-level tasks', async () => {
     const user = userEvent.setup();
     const onAddSubtask = vi.fn();

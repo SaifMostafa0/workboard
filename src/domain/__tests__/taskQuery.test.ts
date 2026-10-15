@@ -275,3 +275,40 @@ describe('collectTaskSummary', () => {
     expect(summary.subtaskProgress.get('p')).toEqual({ done: 1, total: 2 });
   });
 });
+
+describe('blocked filter', () => {
+  it('keeps only blocked tasks when blocked is true', () => {
+    const blocker = makeTask({ id: 'blocker', status: 'todo' });
+    const blocked = makeTask({ id: 'blocked', blockedBy: ['blocker'] });
+    const free = makeTask({ id: 'free' });
+    expect(filterTasks([blocker, blocked, free], { blocked: true }).map((t) => t.id)).toEqual([
+      'blocked',
+    ]);
+  });
+
+  it('keeps only unblocked tasks when blocked is false', () => {
+    const blocker = makeTask({ id: 'blocker', status: 'todo' });
+    const blocked = makeTask({ id: 'blocked', blockedBy: ['blocker'] });
+    const free = makeTask({ id: 'free' });
+    expect(filterTasks([blocker, blocked, free], { blocked: false }).map((t) => t.id)).toEqual([
+      'blocker',
+      'free',
+    ]);
+  });
+
+  it('treats a task as unblocked once its blockers are done', () => {
+    const blocker = makeTask({ id: 'blocker', status: 'done' });
+    const blocked = makeTask({ id: 'blocked', blockedBy: ['blocker'] });
+    expect(filterTasks([blocker, blocked], { blocked: true })).toEqual([]);
+  });
+});
+
+describe('collectTaskSummary blocked state', () => {
+  it('bundles the blocked ids and the blocker-picker options', () => {
+    const blocker = makeTask({ id: 'blocker', status: 'todo' });
+    const blocked = makeTask({ id: 'blocked', blockedBy: ['blocker'] });
+    const summary = collectTaskSummary([blocker, blocked]);
+    expect([...summary.blockedTaskIds]).toEqual(['blocked']);
+    expect(summary.options.map((option) => option.id)).toEqual(['blocker', 'blocked']);
+  });
+});

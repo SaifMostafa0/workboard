@@ -96,8 +96,8 @@
       "id": "a7ebabe3-f24c-4582-8f81-d925ca43bfca",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
       "title": "WB-103 Add task dependencies (blocked by / blocks)",
-      "description": "There is no way to express that one task blocks another. Dependencies are a core planning\nprimitive in Jira and Linear and let the app flag work that cannot start yet.\n\n**Acceptance criteria**\n- [ ] `Task` gains `blockedBy: string[]` (task ids), validated against existing tasks.\n- [ ] A task shows a \"Blocked\" indicator when any blocking task is not `done`.\n- [ ] The Task form lets a user add/remove blockers with keyboard support.\n- [ ] Cycles are prevented (A blocks B blocks A is rejected with a clear error).\n- [ ] Blocked tasks are visually distinct in list and Kanban views.\n- [ ] A dependency filter is available on the Tasks page (e.g. `blocked=true`).\n- [ ] Domain and component tests cover cycle rejection and blocked-state derivation.\n\n- Derive blocked state in a pure domain function; do not store a redundant \"isBlocked\" flag.\n- This is additive to `WB-102`; both touch the task domain model, so sequence them to avoid churn.\n\nTicket file: tickets/WB-103-task-dependencies.md\n\nSource: readme-gaps",
-      "status": "todo",
+      "description": "There is no way to express that one task blocks another. Dependencies are a core planning\nprimitive in Jira and Linear and let the app flag work that cannot start yet.\n\n**Acceptance criteria**\n- [x] `Task` gains `blockedBy: string[]` (task ids), validated against existing tasks.\n- [x] A task shows a \"Blocked\" indicator when any blocking task is not `done`.\n- [x] The Task form lets a user add/remove blockers with keyboard support.\n- [x] Cycles are prevented (A blocks B blocks A is rejected with a clear error).\n- [x] Blocked tasks are visually distinct in list and Kanban views.\n- [x] A dependency filter is available on the Tasks page (e.g. `blocked=true`).\n- [x] Domain and component tests cover cycle rejection and blocked-state derivation.\n\n- Derive blocked state in a pure domain function; do not store a redundant \"isBlocked\" flag.\n- This is additive to `WB-102`; both touch the task domain model, so sequence them to avoid churn.\n\nTicket file: tickets/WB-103-task-dependencies.md\n\nSource: readme-gaps",
+      "status": "done",
       "priority": "medium",
       "tags": [
         "workboard",
@@ -108,8 +108,9 @@
         "type:feature"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-16T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-16T00:00:00.000Z"
     },
     {
       "id": "ff610e88-9367-4dc6-8f36-0b86f77f68bb",

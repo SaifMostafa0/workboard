@@ -3,6 +3,7 @@ import type { TaskPriority, TaskStatus } from '@/domain/task';
 import { cn } from '@/lib/cn';
 import { formatRelativeTime, isDueToday, isOverdue } from '@/lib/date';
 import {
+  Ban,
   Calendar,
   CheckCircle,
   ChevronRight,
@@ -45,6 +46,8 @@ interface TaskCardProps {
   isDragging?: boolean;
   /** Done/total of this task's direct sub-tasks, when it has any. */
   subtaskProgress?: { done: number; total: number };
+  /** When true, at least one task blocking this one is still open. */
+  blocked?: boolean;
   /** When provided (and the task is top-level), renders an "Add sub-task" action. */
   onAddSubtask?: (task: { id: string }) => void;
   /**
@@ -68,6 +71,7 @@ export function TaskCard({
   onDragEnd,
   isDragging = false,
   subtaskProgress,
+  blocked = false,
   onAddSubtask,
   dense = false,
 }: TaskCardProps) {
@@ -190,6 +194,14 @@ export function TaskCard({
             >
               <ListTree className="w-3 h-3" aria-hidden="true" />
               {subtaskProgress.done}/{subtaskProgress.total}
+            </span>
+          )}
+
+          {/* Blocked indicator */}
+          {blocked && task.status !== 'done' && (
+            <span className={styles.blockedBadge} data-testid="blocked-badge">
+              <Ban className="w-3 h-3" aria-hidden="true" />
+              Blocked
             </span>
           )}
 

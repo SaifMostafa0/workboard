@@ -57,6 +57,7 @@
 - **Business Rules**: Pure functions for calculations
   - `calculateCompletionPercentage(tasks)`
   - `computeEpicProgress(epicId, tasks)`
+  - `isTaskBlocked(task, tasksById)` / `collectBlockedTaskIds(tasks)` (task dependencies)
   - `isOverdue(task, referenceDate)`
   - `filterTasks(tasks, filters)`
   - `sortTasks(tasks, sortConfig)`
@@ -69,7 +70,8 @@
 - **Responsibilities**:
   - CRUD operations
   - Query operations (list, search, filter)
-  - Relationship integrity (cascade delete; epics **detach** their tasks on delete)
+  - Relationship integrity (cascade delete; epics **detach** their tasks on delete; task
+    dependencies are validated — blockers must exist and must not form a cycle)
   - Migration handling
 - **Error Handling**: Discriminated union results (`Ok<T>` / `Err<StorageError>`)
 

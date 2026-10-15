@@ -50,6 +50,14 @@ export interface Task {
    * `src/domain/epic.ts`) and live in the same project.
    */
   epicId?: string;
+  /**
+   * Ids of the tasks that must finish before this one can start ("blocked by").
+   * Each id refers to another task. Whether a task is *currently* blocked is
+   * derived from these ids and the blockers' statuses (see
+   * `src/domain/dependency.ts`); it is never stored as a flag. Omitted when the
+   * task has no blockers.
+   */
+  blockedBy?: string[];
 }
 
 export interface TaskInput {
@@ -63,6 +71,7 @@ export interface TaskInput {
   tags: string[];
   parentId?: string;
   epicId?: string;
+  blockedBy?: string[];
 }
 
 export type TaskUpdate = Partial<TaskInput>;

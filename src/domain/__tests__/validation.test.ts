@@ -194,6 +194,25 @@ describe('Validation', () => {
       expect(result.priority).toBe('medium');
       expect(result.tags).toEqual([]);
     });
+
+    it('accepts valid blocker ids', () => {
+      const blockerId = '123e4567-e89b-12d3-a456-426614174099';
+      const result = validateTaskInput({ ...validTaskInput, blockedBy: [blockerId] });
+      expect(result.blockedBy).toEqual([blockerId]);
+    });
+
+    it('rejects an invalid blocker id', () => {
+      expect(() => validateTaskInput({ ...validTaskInput, blockedBy: ['not-a-uuid'] })).toThrow(
+        'Invalid blocking task ID'
+      );
+    });
+
+    it('rejects more than 50 blockers', () => {
+      const blockerId = '123e4567-e89b-12d3-a456-426614174099';
+      expect(() =>
+        validateTaskInput({ ...validTaskInput, blockedBy: Array(51).fill(blockerId) })
+      ).toThrow('at most 50 tasks');
+    });
   });
 
   describe('Task update validation', () => {

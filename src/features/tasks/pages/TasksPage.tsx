@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select, type SelectOption } from '@/components/ui/Select';
 import { VirtualList } from '@/components/ui/VirtualList';
+import type { TaskOption } from '@/domain/dependency';
 import type { SavedView } from '@/domain/savedView';
 import type { Task, TaskPriority, TaskStatus } from '@/domain/task';
 import type { SortOrder, TaskQuery, TaskSortField } from '@/domain/taskQuery';
@@ -61,6 +62,12 @@ const PRIORITY_OPTIONS: SelectOption[] = [
   { value: 'urgent', label: 'Urgent' },
 ];
 
+const DEPENDENCY_OPTIONS: SelectOption[] = [
+  { value: '', label: 'Any dependency' },
+  { value: 'true', label: 'Blocked only' },
+  { value: 'false', label: 'Not blocked' },
+];
+
 const SORT_OPTIONS = [
   { value: 'updatedAt', label: 'Recently Updated' },
   { value: 'createdAt', label: 'Created Date' },
@@ -75,6 +82,8 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const EMPTY_TAGS: string[] = [];
 const EMPTY_TASKS: Task[] = [];
 const EMPTY_PROGRESS = new Map<string, { done: number; total: number }>();
+const EMPTY_OPTIONS: TaskOption[] = [];
+const EMPTY_BLOCKED = new Set<string>();
 
 /**
  * List rows are windowed at a uniform height (see {@link VirtualList}); this is
@@ -162,6 +171,7 @@ export function TasksPage() {
     parseTagsParam(searchParams.get('tags'))
   );
   const [localEpic, setLocalEpic] = useState(searchParams.get('epic') || '');
+  const [localBlocked, setLocalBlocked] = useState(searchParams.get('blocked') || '');
   const [localSortBy, setLocalSortBy] = useState(sortBy);
   const [localSortOrder, setLocalSortOrder] = useState(sortOrder);
   const [localPage, setLocalPage] = useState(page);
@@ -185,6 +195,7 @@ export function TasksPage() {
       epicId: localEpic || undefined,
       tags: localTags,
       due: (localDue || '') as TaskQuery['due'],
+      blocked: localBlocked === '' ? undefined : localBlocked === 'true',
       includeSubtasks: showSubtasks,
       includeCompleted: showCompleted,
       sortBy: localSortBy as TaskSortField,
@@ -200,6 +211,7 @@ export function TasksPage() {
       localEpic,
       localTags,
       localDue,
+      localBlocked,
       showSubtasks,
       showCompleted,
       localSortBy,
@@ -218,6 +230,8 @@ export function TasksPage() {
   const availableTags = summary?.tags ?? EMPTY_TAGS;
   const subtaskProgressById = summary?.subtaskProgress ?? EMPTY_PROGRESS;
   const totalActiveTasks = summary?.total ?? 0;
+  const blockedTaskIds = summary?.blockedTaskIds ?? EMPTY_BLOCKED;
+  const blockerOptions = summary?.options ?? EMPTY_OPTIONS;
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -275,6 +289,7 @@ export function TasksPage() {
         assignee: data.assignee || undefined,
         tags: data.tags ?? [],
         parentId: subtaskParent?.id ?? data.parentId,
+        blockedBy: data.blockedBy ?? [],
       },
       {
         onSuccess: () => {
@@ -362,6 +377,7 @@ export function TasksPage() {
     if (localDue) params.set('due', localDue);
     if (localTags.length > 0) params.set('tags', localTags.join(','));
     if (localEpic) params.set('epic', localEpic);
+    if (localBlocked) params.set('blocked', localBlocked);
     if (localSortBy !== 'updatedAt') params.set('sort', localSortBy);
     if (localSortOrder !== 'desc') params.set('order', localSortOrder);
     if (currentPage > 1) params.set('page', String(currentPage));
@@ -376,6 +392,7 @@ export function TasksPage() {
     localDue,
     localEpic,
     localTags,
+    localBlocked,
     localSortBy,
     localSortOrder,
     currentPage,
@@ -408,6 +425,9 @@ export function TasksPage() {
         break;
       case 'epic':
         setLocalEpic(value);
+        break;
+      case 'blocked':
+        setLocalBlocked(value);
         break;
     }
     setLocalPage(1);
@@ -448,6 +468,7 @@ export function TasksPage() {
     setLocalDue('');
     setLocalTags([]);
     setLocalEpic('');
+    setLocalBlocked('');
     setLocalSortBy('updatedAt');
     setLocalSortOrder('desc');
     setLocalPage(1);
@@ -462,6 +483,7 @@ export function TasksPage() {
     due: localDue,
     tags: localTags,
     epic: localEpic,
+    blocked: localBlocked,
     sort: localSortBy,
     order: localSortOrder === 'asc' ? 'asc' : 'desc',
   };
@@ -476,6 +498,7 @@ export function TasksPage() {
     setLocalDue(next.due);
     setLocalTags(next.tags);
     setLocalEpic(next.epic ?? '');
+    setLocalBlocked(next.blocked);
     setLocalSortBy(next.sort);
     setLocalSortOrder(next.order);
     setLocalPage(1);
@@ -592,6 +615,14 @@ export function TasksPage() {
               })) || []),
             ]}
             aria-label="Filter by epic"
+            className={styles.filterSelect}
+          />
+
+          <Select
+            value={localBlocked}
+            onChange={(e) => handleFilterChange('blocked', e.target.value)}
+            options={DEPENDENCY_OPTIONS}
+            aria-label="Filter by dependency status"
             className={styles.filterSelect}
           />
 
@@ -800,6 +831,7 @@ export function TasksPage() {
                 selected={selectedIds.has(task.id)}
                 onSelect={toggleTaskSelected}
                 subtaskProgress={subtaskProgressById.get(task.id)}
+                blocked={blockedTaskIds.has(task.id)}
                 onAddSubtask={handleAddSubtask}
               />
             )}
@@ -845,6 +877,7 @@ export function TasksPage() {
         parentId={subtaskParent?.id}
         parentTitle={subtaskParent?.title}
         epics={epics}
+        blockerOptions={blockerOptions}
         isLoading={createTask.isPending}
         onSubmit={handleCreateTask}
       />
@@ -864,8 +897,10 @@ export function TasksPage() {
             assignee: editingTask.assignee,
             tags: editingTask.tags,
             epicId: editingTask.epicId,
+            blockedBy: editingTask.blockedBy ?? [],
           }}
           epics={epics}
+          blockerOptions={blockerOptions}
           isLoading={updateTask.isPending}
           onSubmit={handleEditTask}
         />

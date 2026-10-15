@@ -11,6 +11,7 @@ export interface SavedView {
     order?: 'asc' | 'desc';
     tags?: string[];
     epic?: string;
+    blocked?: string;
   };
   createdAt: string;
   updatedAt: string;

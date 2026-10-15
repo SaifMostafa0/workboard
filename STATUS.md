@@ -20,6 +20,7 @@ The project now **manages itself with Workboard** and is documented for AI agent
 
 | Date       | Work                                                             | Ticket                                                 |
 | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
+| 2026-10-16 | Task dependencies: "blocked by" with cycle prevention + filter   | [WB-103](tickets/WB-103-task-dependencies.md)          |
 | 2026-10-16 | Sync spike: options report, ADR, and a working API-backed repo   | [WB-201](tickets/WB-201-sync-spike.md)                 |
 | 2026-10-16 | Virtualized lists + paged repository query; 50k-task benchmark   | [WB-403](tickets/WB-403-virtualization-scale.md)       |
 | 2026-10-16 | Dev reseed: the backlog returns whenever a dev app is empty      | [WB-507](tickets/WB-507-dev-reseed.md)                 |
@@ -40,20 +41,19 @@ _None._ Pick from the next-up list below.
 
 ## Next up (highest priority)
 
-| ID                                              | Title                                       | Why now                                          |
-| ----------------------------------------------- | ------------------------------------------- | ------------------------------------------------ |
-| [WB-103](tickets/WB-103-task-dependencies.md)   | Add task dependencies (blocked by / blocks) | Tier 1 quick win; highest-priority open          |
-| [WB-104](tickets/WB-104-csv-markdown-export.md) | CSV/Markdown export + printable board       | Tier 1 quick win; complements JSON import/export |
+| ID                                              | Title                                 | Why now                                          |
+| ----------------------------------------------- | ------------------------------------- | ------------------------------------------------ |
+| [WB-104](tickets/WB-104-csv-markdown-export.md) | CSV/Markdown export + printable board | Tier 1 quick win; complements JSON import/export |
 
 ## Metrics
 
 | Metric               | Value                         | Source                  |
 | -------------------- | ----------------------------- | ----------------------- |
-| Unit/component tests | 441 passing                   | `npm run test:run`      |
+| Unit/component tests | 477 passing                   | `npm run test:run`      |
 | E2E tests            | 154 passing, 2 skipped        | `npm run test:e2e`      |
-| Coverage             | 85.3% stmts / 78.5% branches  | `npm run test:coverage` |
-| Bundle budget        | 168 KB gzip JS (≤200 KB)      | `npm run size`          |
-| Backlog              | 28 tickets, 14 open / 14 done | `BACKLOG.md`            |
+| Coverage             | 85.8% stmts / 79.1% branches  | `npm run test:coverage` |
+| Bundle budget        | 170 KB gzip JS (≤200 KB)      | `npm run size`          |
+| Backlog              | 28 tickets, 13 open / 15 done | `BACKLOG.md`            |
 
 ## Known limitations
 

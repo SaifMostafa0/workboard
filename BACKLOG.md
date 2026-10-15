@@ -3,13 +3,13 @@
 > **Generated file — do not edit.** Run `npm run tickets:build` after changing `tickets/WB-*.md`.
 > The ticket markdown files are the source of truth; see [docs/project-management.md](docs/project-management.md).
 
-**14 open / 14 done / 28 total** · last update 2026-10-16
+**13 open / 15 done / 28 total** · last update 2026-10-16
 
 ## Progress by project
 
 | Project | Open | Done | Total |
 | --- | ---: | ---: | ---: |
-| WB — Roadmap T1 · Quick Wins | 2 | 2 | 4 |
+| WB — Roadmap T1 · Quick Wins | 1 | 3 | 4 |
 | WB — Roadmap T2 · Differentiators | 3 | 1 | 4 |
 | WB — Roadmap T3 · Platform | 5 | 0 | 5 |
 | WB — Product Gaps | 1 | 3 | 4 |
@@ -24,7 +24,7 @@ Tier 1 roadmap: cheap, high-signal wins that close the most visible gaps.
 | --- | --- | --- | --- | --- | --- | --- |
 | WB-101 | Finish Saved Views — apply saved filters on the Tasks page | Done | high | agent:opencode | tier:1, area:ux, area:state, type:feature | 2026-10-14 |
 | WB-102 | Add sub-tasks (parent/child tasks) | Done | high | agent:opencode | tier:1, area:domain, area:ui, type:feature | 2026-10-15 |
-| WB-103 | Add task dependencies (blocked by / blocks) | To Do | medium | unassigned | tier:1, area:domain, area:ui, type:feature | 2026-10-14 |
+| WB-103 | Add task dependencies (blocked by / blocks) | Done | medium | agent:opencode | tier:1, area:domain, area:ui, type:feature | 2026-10-16 |
 | WB-104 | Add CSV and Markdown export plus a printable board | To Do | medium | unassigned | tier:1, area:storage, area:ux, type:feature | 2026-10-14 |
 
 ## WB — Roadmap T2 · Differentiators

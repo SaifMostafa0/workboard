@@ -21,7 +21,7 @@ test.describe('Filters and Search', () => {
 
     // Only done tasks remain
     await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-103 Add task dependencies' })).toHaveCount(
+    await expect(page.locator('article', { hasText: 'WB-104 Add CSV and Markdown' })).toHaveCount(
       0
     );
   });
@@ -32,7 +32,7 @@ test.describe('Filters and Search', () => {
     await expect(
       page.locator('article', { hasText: 'WB-403 Virtualize long lists' })
     ).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-103 Add task dependencies' })).toHaveCount(
+    await expect(page.locator('article', { hasText: 'WB-104 Add CSV and Markdown' })).toHaveCount(
       0
     );
   });
@@ -59,11 +59,12 @@ test.describe('Filters and Search', () => {
   test('combines multiple filters', async ({ page }) => {
     await page.fill('input[placeholder="Search tasks..."]', 'a');
     await page.selectOption('select[aria-label="Filter by status"]', 'todo');
-    await page.selectOption('select[aria-label="Filter by priority"]', 'high');
+    await page.selectOption('select[aria-label="Filter by priority"]', 'medium');
 
-    // Should apply all filters (AND logic) — every visible card is todo + high
+    // Should apply all filters (AND logic) — every visible card is todo + medium
     const cards = page.locator('article');
     await expect(cards.first()).toBeVisible();
+    await expect(page.locator('article', { hasText: 'WB-104 Add CSV and Markdown' })).toBeVisible();
     await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toHaveCount(0);
   });
 

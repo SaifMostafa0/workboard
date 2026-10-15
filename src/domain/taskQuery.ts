@@ -1,3 +1,5 @@
+import type { TaskOption } from './dependency';
+import { collectBlockedTaskIds, indexTasksById, isTaskBlocked, toTaskOptions } from './dependency';
 import { DEFAULT_PAGE_SIZE, paginate, type Paged } from './pagination';
 import type { Task, TaskPriority, TaskStatus } from './task';
 import { TASK_PRIORITY_ORDER } from './task';
@@ -30,6 +32,12 @@ export interface TaskQuery {
   includeSubtasks?: boolean;
   /** Include completed tasks (default: include them). */
   includeCompleted?: boolean;
+  /**
+   * When set, keep only blocked tasks (`true`) or only unblocked tasks
+   * (`false`). "Blocked" is derived from each task's blockers and their
+   * statuses, so filtering needs the whole set (see {@link filterTasks}).
+   */
+  blocked?: boolean;
   sortBy?: TaskSortField;
   sortOrder?: SortOrder;
   page?: number;
@@ -46,7 +54,12 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
  * narrowing filter in the query. `now` is injected so due-date buckets are
  * deterministic in tests.
  */
-export const matchesTaskQuery = (task: Task, query: TaskQuery, now: Date = new Date()): boolean => {
+export const matchesTaskQuery = (
+  task: Task,
+  query: TaskQuery,
+  now: Date = new Date(),
+  tasksById?: ReadonlyMap<string, Task>
+): boolean => {
   // Sub-tasks are hidden from the top-level list unless explicitly included.
   if (!query.includeSubtasks && task.parentId) return false;
 
@@ -95,12 +108,29 @@ export const matchesTaskQuery = (task: Task, query: TaskQuery, now: Date = new D
     }
   }
 
+  if (query.blocked !== undefined) {
+    const byId = tasksById ?? indexTasksById([task]);
+    if (isTaskBlocked(task, byId) !== query.blocked) return false;
+  }
+
   return true;
 };
 
-/** Everything in `tasks` that survives the query's narrowing filters. */
-export const filterTasks = (tasks: Task[], query: TaskQuery = {}, now: Date = new Date()): Task[] =>
-  tasks.filter((task) => matchesTaskQuery(task, query, now));
+/**
+ * Everything in `tasks` that survives the query's narrowing filters.
+ *
+ * The blocked-state filter needs the whole set to resolve each task's blockers,
+ * so it is applied against an index built once for the call (and skipped
+ * entirely when that filter is not in use).
+ */
+export const filterTasks = (
+  tasks: Task[],
+  query: TaskQuery = {},
+  now: Date = new Date()
+): Task[] => {
+  const tasksById = query.blocked !== undefined ? indexTasksById(tasks) : undefined;
+  return tasks.filter((task) => matchesTaskQuery(task, query, now, tasksById));
+};
 
 /** The comparable value a task sorts on, for the given field. */
 const sortValue = (task: Task, sortBy: TaskSortField): number | string => {
@@ -188,16 +218,23 @@ export interface TaskSummary {
   total: number;
   tags: string[];
   subtaskProgress: Map<string, { done: number; total: number }>;
+  /** Ids of tasks currently blocked by an open task. Derived, never stored. */
+  blockedTaskIds: Set<string>;
+  /** Lightweight task list for the blocker picker (id, title, status, blockers). */
+  options: TaskOption[];
 }
 
 /**
  * Derived data the list view needs but that must reflect *every* task, not just
  * the current page: the active-task count (for "filtered from N"), the tag
- * filter options, and sub-task progress badges. Computed in one pass so the
- * page only ever scans the collection once for it.
+ * filter options, sub-task progress badges, which tasks are blocked, and the
+ * blocker-picker options. Computed in one pass so the page only ever scans the
+ * collection once for it.
  */
 export const collectTaskSummary = (tasks: Task[]): TaskSummary => ({
   total: tasks.length,
   tags: collectTags(tasks),
   subtaskProgress: collectSubtaskProgress(tasks),
+  blockedTaskIds: collectBlockedTaskIds(tasks),
+  options: toTaskOptions(tasks),
 });

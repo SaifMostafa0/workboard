@@ -1,5 +1,6 @@
 import { EmptyState, Loading } from '@/components/feedback';
 import { Button } from '@/components/ui/Button';
+import { collectBlockedTaskIds, toTaskOptions } from '@/domain/dependency';
 import type { Epic } from '@/domain/epic';
 import { computeEpicProgress } from '@/domain/epic';
 import { PROJECT_COLOR_HEX, isValidProjectColor } from '@/domain/project';
@@ -69,6 +70,11 @@ export function ProjectDetailPage() {
     }
     return map;
   }, [tasks]);
+
+  // Which tasks are currently blocked by an unfinished task, and the lightweight
+  // options the blocker picker offers.
+  const blockedTaskIds = useMemo(() => collectBlockedTaskIds(tasks ?? []), [tasks]);
+  const blockerOptions = useMemo(() => toTaskOptions(tasks ?? []), [tasks]);
 
   if (projectLoading) {
     return (
@@ -371,6 +377,7 @@ export function ProjectDetailPage() {
               onEdit={(t) => setEditingTask(tasks?.find((x) => x.id === t.id) ?? null)}
               onDelete={handleDelete}
               subtaskProgressById={subtaskProgressById}
+              blockedTaskIds={blockedTaskIds}
               onAddSubtask={handleAddSubtask}
             />
           ))}
@@ -383,6 +390,7 @@ export function ProjectDetailPage() {
           onDelete={handleDelete}
           onCreateTask={() => setShowCreateTask(true)}
           subtaskProgressById={subtaskProgressById}
+          blockedTaskIds={blockedTaskIds}
           onAddSubtask={handleAddSubtask}
         />
       )}
@@ -399,6 +407,7 @@ export function ProjectDetailPage() {
         parentId={subtaskParent?.id}
         parentTitle={subtaskParent?.title}
         epics={epics}
+        blockerOptions={blockerOptions}
         isLoading={createTask.isPending}
         onSubmit={handleCreateTask}
       />
@@ -419,8 +428,10 @@ export function ProjectDetailPage() {
             assignee: editingTask.assignee,
             tags: editingTask.tags,
             epicId: editingTask.epicId,
+            blockedBy: editingTask.blockedBy ?? [],
           }}
           epics={epics}
+          blockerOptions={blockerOptions}
           isLoading={updateTask.isPending}
           onSubmit={(data) => handleEditTask(data, editingTask.id)}
         />
@@ -474,6 +485,7 @@ interface KanbanColumnProps {
   onEdit: (task: { id: string }) => void;
   onDelete: (id: string, title: string) => void;
   subtaskProgressById: Map<string, { done: number; total: number }>;
+  blockedTaskIds: Set<string>;
   onAddSubtask: (task: { id: string }) => void;
 }
 
@@ -487,6 +499,7 @@ function KanbanColumn({
   onEdit,
   onDelete,
   subtaskProgressById,
+  blockedTaskIds,
   onAddSubtask,
 }: KanbanColumnProps) {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -560,6 +573,7 @@ function KanbanColumn({
               }}
               onDragEnd={() => setDraggingId(null)}
               subtaskProgress={subtaskProgressById.get(task.id)}
+              blocked={blockedTaskIds.has(task.id)}
               onAddSubtask={onAddSubtask}
             />
           ))
@@ -586,6 +600,7 @@ interface TaskListViewProps {
   onDelete: (id: string, title: string) => void;
   onCreateTask: () => void;
   subtaskProgressById: Map<string, { done: number; total: number }>;
+  blockedTaskIds: Set<string>;
   onAddSubtask: (task: { id: string }) => void;
 }
 
@@ -596,6 +611,7 @@ function TaskListView({
   onDelete,
   onCreateTask,
   subtaskProgressById,
+  blockedTaskIds,
   onAddSubtask,
 }: TaskListViewProps) {
   if (tasks.length === 0) {
@@ -620,6 +636,7 @@ function TaskListView({
           onDelete={onDelete}
           variant="list"
           subtaskProgress={subtaskProgressById.get(task.id)}
+          blocked={blockedTaskIds.has(task.id)}
           onAddSubtask={onAddSubtask}
         />
       ))}

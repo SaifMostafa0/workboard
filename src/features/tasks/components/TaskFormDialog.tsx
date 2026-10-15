@@ -3,6 +3,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
+import type { TaskOption } from '@/domain/dependency';
 import {
   DEFAULT_TASK_PRIORITY,
   DEFAULT_TASK_STATUS,
@@ -15,6 +16,7 @@ import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useRef } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
+import { BlockerPicker } from './BlockerPicker';
 import styles from './TaskFormDialog.module.css';
 
 interface TaskFormDialogProps {
@@ -28,6 +30,8 @@ interface TaskFormDialogProps {
   projects?: Array<{ id: string; name: string }>;
   /** Optional list of epics in the target project for the epic selector. */
   epics?: Array<{ id: string; name: string }>;
+  /** Active tasks offered as blockers ("blocked by"). */
+  blockerOptions?: TaskOption[];
   /** When set, the new task is created as a sub-task of this task. */
   parentId?: string;
   /** Display title of the parent task (for the sub-task context note). */
@@ -45,6 +49,7 @@ export function TaskFormDialog({
   parentId,
   parentTitle,
   epics,
+  blockerOptions,
 }: TaskFormDialogProps) {
   const isEditing = !!taskId;
   const isSubtask = !isEditing && !!parentId;
@@ -69,6 +74,7 @@ export function TaskFormDialog({
       tags: [] as string[],
       parentId,
       epicId: undefined,
+      blockedBy: [] as string[],
     },
     mode: 'onChange',
   });
@@ -76,6 +82,9 @@ export function TaskFormDialog({
   // Handle tags as comma-separated string in input, but array in form data
   const tagsString = useWatch({ control, name: 'tags', defaultValue: [] }) as string[];
   const tagsInputValue = tagsString.join(', ');
+
+  const blockedBy =
+    (useWatch({ control, name: 'blockedBy', defaultValue: [] }) as string[] | undefined) ?? [];
 
   const handleTagsChange = (value: string) => {
     const tags = value
@@ -207,6 +216,13 @@ export function TaskFormDialog({
           <p className={styles.tagsHint}>Separate tags with commas. Maximum 10 tags.</p>
         </div>
 
+        <BlockerPicker
+          options={blockerOptions ?? []}
+          selected={blockedBy}
+          currentTaskId={taskId}
+          onChange={(ids) => setValue('blockedBy', ids, { shouldValidate: true })}
+        />
+
         <div className={styles.actions}>
           <Button
             type="button"
@@ -238,6 +254,7 @@ export function TaskFormDialogWithData({
   isLoading,
   onSubmit,
   epics,
+  blockerOptions,
 }: TaskFormDialogWithDataProps) {
   const isEditing = !!initialData?.id;
   const schema = isEditing ? taskUpdateSchema : taskInputSchema;
@@ -260,6 +277,7 @@ export function TaskFormDialogWithData({
       assignee: '',
       tags: [] as string[],
       epicId: undefined,
+      blockedBy: [] as string[],
       ...initialData,
     },
     mode: 'onChange',
@@ -270,6 +288,9 @@ export function TaskFormDialogWithData({
   // Handle tags as comma-separated string in input, but array in form data
   const tagsString = useWatch({ control, name: 'tags', defaultValue: [] }) as string[];
   const tagsInputValue = tagsString.join(', ');
+
+  const blockedBy =
+    (useWatch({ control, name: 'blockedBy', defaultValue: [] }) as string[] | undefined) ?? [];
 
   const handleTagsChange = (value: string) => {
     const tags = value
@@ -395,6 +416,13 @@ export function TaskFormDialogWithData({
           />
           <p className={styles.tagsHint}>Separate tags with commas. Maximum 10 tags.</p>
         </div>
+
+        <BlockerPicker
+          options={blockerOptions ?? []}
+          selected={blockedBy}
+          currentTaskId={initialData?.id}
+          onChange={(ids) => setValue('blockedBy', ids, { shouldValidate: true })}
+        />
 
         <div className={styles.actions}>
           <Button

@@ -15,6 +15,8 @@ export interface TaskFilterState {
   due: string;
   tags: string[];
   epic?: string;
+  /** '' (any) | 'true' (blocked only) | 'false' (unblocked only). */
+  blocked: string;
   sort: string;
   order: 'asc' | 'desc';
 }
@@ -28,6 +30,7 @@ export const DEFAULT_TASK_FILTERS: TaskFilterState = {
   due: '',
   tags: [],
   epic: '',
+  blocked: '',
   sort: 'updatedAt',
   order: 'desc',
 };
@@ -52,6 +55,7 @@ export function searchParamsToTaskFilters(params: URLSearchParams): TaskFilterSt
     due: params.get('due') ?? '',
     tags: parseTagsParam(params.get('tags')),
     epic: params.get('epic') ?? '',
+    blocked: params.get('blocked') ?? '',
     sort: params.get('sort') || DEFAULT_TASK_FILTERS.sort,
     order: order === 'asc' || order === 'desc' ? order : DEFAULT_TASK_FILTERS.order,
   };
@@ -67,6 +71,7 @@ export function taskFiltersToSearchParams(filters: TaskFilterState): URLSearchPa
   if (filters.due) params.set('due', filters.due);
   if (filters.tags.length > 0) params.set('tags', filters.tags.join(','));
   if (filters.epic) params.set('epic', filters.epic);
+  if (filters.blocked) params.set('blocked', filters.blocked);
   if (filters.sort && filters.sort !== DEFAULT_TASK_FILTERS.sort) params.set('sort', filters.sort);
   if (filters.order && filters.order !== DEFAULT_TASK_FILTERS.order)
     params.set('order', filters.order);
@@ -84,6 +89,7 @@ export function viewToTaskFilters(filters: SavedViewFilters | undefined): TaskFi
     due: view.due ?? '',
     tags: view.tags ? [...view.tags] : [],
     epic: view.epic ?? '',
+    blocked: view.blocked ?? '',
     sort: view.sort || DEFAULT_TASK_FILTERS.sort,
     order: view.order === 'asc' || view.order === 'desc' ? view.order : DEFAULT_TASK_FILTERS.order,
   };
@@ -99,6 +105,7 @@ export function taskFiltersToViewFilters(filters: TaskFilterState): SavedViewFil
   if (filters.due) view.due = filters.due;
   if (filters.tags.length > 0) view.tags = [...filters.tags];
   if (filters.epic) view.epic = filters.epic;
+  if (filters.blocked) view.blocked = filters.blocked;
   if (filters.sort && filters.sort !== DEFAULT_TASK_FILTERS.sort) view.sort = filters.sort;
   if (filters.order && filters.order !== DEFAULT_TASK_FILTERS.order) view.order = filters.order;
   return view;
@@ -113,7 +120,8 @@ export function hasActiveTaskFilters(filters: TaskFilterState): boolean {
     filters.project ||
     filters.due ||
     filters.tags.length > 0 ||
-    filters.epic
+    filters.epic ||
+    filters.blocked
   );
 }
 
@@ -133,6 +141,7 @@ export function describeViewFilters(
   if (filters.due) parts.push(`Due: ${filters.due}`);
   if (filters.tags && filters.tags.length > 0) parts.push(`Tags: ${filters.tags.join(', ')}`);
   if (filters.epic) parts.push('Epic: selected');
+  if (filters.blocked) parts.push(filters.blocked === 'true' ? 'Blocked' : 'Not blocked');
   if (filters.sort && filters.sort !== DEFAULT_TASK_FILTERS.sort)
     parts.push(`Sort: ${filters.sort}`);
   if (filters.order && filters.order !== DEFAULT_TASK_FILTERS.order)

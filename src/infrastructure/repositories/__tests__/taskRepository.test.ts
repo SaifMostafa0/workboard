@@ -778,4 +778,74 @@ describe('LocalTaskRepository', () => {
       if (result.ok) expect(result.value.parentId).toBe(parentB.value.id);
     });
   });
+
+  describe('blockedBy dependencies', () => {
+    it('stores valid blockers on create', async () => {
+      const blocker = await repository.create(validTaskInput);
+      if (!blocker.ok) return;
+
+      const blocked = await repository.create({
+        ...validTaskInput,
+        blockedBy: [blocker.value.id],
+      });
+
+      expect(blocked.ok).toBe(true);
+      if (blocked.ok) expect(blocked.value.blockedBy).toEqual([blocker.value.id]);
+    });
+
+    it('rejects a blocker that does not exist', async () => {
+      const result = await repository.create({
+        ...validTaskInput,
+        blockedBy: ['123e4567-e89b-42d3-a456-4266141740bb'],
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok && result.error.type === 'VALIDATION_ERROR') {
+        expect(result.error.issues[0]?.code).toBe('dependency_blocker_not_found');
+      }
+    });
+
+    it('rejects a self-dependency on update', async () => {
+      const task = await repository.create(validTaskInput);
+      if (!task.ok) return;
+
+      const result = await repository.update(task.value.id, { blockedBy: [task.value.id] });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok && result.error.type === 'VALIDATION_ERROR') {
+        expect(result.error.issues[0]?.code).toBe('dependency_self_dependency');
+      }
+    });
+
+    it('prevents a circular dependency across updates', async () => {
+      const a = await repository.create(validTaskInput);
+      const b = await repository.create(validTaskInput);
+      if (!a.ok || !b.ok) return;
+
+      const first = await repository.update(a.value.id, { blockedBy: [b.value.id] });
+      expect(first.ok).toBe(true);
+
+      const result = await repository.update(b.value.id, { blockedBy: [a.value.id] });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok && result.error.type === 'VALIDATION_ERROR') {
+        expect(result.error.issues[0]?.code).toBe('dependency_cycle');
+      }
+    });
+
+    it('allows clearing a task’s blockers', async () => {
+      const blocker = await repository.create(validTaskInput);
+      if (!blocker.ok) return;
+      const blocked = await repository.create({
+        ...validTaskInput,
+        blockedBy: [blocker.value.id],
+      });
+      if (!blocked.ok) return;
+
+      const result = await repository.update(blocked.value.id, { blockedBy: [] });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.value.blockedBy).toEqual([]);
+    });
+  });
 });

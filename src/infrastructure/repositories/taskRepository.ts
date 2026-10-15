@@ -3,6 +3,7 @@ import type {
   Paged,
   ParentAssignmentIssue,
   Task,
+  TaskDependencyIssue,
   TaskInput,
   TaskPriority,
   TaskQuery,
@@ -10,7 +11,13 @@ import type {
   TaskSummary,
   TaskUpdate,
 } from '@/domain';
-import { collectTaskSummary, queryTasks } from '@/domain';
+import {
+  collectTaskSummary,
+  DEPENDENCY_MESSAGES,
+  indexTasksById,
+  queryTasks,
+  validateTaskBlockers,
+} from '@/domain';
 import type { DomainError, StorageError, ValidationError } from '@/domain/errors';
 import { createNotFoundError, createValidationError } from '@/domain/errors';
 import { PARENT_ASSIGNMENT_MESSAGES, validateParentAssignment } from '@/domain/task';
@@ -68,6 +75,11 @@ const toDomainError = (error: StorageError): DomainError => error;
 const parentIssueError = (issue: ParentAssignmentIssue): ValidationError =>
   createValidationError([
     { field: 'parentId', message: PARENT_ASSIGNMENT_MESSAGES[issue], code: issue },
+  ]);
+
+const dependencyIssueError = (issue: TaskDependencyIssue): ValidationError =>
+  createValidationError([
+    { field: 'blockedBy', message: DEPENDENCY_MESSAGES[issue], code: `dependency_${issue}` },
   ]);
 
 export class LocalTaskRepository implements ITaskRepository {
@@ -157,6 +169,23 @@ export class LocalTaskRepository implements ITaskRepository {
     return ok(result.value);
   }
 
+  /**
+   * Validates a task's blocker ids against the current collection: each must
+   * reference an active task and must not close a dependency loop. Returns the
+   * first problem as a validation error, or `null` when the list is valid.
+   */
+  private async validateBlockers(taskId: string, blockedBy: string[]): Promise<DomainError | null> {
+    if (blockedBy.length === 0) return null;
+    const result = await this.adapter.getAll<Task>(TASK_PREFIX);
+    if (!result.ok) return toDomainError(result.error);
+    const issue = validateTaskBlockers({
+      taskId,
+      blockedBy,
+      tasksById: indexTasksById(result.value.filter((task) => !task.deletedAt)),
+    });
+    return issue ? dependencyIssueError(issue) : null;
+  }
+
   async create(input: TaskInput): Promise<Result<Task, DomainError>> {
     const validation = safeValidateTaskInput(input);
     if (!validation.success) {
@@ -203,6 +232,12 @@ export class LocalTaskRepository implements ITaskRepository {
       epicId = validatedInput.epicId;
     }
 
+    // Validate dependency references (a new task can't close a loop, but its
+    // blockers must exist).
+    const blockedBy = validatedInput.blockedBy ?? [];
+    const dependencyError = await this.validateBlockers(id, blockedBy);
+    if (dependencyError) return err(dependencyError);
+
     const task: Task = {
       id,
       projectId,
@@ -215,6 +250,7 @@ export class LocalTaskRepository implements ITaskRepository {
       tags: validatedInput.tags,
       parentId: validatedInput.parentId,
       epicId,
+      blockedBy,
       createdAt: now,
       updatedAt: now,
       completedAt: validatedInput.status === 'done' ? now : undefined,
@@ -252,6 +288,12 @@ export class LocalTaskRepository implements ITaskRepository {
         taskHasChildren: childrenResult.value > 0,
       });
       if (issue) return err(parentIssueError(issue));
+    }
+
+    // Re-validate the dependency graph when blockers are being set.
+    if (validation.data.blockedBy !== undefined) {
+      const dependencyError = await this.validateBlockers(id, validation.data.blockedBy);
+      if (dependencyError) return err(dependencyError);
     }
 
     let completedAt = task.completedAt;

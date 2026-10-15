@@ -32,7 +32,7 @@ describe('savedViewFilters', () => {
   describe('searchParamsToTaskFilters', () => {
     it('reads every known param and applies defaults for the rest', () => {
       const params = new URLSearchParams(
-        'q=hero&status=todo&priority=high&project=p1&due=overdue&tags=a,b&sort=dueDate&order=asc'
+        'q=hero&status=todo&priority=high&project=p1&due=overdue&tags=a,b&sort=dueDate&order=asc&blocked=true'
       );
 
       expect(searchParamsToTaskFilters(params)).toEqual({
@@ -43,6 +43,7 @@ describe('savedViewFilters', () => {
         due: 'overdue',
         tags: ['a', 'b'],
         epic: '',
+        blocked: 'true',
         sort: 'dueDate',
         order: 'asc',
       });
@@ -68,6 +69,7 @@ describe('savedViewFilters', () => {
           project: 'p1',
           due: 'today',
           tags: ['a', 'b'],
+          blocked: 'true',
           sort: 'dueDate',
           order: 'asc',
         })
@@ -79,6 +81,7 @@ describe('savedViewFilters', () => {
       expect(params.get('project')).toBe('p1');
       expect(params.get('due')).toBe('today');
       expect(params.get('tags')).toBe('a,b');
+      expect(params.get('blocked')).toBe('true');
       expect(params.get('sort')).toBe('dueDate');
       expect(params.get('order')).toBe('asc');
     });
@@ -95,6 +98,7 @@ describe('savedViewFilters', () => {
         q: 'a b',
         status: 'in_progress',
         tags: ['x', 'y'],
+        blocked: 'false',
         sort: 'priority',
         order: 'asc',
       });
@@ -135,6 +139,7 @@ describe('savedViewFilters', () => {
     it('is true when any narrowing filter is set', () => {
       expect(hasActiveTaskFilters(filters({ status: 'done' }))).toBe(true);
       expect(hasActiveTaskFilters(filters({ tags: ['design'] }))).toBe(true);
+      expect(hasActiveTaskFilters(filters({ blocked: 'true' }))).toBe(true);
     });
   });
 

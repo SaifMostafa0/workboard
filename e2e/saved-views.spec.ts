@@ -32,9 +32,7 @@ test.describe('Saved views', () => {
     await expect(page.getByText(`View: ${viewName}`)).toBeVisible();
 
     // Only todo tasks remain: a todo task is shown, a done task is filtered out.
-    await expect(
-      page.locator('article', { hasText: 'WB-103 Add task dependencies' })
-    ).toBeVisible();
+    await expect(page.locator('article', { hasText: 'WB-104 Add CSV and Markdown' })).toBeVisible();
     await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toHaveCount(0);
 
     // Choosing "All views" returns to the default state.
@@ -53,7 +51,7 @@ test.describe('Saved views', () => {
     await expect(
       page.locator('article', { hasText: 'WB-508 Un-skip and fix the mobile Kanban drag' })
     ).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-103 Add task dependencies' })).toHaveCount(
+    await expect(page.locator('article', { hasText: 'WB-104 Add CSV and Markdown' })).toHaveCount(
       0
     );
   });

@@ -1,3 +1,4 @@
+export * from './dependency';
 export * from './epic';
 export * from './errors';
 export * from './label';

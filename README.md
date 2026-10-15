@@ -10,8 +10,9 @@ A polished, responsive project and task management application demonstrating pro
 - **Task Management**: Full CRUD for tasks with status, priority, due dates, assignees, tags
 - **Epics**: Group tasks under project-scoped epics with done/total roll-up progress and a delete that detaches (never deletes) its tasks
 - **Sub-tasks**: Break a task into one level of sub-tasks with done/total progress and cascade delete/restore
+- **Task Dependencies**: Mark a task as "blocked by" others — a derived Blocked badge, cycle prevention, and a dependency filter
 - **Kanban & List Views**: Switch between board and list layouts
-- **Advanced Filtering**: Search, filter by status/priority/project/epic/due date, multi-column sorting
+- **Advanced Filtering**: Search, filter by status/priority/project/epic/due date/dependency, multi-column sorting
 - **Pagination**: Configurable page sizes with URL synchronization
 - **Trash & Undo**: Deleting is reversible — an inline Undo toast plus a Trash page to restore or remove items for good
 - **Bulk Actions**: Select multiple tasks to change their status or priority, or move them to Trash at once

@@ -91,4 +91,62 @@ describe('TaskFormDialog', () => {
       expect.anything()
     );
   });
+
+  const BLOCKER_ID = '123e4567-e89b-42d3-a456-4266141740a1';
+
+  it('adds a blocker and submits it', async () => {
+    const user = userEvent.setup();
+    const { onSubmit } = renderDialog({
+      blockerOptions: [{ id: BLOCKER_ID, title: 'Design review', status: 'todo', blockedBy: [] }],
+    });
+
+    await user.type(screen.getByLabelText(/Title/), 'Ship the feature');
+    await user.selectOptions(screen.getByLabelText('Add a blocking task'), BLOCKER_ID);
+    await user.click(screen.getByRole('button', { name: 'Create Task' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ blockedBy: [BLOCKER_ID] }),
+      expect.anything()
+    );
+  });
+
+  it('removes a blocker from the chip list', async () => {
+    const user = userEvent.setup();
+    const { onSubmit } = renderDialog({
+      blockerOptions: [{ id: BLOCKER_ID, title: 'Design review', status: 'todo', blockedBy: [] }],
+    });
+
+    await user.type(screen.getByLabelText(/Title/), 'Ship the feature');
+    await user.selectOptions(screen.getByLabelText('Add a blocking task'), BLOCKER_ID);
+    await user.click(screen.getByRole('button', { name: 'Remove blocker Design review' }));
+    await user.click(screen.getByRole('button', { name: 'Create Task' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ blockedBy: [] }),
+      expect.anything()
+    );
+  });
+
+  it('excludes itself and cycle-forming tasks from the blocker options', () => {
+    const taskId = '123e4567-e89b-42d3-a456-4266141740b1';
+    const cyclicId = '123e4567-e89b-42d3-a456-4266141740b2';
+    const freeId = '123e4567-e89b-42d3-a456-4266141740b3';
+    renderDialog({
+      taskId,
+      blockerOptions: [
+        { id: taskId, title: 'This task', status: 'todo', blockedBy: [] },
+        { id: cyclicId, title: 'Depends on this task', status: 'todo', blockedBy: [taskId] },
+        { id: freeId, title: 'Independent task', status: 'todo', blockedBy: [] },
+      ],
+    });
+
+    const select = screen.getByLabelText('Add a blocking task') as HTMLSelectElement;
+    const values = [...select.options].map((option) => option.value);
+
+    expect(values).toContain(freeId);
+    expect(values).not.toContain(taskId);
+    expect(values).not.toContain(cyclicId);
+  });
 });

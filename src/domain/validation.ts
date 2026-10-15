@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_BLOCKERS } from './dependency';
 import type { ValidationError, ValidationIssue } from './errors';
 import { createValidationError } from './errors';
 import type { ProjectColor } from './project';
@@ -54,6 +55,10 @@ export const taskInputSchema = z.object({
     .default([]),
   parentId: z.string().uuid('Invalid parent task ID').optional(),
   epicId: z.string().uuid('Invalid epic ID').optional(),
+  blockedBy: z
+    .array(z.string().uuid('Invalid blocking task ID'))
+    .max(MAX_BLOCKERS, `A task can be blocked by at most ${MAX_BLOCKERS} tasks`)
+    .optional(),
 });
 
 export const taskUpdateSchema = taskInputSchema.partial();
@@ -74,6 +79,7 @@ export const taskSchema = z.object({
   deletedAt: z.string().datetime({ offset: true }).optional(),
   parentId: z.string().uuid().optional(),
   epicId: z.string().uuid().optional(),
+  blockedBy: z.array(z.string().uuid()).max(MAX_BLOCKERS).optional(),
 });
 
 // Label schemas
@@ -114,6 +120,7 @@ export const savedViewFiltersSchema = z.object({
   order: z.enum(['asc', 'desc']).optional(),
   tags: z.array(z.string()).optional(),
   epic: z.string().optional(),
+  blocked: z.string().optional(),
 });
 
 export const savedViewSchema = z.object({
