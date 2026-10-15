@@ -1,13 +1,13 @@
 import { validateImportData } from '@/domain/validation';
 import { FakeStorageAdapter } from '@/test/factories/fakeStorageAdapter';
 import { describe, expect, it } from 'vitest';
+import seedJson from '../../../../project-management/workboard-import.json';
 import {
   clearAllData,
   exportAllData,
   getSchemaVersion,
   importData,
   initializeApp,
-  resetToDemoData,
   runMigrations,
 } from '../migrations';
 
@@ -34,7 +34,7 @@ describe('runMigrations', () => {
 });
 
 describe('initializeApp', () => {
-  it('seeds demo data on a fresh install', async () => {
+  it('seeds the Workboard backlog on a fresh install', async () => {
     const adapter = new FakeStorageAdapter();
 
     const result = await initializeApp(adapter);
@@ -42,8 +42,8 @@ describe('initializeApp', () => {
     expect(result.ok).toBe(true);
     const projects = await adapter.getAll('workboard:projects:');
     const tasks = await adapter.getAll('workboard:tasks:');
-    expect(projects.ok && projects.value.length).toBeGreaterThan(0);
-    expect(tasks.ok && tasks.value.length).toBeGreaterThan(0);
+    expect(projects.ok && projects.value).toHaveLength(seedJson.projects.length);
+    expect(tasks.ok && tasks.value).toHaveLength(seedJson.tasks.length);
     expect(adapter.getValue('workboard:meta:seeded')).toBe(true);
   });
 
@@ -102,22 +102,6 @@ describe('clearAllData', () => {
     expect(settings.ok && settings.value).toEqual([]);
     expect(adapter.hasKey('workboard:meta:schema')).toBe(true);
     expect(adapter.hasKey('workboard:meta:seeded')).toBe(true);
-  });
-});
-
-describe('resetToDemoData', () => {
-  it('clears user data and restores the sample set', async () => {
-    const adapter = new FakeStorageAdapter();
-    await initializeApp(adapter);
-    await clearAllData(adapter);
-
-    const result = await resetToDemoData(adapter);
-
-    expect(result.ok).toBe(true);
-    const projects = await adapter.getAll('workboard:projects:');
-    const tasks = await adapter.getAll('workboard:tasks:');
-    expect(projects.ok && projects.value.length).toBeGreaterThan(0);
-    expect(tasks.ok && tasks.value.length).toBeGreaterThan(0);
   });
 });
 

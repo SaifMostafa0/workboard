@@ -6,7 +6,7 @@ test.describe('Dashboard', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('shows dashboard with demo data', async ({ page }) => {
+  test('shows dashboard with seeded data', async ({ page }) => {
     // Should show dashboard title
     await expect(page.locator('h1')).toContainText('Dashboard');
 
@@ -19,7 +19,8 @@ test.describe('Dashboard', () => {
   });
 
   test('shows upcoming due dates section', async ({ page }) => {
-    await expect(page.locator('text=Upcoming Due Dates')).toBeVisible();
+    // The heading role disambiguates from the "No upcoming due dates" text.
+    await expect(page.getByRole('heading', { name: 'Upcoming Due Dates' })).toBeVisible();
   });
 
   test('shows recent activity section', async ({ page }) => {

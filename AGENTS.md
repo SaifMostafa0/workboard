@@ -31,20 +31,20 @@ React Hook Form + Zod, IndexedDB (with localStorage fallback). No backend, no ac
 
 ## Commands
 
-| Command                       | Purpose                                                               |
-| ----------------------------- | --------------------------------------------------------------------- |
-| `npm run dev`                 | Dev server at http://localhost:5173                                   |
-| `npm run build`               | Type-check + production build                                         |
-| `npm run preview`             | Preview the production build                                          |
-| `npm run lint`                | ESLint (0 warnings tolerated)                                         |
-| `npm run typecheck`           | TypeScript (app + tests)                                              |
-| `npm run test:run`            | Unit/component tests once                                             |
-| `npm run test:coverage`       | Tests with coverage                                                   |
-| `npm run test:e2e`            | Playwright E2E (needs a build + preview)                              |
-| `npm run ci`                  | Full local gate (format, lint, typecheck, tickets, tests, build, e2e) |
-| `npm run tickets:build`       | Regenerate `BACKLOG.md` + `workboard-import.json`                     |
-| `npm run tickets:check`       | Fail if generated artifacts are stale                                 |
-| `npm run tickets:sync <file>` | Fold a Workboard export back into ticket frontmatter                  |
+| Command                       | Purpose                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| `npm run dev`                 | Dev server at http://localhost:5173                                     |
+| `npm run build`               | Type-check + production build                                           |
+| `npm run preview`             | Preview the production build                                            |
+| `npm run lint`                | ESLint (0 warnings tolerated)                                           |
+| `npm run typecheck`           | TypeScript (app + tests)                                                |
+| `npm run test:run`            | Unit/component tests once                                               |
+| `npm run test:coverage`       | Tests with coverage                                                     |
+| `npm run test:e2e`            | Playwright E2E (starts the dev server, seeded with this repo's backlog) |
+| `npm run ci`                  | Full local gate (format, lint, typecheck, tickets, tests, build, e2e)   |
+| `npm run tickets:build`       | Regenerate `BACKLOG.md` + `workboard-import.json`                       |
+| `npm run tickets:check`       | Fail if generated artifacts are stale                                   |
+| `npm run tickets:sync <file>` | Fold a Workboard export back into ticket frontmatter                    |
 
 ## Repository map
 

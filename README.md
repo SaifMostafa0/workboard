@@ -181,14 +181,15 @@ Target coverage (enforced on `src/domain`, `src/infrastructure` and `src/lib`):
 ### E2E Tests
 
 ```bash
-npm run build
-npm run preview &
 npm run test:e2e
 ```
 
+Playwright starts the dev server itself, so the suite runs against the same dev-only
+Workboard backlog seed a developer sees (see `src/infrastructure/storage/devSeed.ts`).
+
 Covers critical user journeys:
 
-- First launch with demo data
+- First launch with the Workboard backlog seed (dev builds)
 - Project CRUD
 - Task CRUD
 - Sub-tasks (create, progress, cascade trash)

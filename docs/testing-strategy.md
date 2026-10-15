@@ -87,7 +87,7 @@
 
 ```typescript
 // e2e/dashboard.spec.ts
-test('First launch shows demo data and empty state shortcuts');
+test('First launch shows the seeded Workboard backlog');
 
 // e2e/projects.spec.ts
 test('Create project → appears in list → navigate to detail');
@@ -114,7 +114,6 @@ test('Reload page → data persists');
 test('Import valid JSON → merges data');
 test('Import invalid JSON → shows error, no data loss');
 test('Export JSON → valid schema');
-test('Reset demo data → restores seed');
 
 // e2e/navigation.spec.ts
 test('Direct load /projects/:id shows project detail');

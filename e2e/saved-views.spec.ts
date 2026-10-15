@@ -32,8 +32,10 @@ test.describe('Saved views', () => {
     await expect(page.getByText(`View: ${viewName}`)).toBeVisible();
 
     // Only todo tasks remain: a todo task is shown, a done task is filtered out.
-    await expect(page.locator('article', { hasText: 'Write landing page copy' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'Set up analytics' })).toHaveCount(0);
+    await expect(
+      page.locator('article', { hasText: 'WB-103 Add task dependencies' })
+    ).toBeVisible();
+    await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toHaveCount(0);
 
     // Choosing "All views" returns to the default state.
     await page.selectOption('select[aria-label="Apply a saved view"]', { label: 'All views' });
@@ -42,13 +44,17 @@ test.describe('Saved views', () => {
   });
 
   test('filters by tag and reflects the selection in the URL', async ({ page }) => {
-    const chip = page.getByRole('button', { name: 'security', exact: true });
+    const chip = page.getByRole('button', { name: 'type:test', exact: true });
 
     await chip.click();
     await expect(chip).toHaveAttribute('aria-pressed', 'true');
-    await expect(page).toHaveURL(/tags=security/);
+    await expect(page).toHaveURL(/tags=/);
 
-    await expect(page.locator('article', { hasText: 'Implement authentication' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'Write landing page copy' })).toHaveCount(0);
+    await expect(
+      page.locator('article', { hasText: 'WB-508 Un-skip and fix the mobile Kanban drag' })
+    ).toBeVisible();
+    await expect(page.locator('article', { hasText: 'WB-103 Add task dependencies' })).toHaveCount(
+      0
+    );
   });
 });

@@ -42,7 +42,9 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
-      open: true,
+      // Playwright starts the dev server for E2E runs; don't hijack the
+      // developer's browser in that case (see playwright.config.ts webServer).
+      open: process.env.WORKBOARD_NO_OPEN !== '1',
     },
     preview: {
       port: 4173,

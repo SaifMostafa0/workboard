@@ -6,7 +6,7 @@ import {
   validateImportData,
   validateImportRelationships,
 } from '@/domain/validation';
-import { createDemoData } from './demoData';
+import { loadDevSeed } from './devSeed';
 import type { Result, StorageAdapter } from './storageAdapter';
 import { createStorageKey, err, ok } from './storageAdapter';
 
@@ -250,48 +250,17 @@ export const clearAllData = async (
 };
 
 /**
- * Writes a fresh set of sample projects and tasks to storage.
- */
-export const seedDemoData = async (
-  adapter: StorageAdapter
-): Promise<Result<void, StorageError>> => {
-  const { projects, tasks } = createDemoData();
-
-  for (const project of projects) {
-    const setResult = await adapter.set(createStorageKey('projects', project.id), project);
-    if (!setResult.ok) return setResult;
-  }
-
-  for (const task of tasks) {
-    const setResult = await adapter.set(createStorageKey('tasks', task.id), task);
-    if (!setResult.ok) return setResult;
-  }
-
-  return ok(undefined);
-};
-
-/**
- * Clears all data and then restores the sample projects and tasks.
- */
-export const resetToDemoData = async (
-  adapter: StorageAdapter
-): Promise<Result<void, StorageError>> => {
-  const clearResult = await clearAllData(adapter);
-  if (!clearResult.ok) return clearResult;
-
-  return seedDemoData(adapter);
-};
-
-/**
  * One-time application setup.
  *
  * Runs any pending schema migrations and, on a brand new install, seeds the
- * sample projects and tasks so the app isn't empty on first launch. The
- * "seeded" flag means we never re-seed once the user has cleared their data.
+ * app with this repository's own Workboard backlog in development (see
+ * `loadDevSeed`). Production installs start empty — no placeholder data is
+ * shipped. The "seeded" flag means we never re-seed once the user has cleared
+ * their data.
  */
 export const initializeApp = async (
   adapter: StorageAdapter
-): Promise<Result<void, StorageError>> => {
+): Promise<Result<void, StorageError | ValidationError>> => {
   const migrationResult = await runMigrations(adapter);
   if (!migrationResult.ok) return migrationResult;
 
@@ -303,8 +272,11 @@ export const initializeApp = async (
   if (!projectsResult.ok) return projectsResult;
 
   if (projectsResult.value.length === 0) {
-    const seedResult = await seedDemoData(adapter);
-    if (!seedResult.ok) return seedResult;
+    const seed = await loadDevSeed();
+    if (seed) {
+      const seedResult = await importData(adapter, seed, { mode: 'merge' });
+      if (!seedResult.ok) return seedResult;
+    }
   }
 
   return adapter.set(SEEDED_KEY, true);

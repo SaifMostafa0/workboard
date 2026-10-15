@@ -27,7 +27,6 @@ import {
   clearAllData,
   exportAllData,
   importData as importDataFromStorage,
-  resetToDemoData,
   validateImportData,
 } from '@/infrastructure/storage/migrations';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -752,30 +751,6 @@ export function useClearAllData() {
     },
     onError: (err: Error) => {
       error('Delete failed', err.message);
-    },
-  });
-}
-
-export function useResetDemoData() {
-  const queryClient = useQueryClient();
-  const { success, error } = useToastHelpers();
-
-  return useMutation({
-    mutationFn: async () => {
-      const adapter = getStorageAdapter();
-      const result = await resetToDemoData(adapter);
-      if (!result.ok) throw new Error(result.error.message);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.settings });
-      queryClient.invalidateQueries({ queryKey: queryKeys.labels });
-      queryClient.invalidateQueries({ queryKey: queryKeys.savedViews });
-      success('Demo data reset', 'Sample projects and tasks have been restored.');
-    },
-    onError: (err: Error) => {
-      error('Reset failed', err.message);
     },
   });
 }

@@ -41,7 +41,8 @@ test.describe('Accessibility', () => {
     await page.goto('/tasks');
     await page.waitForLoadState('networkidle');
 
-    await page.getByRole('button', { name: 'Select' }).click();
+    // exact: true — seeded task titles contain the word "Select" too.
+    await page.getByRole('button', { name: 'Select', exact: true }).click();
     await expect(page.getByText('0 selected')).toBeVisible();
 
     const results = await new AxeBuilder({ page })

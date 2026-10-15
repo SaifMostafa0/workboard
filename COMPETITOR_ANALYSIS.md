@@ -54,7 +54,7 @@ and `HANDOFF_COMPLETE.md`.
   indicators, search + multi-filter + sort + pagination with shareable URL state,
   bulk actions, soft delete + undo toast + trash/restore/purge, Kanban drag & drop,
   command palette + `g`-key navigation + shortcuts dialog, light/dark/system theme,
-  JSON import/export with validation, demo data.
+  JSON import/export with validation, and a dev-only seed of Workboard's own backlog.
 - Accessibility: WCAG 2.2 AA target, axe scans in E2E, focus management, live regions.
 - Quality: 280 unit tests (~89.6% stmts / 78.5% branches), 144 E2E tests, lint/typecheck
   clean, bundle budget ≤100 KB gzip, Lighthouse targets (perf ≥90, a11y ≥95).

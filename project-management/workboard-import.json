@@ -475,6 +475,26 @@
       "completedAt": "2026-10-14T00:00:00.000Z"
     },
     {
+      "id": "85e7bf46-e9de-4bc1-954d-5eabc620099e",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "title": "WB-506 Dev-only seeding of the Workboard backlog, no placeholder demo data",
+      "description": "`npm run dev` currently seeds three placeholder demo projects (\"Website Redesign\", \"Mobile App\nv2\", \"Q3 Marketing Campaign\") and 11 fake tasks on first launch, and Settings offers a \"Reset to\nDemo\" action that restores them. The placeholder data makes the app look like a generic demo\ninstead of the tool it actually is — and it ships its own dogfooding backlog already, generated\nfrom `tickets/WB-*.md` into `project-management/workboard-import.json`.\n\nReplace the demo seed with Workboard's own backlog (projects + tasks) and load it **only in\ndevelopment**. Production builds start with an empty app — no placeholders anywhere.\n\n**Acceptance criteria**\n- [x] `createDemoData` / `demoData.ts`, `seedDemoData` and `resetToDemoData` are removed.\n- [x] First `npm run dev` on a fresh profile seeds the 6 Workboard projects + their tasks from\n      the generated `project-management/workboard-import.json`, validated through\n      `importDataSchema` (`validateImportData`) before writing.\n- [x] Seeding stays behind a static `import.meta.env.DEV` guard with a dynamic `import()` so the\n      seed JSON never enters the production bundle; production builds start empty.\n- [x] The existing `SEEDED_KEY` semantics are preserved (never re-seed after the user clears\n      data).\n- [x] Settings: \"Reset to Demo\" card, confirm dialog and `useResetDemoData` hook are removed;\n      \"Delete all data\" remains the only destructive action.\n- [x] Playwright runs against the dev server (seeded, dogfooded) instead of a preview build;\n      E2E expectations reference real Workboard titles/tags.\n- [x] Docs updated (`README`, `AGENTS`, `architecture`, `testing-strategy`, competitor analysis).\n- [x] Gates green: format, lint, typecheck, tickets, unit tests, build, size, E2E.\n\n- `project-management/workboard-import.json` is generated — never hand-edit; regenerate with\n  `npm run tickets:build`.\n- Free ticket id: WB-506 (WB-507 also free, WB-508 already taken).\n\nTicket file: tickets/WB-506-dev-seed-workboard-…",
+      "status": "done",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-506",
+        "type:chore",
+        "area:storage",
+        "area:docs",
+        "area:ci"
+      ],
+      "createdAt": "2026-10-15T00:00:00.000Z",
+      "updatedAt": "2026-10-15T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-15T00:00:00.000Z"
+    },
+    {
       "id": "2a2f487c-b7bf-4d37-89f9-cf374302f103",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
       "title": "WB-508 Un-skip and fix the mobile Kanban drag E2E tests",

@@ -7,26 +7,34 @@ test.describe('Filters and Search', () => {
   });
 
   test('searches tasks by title', async ({ page }) => {
-    await page.fill('input[placeholder="Search tasks..."]', 'homepage');
+    await page.fill('input[placeholder="Search tasks..."]', 'Virtualize');
 
     // Should filter results down to the matching task
-    await expect(page.locator('article', { hasText: 'Design the homepage hero' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'Set up analytics' })).toHaveCount(0);
+    await expect(
+      page.locator('article', { hasText: 'WB-403 Virtualize long lists' })
+    ).toBeVisible();
+    await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toHaveCount(0);
   });
 
   test('filters by status', async ({ page }) => {
     await page.selectOption('select[aria-label="Filter by status"]', 'done');
 
     // Only done tasks remain
-    await expect(page.locator('article', { hasText: 'Set up analytics' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'Write landing page copy' })).toHaveCount(0);
+    await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toBeVisible();
+    await expect(page.locator('article', { hasText: 'WB-103 Add task dependencies' })).toHaveCount(
+      0
+    );
   });
 
   test('filters by priority', async ({ page }) => {
-    await page.selectOption('select[aria-label="Filter by priority"]', 'urgent');
+    await page.selectOption('select[aria-label="Filter by priority"]', 'high');
 
-    await expect(page.locator('article', { hasText: 'Accessibility audit' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'Write landing page copy' })).toHaveCount(0);
+    await expect(
+      page.locator('article', { hasText: 'WB-403 Virtualize long lists' })
+    ).toBeVisible();
+    await expect(page.locator('article', { hasText: 'WB-103 Add task dependencies' })).toHaveCount(
+      0
+    );
   });
 
   test('filters by project', async ({ page }) => {
@@ -37,11 +45,15 @@ test.describe('Filters and Search', () => {
   });
 
   test('filters by due date', async ({ page }) => {
+    // The backlog tracks no due dates, so nothing is overdue…
     await page.selectOption('select[aria-label="Filter by due date"]', 'overdue');
+    await expect(page.locator('article')).toHaveCount(0);
 
-    // Only overdue tasks should remain
-    await expect(page.locator('article', { hasText: 'Fix crash on startup' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'Write landing page copy' })).toHaveCount(0);
+    // …while the "No Due Date" filter matches the whole backlog.
+    await page.selectOption('select[aria-label="Filter by due date"]', 'no-date');
+    await expect(
+      page.locator('article', { hasText: 'WB-403 Virtualize long lists' })
+    ).toBeVisible();
   });
 
   test('combines multiple filters', async ({ page }) => {
@@ -52,7 +64,7 @@ test.describe('Filters and Search', () => {
     // Should apply all filters (AND logic) — every visible card is todo + high
     const cards = page.locator('article');
     await expect(cards.first()).toBeVisible();
-    await expect(page.locator('article', { hasText: 'Set up analytics' })).toHaveCount(0);
+    await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toHaveCount(0);
   });
 
   test('clears all filters', async ({ page }) => {
@@ -86,14 +98,13 @@ test.describe('Filters and Search', () => {
   test('paginates results', async ({ page }) => {
     const nextButton = page.locator('button:has-text("Next")');
 
-    // Pagination only renders when there is more than one page.
-    if (await nextButton.count()) {
-      await nextButton.click();
-      await expect(page).toHaveURL(/page=2/);
+    // The seeded backlog spans more than one page.
+    await expect(nextButton).toBeVisible();
+    await nextButton.click();
+    await expect(page).toHaveURL(/page=2/);
 
-      await page.locator('button:has-text("Previous")').click();
-      await expect(page).toHaveURL(/page=1/);
-    }
+    await page.locator('button:has-text("Previous")').click();
+    await expect(page).not.toHaveURL(/page=2/);
   });
 
   test('changes page size', async ({ page }) => {
@@ -106,15 +117,14 @@ test.describe('Filters and Search', () => {
   test('resets pagination when filters change', async ({ page }) => {
     const nextButton = page.locator('button:has-text("Next")');
 
-    if (await nextButton.count()) {
-      await nextButton.click();
-      await expect(page).toHaveURL(/page=2/);
+    await expect(nextButton).toBeVisible();
+    await nextButton.click();
+    await expect(page).toHaveURL(/page=2/);
 
-      await page.fill('input[placeholder="Search tasks..."]', 'a');
+    await page.fill('input[placeholder="Search tasks..."]', 'a');
 
-      // Should reset to page 1
-      await expect(page).toHaveURL(/page=1/);
-    }
+    // Should reset to page 1 (the page param is dropped)
+    await expect(page).not.toHaveURL(/page=2/);
   });
 
   test('persists filter state in URL', async ({ page }) => {

@@ -7,7 +7,6 @@ import {
   useClearAllData,
   useExportData,
   useImportData,
-  useResetDemoData,
   useSettings,
   useUpdateSettings,
 } from '@/hooks/useData';
@@ -20,7 +19,6 @@ import {
   Monitor,
   Moon,
   Palette,
-  RotateCcw,
   Sun,
   Trash2,
   Upload,
@@ -51,12 +49,10 @@ export function SettingsPage() {
   const updateSettings = useUpdateSettings();
   const exportData = useExportData();
   const importData = useImportData();
-  const resetDemoData = useResetDemoData();
   const clearAllData = useClearAllData();
   const { setTheme } = useTheme();
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
@@ -146,12 +142,6 @@ export function SettingsPage() {
     } catch {
       setImportError('Invalid JSON file');
     }
-  };
-
-  const handleReset = () => {
-    resetDemoData.mutate(undefined, {
-      onSuccess: () => setResetDialogOpen(false),
-    });
   };
 
   const handleDeleteAll = () => {
@@ -321,26 +311,6 @@ export function SettingsPage() {
 
           <div className={cn(styles.dataCard, styles.danger)}>
             <div className={styles.dataCardHeader}>
-              <RotateCcw className={styles.dataCardIcon} aria-hidden="true" />
-              <div>
-                <h3 className={styles.dataCardTitle}>Reset to Demo</h3>
-                <p className={styles.dataCardDesc}>
-                  Clear all data and restore sample projects and tasks
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              onClick={() => setResetDialogOpen(true)}
-              className={cn(styles.dataCardButton, styles.danger)}
-            >
-              <RotateCcw className="w-4 h-4" aria-hidden="true" />
-              Reset Data
-            </Button>
-          </div>
-
-          <div className={cn(styles.dataCard, styles.danger)}>
-            <div className={styles.dataCardHeader}>
               <Trash2 className={styles.dataCardIcon} aria-hidden="true" />
               <div>
                 <h3 className={styles.dataCardTitle}>Danger Zone</h3>
@@ -463,28 +433,6 @@ export function SettingsPage() {
               Import Data
             </Button>
           </div>
-        </div>
-      </Dialog>
-
-      {/* Reset Dialog */}
-      <Dialog
-        open={resetDialogOpen}
-        onClose={() => setResetDialogOpen(false)}
-        title="Reset to Demo Data"
-        description="This will permanently delete all your projects, tasks, labels and saved views and restore the sample data. This action cannot be undone."
-        size="md"
-      >
-        <Alert type="warning" title="Warning">
-          All your current data will be lost. Make sure you have exported a backup if you want to
-          keep it.
-        </Alert>
-        <div className={styles.dialogActions}>
-          <Button variant="secondary" onClick={() => setResetDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={handleReset} loading={resetDemoData.isPending}>
-            Reset to Demo
-          </Button>
         </div>
       </Dialog>
 

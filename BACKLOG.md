@@ -3,7 +3,7 @@
 > **Generated file — do not edit.** Run `npm run tickets:build` after changing `tickets/WB-*.md`.
 > The ticket markdown files are the source of truth; see [docs/project-management.md](docs/project-management.md).
 
-**16 open / 10 done / 26 total** · last update 2026-10-15
+**16 open / 11 done / 27 total** · last update 2026-10-15
 
 ## Progress by project
 
@@ -13,7 +13,7 @@
 | WB — Roadmap T2 · Differentiators | 4 | 0 | 4 |
 | WB — Roadmap T3 · Platform | 5 | 0 | 5 |
 | WB — Product Gaps | 2 | 2 | 4 |
-| WB — Engineering & AI-DX | 1 | 5 | 6 |
+| WB — Engineering & AI-DX | 1 | 6 | 7 |
 | WB — Quality & Accessibility | 2 | 1 | 3 |
 
 ## WB — Roadmap T1 · Quick Wins
@@ -72,6 +72,7 @@ Dogfooding, documentation-as-code and agent-friendliness of the project itself.
 | WB-501 | Publish a competitor analysis (Jira, Trello, Linear) | Done | medium | agent:opencode | area:docs, type:docs, source:competitor-analysis | 2026-10-14 |
 | WB-504 | Enforce ticket/backlog sync in CI | Done | medium | agent:opencode | area:ci, type:chore, ai:agent-friendly | 2026-10-14 |
 | WB-505 | Add a Workboard-to-ticket sync script | Done | medium | agent:opencode | area:docs, area:storage, type:feature, ai:agent-friendly | 2026-10-14 |
+| WB-506 | Dev-only seeding of the Workboard backlog, no placeholder demo data | Done | medium | agent:opencode | type:chore, area:storage, area:docs, area:ci | 2026-10-15 |
 | WB-508 | Un-skip and fix the mobile Kanban drag E2E tests | To Do | medium | unassigned | area:ci, area:ux, type:test | 2026-10-14 |
 
 ## WB — Quality & Accessibility

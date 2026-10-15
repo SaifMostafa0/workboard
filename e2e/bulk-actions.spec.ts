@@ -39,7 +39,8 @@ test.describe('Bulk actions', () => {
   });
 
   test('bulk updates the priority of selected tasks', async ({ page }) => {
-    await page.getByRole('button', { name: 'Select' }).click();
+    // exact: true — seeded task titles contain the word "Select" too.
+    await page.getByRole('button', { name: 'Select', exact: true }).click();
 
     await page.getByRole('checkbox', { name: 'Select Bulk A' }).check();
     await page.getByRole('checkbox', { name: 'Select Bulk B' }).check();
@@ -54,7 +55,7 @@ test.describe('Bulk actions', () => {
   });
 
   test('bulk deletes selected tasks and can undo', async ({ page }) => {
-    await page.getByRole('button', { name: 'Select' }).click();
+    await page.getByRole('button', { name: 'Select', exact: true }).click();
 
     await page.getByRole('checkbox', { name: 'Select Bulk A' }).check();
     await page.getByRole('checkbox', { name: 'Select Bulk B' }).check();

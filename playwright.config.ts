@@ -12,7 +12,7 @@ export default defineConfig({
     ['json', { outputFile: 'test-results/results.json' }],
   ],
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -28,10 +28,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run preview',
-    url: 'http://localhost:4173',
+    // E2E runs against the dev server so every test exercises the same
+    // dev-only Workboard seed a developer sees (see `loadDevSeed`).
+    command: 'npm run dev -- --port 5173 --strictPort',
+    url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    env: { ...process.env, WORKBOARD_NO_OPEN: '1' },
   },
   expect: {
     toHaveScreenshot: {

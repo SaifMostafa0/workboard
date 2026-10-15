@@ -10,15 +10,15 @@ This document is the contract. If you change how work is tracked, update this fi
 
 ## 1. Sources of truth
 
-| Artifact                                   | Role                                                  | Who edits it          | Regenerated?     |
-| ------------------------------------------ | ----------------------------------------------------- | --------------------- | ---------------- |
-| `tickets/WB-*.md`                          | **Canonical** ticket definitions (frontmatter + body) | humans & agents       | no               |
-| `project-management/workboard.config.json` | Projects (slug, id, name, colour)                     | humans                | no               |
-| `project-management/ticket.schema.json`    | Machine-readable frontmatter schema                   | humans                | no               |
-| `BACKLOG.md`                               | Human/agent index of all tickets                      | —                     | `tickets:build`  |
-| `project-management/workboard-import.json` | Importable Workboard dataset                          | —                     | `tickets:build`  |
-| The Workboard app (IndexedDB)              | Day-to-day driver (views, DnD, statuses)              | anyone working        | seeded by import |
-| `STATUS.md`                                | Living snapshot of current state                      | whoever finishes work | no               |
+| Artifact                                   | Role                                                  | Who edits it          | Regenerated?           |
+| ------------------------------------------ | ----------------------------------------------------- | --------------------- | ---------------------- |
+| `tickets/WB-*.md`                          | **Canonical** ticket definitions (frontmatter + body) | humans & agents       | no                     |
+| `project-management/workboard.config.json` | Projects (slug, id, name, colour)                     | humans                | no                     |
+| `project-management/ticket.schema.json`    | Machine-readable frontmatter schema                   | humans                | no                     |
+| `BACKLOG.md`                               | Human/agent index of all tickets                      | —                     | `tickets:build`        |
+| `project-management/workboard-import.json` | Importable Workboard dataset                          | —                     | `tickets:build`        |
+| The Workboard app (IndexedDB)              | Day-to-day driver (views, DnD, statuses)              | anyone working        | seeded by import (dev) |
+| `STATUS.md`                                | Living snapshot of current state                      | whoever finishes work | no                     |
 
 **Rule:** the ticket markdown files win. Everything generated is derived. If the app and the
 tickets disagree, correct the tickets and rebuild.

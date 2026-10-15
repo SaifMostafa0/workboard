@@ -171,7 +171,7 @@ test.describe('Import/Export', () => {
   });
 
   test('restores labels through an export/import round-trip', async ({ page }) => {
-    // Create a label that is not part of the demo data.
+    // Create a label that is not part of the seeded backlog.
     await page.goto('/labels');
     await page.waitForLoadState('networkidle');
     await page.click('button:has-text("New Label")');
@@ -207,19 +207,5 @@ test.describe('Import/Export', () => {
     await page.goto('/labels');
     await page.waitForLoadState('networkidle');
     await expect(page.getByText('Regression')).toBeVisible();
-  });
-});
-
-test.describe('Demo Data Reset', () => {
-  test('resets to demo data', async ({ page }) => {
-    await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
-
-    // The confirmation step is an in-app dialog, not a native window.confirm.
-    await page.click('button:has-text("Reset Data")');
-    await page.click('button:has-text("Reset to Demo")');
-
-    // Should show success
-    await expect(page.locator('text=Demo data reset')).toBeVisible();
   });
 });
