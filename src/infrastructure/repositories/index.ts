@@ -1,5 +1,5 @@
-export * from './labelRepository';
 export * from './epicRepository';
+export * from './labelRepository';
 export * from './projectRepository';
 export * from './savedViewRepository';
 export * from './settingsRepository';

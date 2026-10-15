@@ -27,6 +27,7 @@ export const DEFAULT_TASK_FILTERS: TaskFilterState = {
   project: '',
   due: '',
   tags: [],
+  epic: '',
   sort: 'updatedAt',
   order: 'desc',
 };

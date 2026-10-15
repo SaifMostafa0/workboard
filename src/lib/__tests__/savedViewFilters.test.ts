@@ -42,6 +42,7 @@ describe('savedViewFilters', () => {
         project: 'p1',
         due: 'overdue',
         tags: ['a', 'b'],
+        epic: '',
         sort: 'dueDate',
         order: 'asc',
       });

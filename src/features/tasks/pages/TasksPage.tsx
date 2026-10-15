@@ -317,6 +317,7 @@ export function TasksPage() {
     localPriority,
     localProject,
     localDue,
+    localEpic,
     localTags,
   ]);
 
@@ -453,6 +454,7 @@ export function TasksPage() {
     localPriority,
     localProject,
     localDue,
+    localEpic,
     localTags,
     localSortBy,
     localSortOrder,
@@ -663,7 +665,10 @@ export function TasksPage() {
             onChange={(e) => handleFilterChange('epic', e.target.value)}
             options={[
               { value: '', label: 'All Epics' },
-              ...(epics?.map((e: { id: string; name: string }) => ({ value: e.id, label: e.name })) || []),
+              ...(epics?.map((e: { id: string; name: string }) => ({
+                value: e.id,
+                label: e.name,
+              })) || []),
             ]}
             aria-label="Filter by epic"
             className={styles.filterSelect}

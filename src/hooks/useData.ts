@@ -1,9 +1,9 @@
 import { useToastHelpers } from '@/components/feedback/Toast';
 import type {
-  LabelInput,
-  LabelUpdate,
   EpicInput,
   EpicUpdate,
+  LabelInput,
+  LabelUpdate,
   Project,
   ProjectInput,
   ProjectUpdate,
@@ -14,8 +14,8 @@ import type {
   TaskUpdate,
 } from '@/domain';
 import {
-  createLabelRepository,
   createEpicRepository,
+  createLabelRepository,
   createProjectRepository,
   createSavedViewRepository,
   createSettingsRepository,

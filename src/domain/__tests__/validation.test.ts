@@ -425,6 +425,7 @@ describe('Validation', () => {
         ],
         labels: [],
         savedViews: [],
+        epics: [],
       };
 
       const result = validateImportRelationships(data);
@@ -459,6 +460,7 @@ describe('Validation', () => {
         ],
         labels: [],
         savedViews: [],
+        epics: [],
       };
 
       const result = validateImportRelationships(data);
@@ -490,6 +492,7 @@ describe('Validation', () => {
         tasks: [],
         labels: [],
         savedViews: [],
+        epics: [],
       };
 
       const result = validateImportRelationships(data);
@@ -517,6 +520,7 @@ describe('Validation', () => {
           },
         ],
         savedViews: [],
+        epics: [],
       };
 
       const result = validateImportRelationships(data);
@@ -546,6 +550,7 @@ describe('Validation', () => {
             updatedAt: '2024-01-01T00:00:00.000Z',
           },
         ],
+        epics: [],
       };
 
       const result = validateImportRelationships(data);

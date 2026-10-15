@@ -33,7 +33,7 @@ export function ProjectDetailPage() {
   const [subtaskParent, setSubtaskParent] = useState<Task | null>(null);
 
   const { data: project, isLoading: projectLoading } = useProject(projectId || '');
-  const { data: epics, isLoading: epicsLoading } = useEpics();
+  const { data: epics } = useEpics();
   const { data: tasks, isLoading: tasksLoading } = useTasks({ projectId });
   const { data: settings } = useSettings();
   const createTask = useCreateTask();
@@ -245,8 +245,14 @@ export function ProjectDetailPage() {
             return (
               <div key={epic.id} className={styles.epicItem}>
                 <span className={styles.epicName}>{epic.name}</span>
-                <span className={styles.epicProgress}>{done}/{total}</span>
-                <progress value={total > 0 ? done / total : 0} max={1} aria-label={`${epic.name}: ${done} of ${total} complete`} />
+                <span className={styles.epicProgress}>
+                  {done}/{total}
+                </span>
+                <progress
+                  value={total > 0 ? done / total : 0}
+                  max={1}
+                  aria-label={`${epic.name}: ${done} of ${total} complete`}
+                />
               </div>
             );
           })}

@@ -128,6 +128,7 @@ describe('exportAllData / importData', () => {
       tasksCreated: 0,
       labelsCreated: 0,
       savedViewsCreated: 0,
+      epicsCreated: 0,
     });
   });
 
@@ -193,6 +194,7 @@ describe('exportAllData / importData', () => {
       tasksCreated: 0,
       labelsCreated: 0,
       savedViewsCreated: 0,
+      epicsCreated: 0,
     });
   });
 

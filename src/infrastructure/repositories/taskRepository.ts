@@ -1,14 +1,14 @@
-import type { DomainError, StorageError, ValidationError } from '@/domain/errors';
-import { createNotFoundError, createValidationError } from '@/domain/errors';
 import type {
-  ParentAssignmentIssue,
   Epic,
+  ParentAssignmentIssue,
   Task,
   TaskInput,
   TaskPriority,
   TaskStatus,
   TaskUpdate,
 } from '@/domain';
+import type { DomainError, StorageError, ValidationError } from '@/domain/errors';
+import { createNotFoundError, createValidationError } from '@/domain/errors';
 import { PARENT_ASSIGNMENT_MESSAGES, validateParentAssignment } from '@/domain/task';
 import {
   safeValidateTaskInput,
@@ -165,7 +165,15 @@ export class LocalTaskRepository implements ITaskRepository {
       if (!allEpicsResult.ok) return err(toDomainError(allEpicsResult.error));
       const epic = allEpicsResult.value.find((e) => e.id === validatedInput.epicId && !e.deletedAt);
       if (!epic) {
-        return err(createValidationError([{ field: 'epicId', message: 'Referenced epic does not exist', code: 'invalid_epic_reference' }]));
+        return err(
+          createValidationError([
+            {
+              field: 'epicId',
+              message: 'Referenced epic does not exist',
+              code: 'invalid_epic_reference',
+            },
+          ])
+        );
       }
       epicId = validatedInput.epicId;
     }

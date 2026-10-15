@@ -3,7 +3,7 @@
 > **Generated file — do not edit.** Run `npm run tickets:build` after changing `tickets/WB-*.md`.
 > The ticket markdown files are the source of truth; see [docs/project-management.md](docs/project-management.md).
 
-**18 open / 8 done / 26 total** · last update 2026-10-15
+**17 open / 9 done / 26 total** · last update 2026-10-15
 
 ## Progress by project
 
@@ -14,7 +14,7 @@
 | WB — Roadmap T3 · Platform | 5 | 0 | 5 |
 | WB — Product Gaps | 3 | 1 | 4 |
 | WB — Engineering & AI-DX | 1 | 5 | 6 |
-| WB — Quality & Accessibility | 3 | 0 | 3 |
+| WB — Quality & Accessibility | 2 | 1 | 3 |
 
 ## WB — Roadmap T1 · Quick Wins
 
@@ -56,7 +56,7 @@ Capability gaps versus Jira, Trello and Linear, plus gaps found in the codebase.
 
 | ID | Title | Status | Priority | Assignee | Tags | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
-| WB-401 | Add epics / milestones above tasks | To Do | high | unassigned | area:domain, area:ui, type:feature, gap:hierarchy | 2026-10-14 |
+| WB-401 | Add epics / milestones above tasks | In Progress | high | agent:opencode | area:domain, area:ui, type:feature, gap:hierarchy | 2026-10-15 |
 | WB-403 | Virtualize long lists and raise the ~10k-task scale ceiling | To Do | high | unassigned | area:perf, area:ui, type:feature, gap:scale | 2026-10-14 |
 | WB-404 | Include labels and saved views in export/import | Done | high | agent:opencode | area:storage, area:docs, type:bug, gap:data | 2026-10-14 |
 | WB-402 | Add comments and an activity feed | To Do | medium | unassigned | area:domain, area:ui, type:feature, gap:collaboration | 2026-10-14 |
@@ -80,7 +80,7 @@ Accessibility, performance budgets, and test-depth improvements.
 
 | ID | Title | Status | Priority | Assignee | Tags | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
-| WB-601 | Improve Select and DatePicker keyboard and ARIA support | To Do | high | unassigned | area:a11y, area:ui, type:bug | 2026-10-14 |
+| WB-601 | Improve Select and DatePicker keyboard and ARIA support | Done | high | agent:opencode | area:a11y, area:ui, type:bug, ai:agent-friendly | 2026-10-15 |
 | WB-602 | Wire a Lighthouse CI performance budget gate | To Do | medium | unassigned | area:perf, area:ci, type:chore | 2026-10-14 |
 | WB-603 | Raise branch coverage and cover labels and saved views | To Do | medium | unassigned | area:ci, type:test, area:domain | 2026-10-14 |
 

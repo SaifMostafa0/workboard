@@ -261,10 +261,7 @@ export const validateTaskProjectReference = (task: TaskInputValidated, projectId
   return null;
 };
 
-export const validateTaskEpicReference = (
-  task: TaskInputValidated,
-  epicIds: Set<string>
-) => {
+export const validateTaskEpicReference = (task: TaskInputValidated, epicIds: Set<string>) => {
   if (task.epicId && !epicIds.has(task.epicId)) {
     return createValidationError([
       {

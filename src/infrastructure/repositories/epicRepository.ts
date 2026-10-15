@@ -1,6 +1,6 @@
+import type { Epic, EpicInput, EpicUpdate } from '@/domain/epic';
 import type { DomainError } from '@/domain/errors';
 import { createNotFoundError } from '@/domain/errors';
-import type { Epic, EpicInput, EpicUpdate } from '@/domain/epic';
 import type { Result, StorageAdapter } from '@/infrastructure/storage/storageAdapter';
 import {
   createCollectionPrefix,
