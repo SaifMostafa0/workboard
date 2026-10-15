@@ -1,12 +1,16 @@
 import type {
   Epic,
+  Paged,
   ParentAssignmentIssue,
   Task,
   TaskInput,
   TaskPriority,
+  TaskQuery,
   TaskStatus,
+  TaskSummary,
   TaskUpdate,
 } from '@/domain';
+import { collectTaskSummary, queryTasks } from '@/domain';
 import type { DomainError, StorageError, ValidationError } from '@/domain/errors';
 import { createNotFoundError, createValidationError } from '@/domain/errors';
 import { PARENT_ASSIGNMENT_MESSAGES, validateParentAssignment } from '@/domain/task';
@@ -25,6 +29,13 @@ import {
 
 export interface ITaskRepository {
   list(projectId?: string): Promise<Result<Task[], DomainError>>;
+  /**
+   * A single page of tasks for a list view: filter → sort → paginate in the
+   * repository, so callers never have to hold the whole collection.
+   */
+  listPage(query?: TaskQuery): Promise<Result<Paged<Task>, DomainError>>;
+  /** Distinct tags, active-task total and sub-task progress, in one scan. */
+  summary(): Promise<Result<TaskSummary, DomainError>>;
   listDeleted(): Promise<Result<Task[], DomainError>>;
   /** Active children of a parent task. */
   listChildren(parentId: string): Promise<Result<Task[], DomainError>>;
@@ -102,6 +113,20 @@ export class LocalTaskRepository implements ITaskRepository {
         return b.createdAt.localeCompare(a.createdAt);
       })
     );
+  }
+
+  async listPage(query: TaskQuery = {}): Promise<Result<Paged<Task>, DomainError>> {
+    const result = await this.adapter.getAll<Task>(TASK_PREFIX);
+    if (!result.ok) return err(toDomainError(result.error));
+
+    const active = result.value.filter((task) => !task.deletedAt);
+    return ok(queryTasks(active, query));
+  }
+
+  async summary(): Promise<Result<TaskSummary, DomainError>> {
+    const result = await this.adapter.getAll<Task>(TASK_PREFIX);
+    if (!result.ok) return err(toDomainError(result.error));
+    return ok(collectTaskSummary(result.value.filter((task) => !task.deletedAt)));
   }
 
   async listDeleted(): Promise<Result<Task[], DomainError>> {

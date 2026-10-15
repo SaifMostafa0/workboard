@@ -20,6 +20,7 @@ The project now **manages itself with Workboard** and is documented for AI agent
 
 | Date       | Work                                                             | Ticket                                                 |
 | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
+| 2026-10-16 | Virtualized lists + paged repository query; 50k-task benchmark   | [WB-403](tickets/WB-403-virtualization-scale.md)       |
 | 2026-10-16 | Dev reseed: the backlog returns whenever a dev app is empty      | [WB-507](tickets/WB-507-dev-reseed.md)                 |
 | 2026-10-15 | Dev-only seed of Workboard's own backlog; demo data removed      | [WB-506](tickets/WB-506-dev-seed-workboard-backlog.md) |
 | 2026-10-15 | Epics / milestones with roll-up progress + epic filter           | [WB-401](tickets/WB-401-epics-milestones.md)           |
@@ -38,21 +39,22 @@ _None._ Pick from the next-up list below.
 
 ## Next up (highest priority)
 
-| ID                                               | Title                 | Why now                       |
-| ------------------------------------------------ | --------------------- | ----------------------------- |
-| [WB-403](tickets/WB-403-virtualization-scale.md) | Virtualize long lists | Removes the ~10k-task ceiling |
+| ID                                     | Title                               | Why now                              |
+| -------------------------------------- | ----------------------------------- | ------------------------------------ |
+| [WB-201](tickets/WB-201-sync-spike.md) | Spike — optional self-hostable sync | Highest-priority open; unlocks teams |
 
 ## Metrics
 
 | Metric               | Value                         | Source                  |
 | -------------------- | ----------------------------- | ----------------------- |
-| Unit/component tests | 363 passing                   | `npm run test:run`      |
+| Unit/component tests | 401 passing                   | `npm run test:run`      |
 | E2E tests            | 154 passing, 2 skipped        | `npm run test:e2e`      |
-| Coverage             | 84.2% stmts / 77.5% branches  | `npm run test:coverage` |
-| Bundle budget        | 167 KB gzip JS (≤200 KB)      | `npm run size`          |
-| Backlog              | 28 tickets, 16 open / 12 done | `BACKLOG.md`            |
+| Coverage             | 84.3% stmts / 79.6% branches  | `npm run test:coverage` |
+| Bundle budget        | 168 KB gzip JS (≤200 KB)      | `npm run size`          |
+| Backlog              | 28 tickets, 15 open / 13 done | `BACKLOG.md`            |
 
 ## Known limitations
 
 - No backend, accounts, collaboration, or sync.
-- ~10,000 tasks before performance degrades ([WB-403](tickets/WB-403-virtualization-scale.md)).
+- List rendering is virtualized and benchmarked to 50,000 tasks; filtering/sorting still run in memory
+  ([WB-403](tickets/WB-403-virtualization-scale.md), [docs/performance.md](docs/performance.md)).

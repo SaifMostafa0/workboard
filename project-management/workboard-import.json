@@ -343,8 +343,8 @@
       "id": "8650f284-7a81-4cf2-9eb0-3a112a913172",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000104",
       "title": "WB-403 Virtualize long lists and raise the ~10k-task scale ceiling",
-      "description": "`README.md` lists \"~10,000 tasks before performance degrades\" as a known limitation because all\nrecords are loaded and filtered in memory. Virtualize rendering and move pagination to the\nrepository layer so the app stays smooth at scale.\n\n**Acceptance criteria**\n- [ ] Task and project lists render with windowing so DOM node count stays bounded.\n- [ ] A repository-level paged query avoids loading every record for list views.\n- [ ] Filtering/sorting remain correct and instant for datasets of at least 50k tasks (documented benchmark).\n- [ ] A repeatable benchmark script records render and filter timings in `docs/performance.md`.\n- [ ] No regression to keyboard navigation, focus order, or the a11y axe checks.\n- [ ] Update the \"Known Limitations\" section of README once the ceiling is raised.\n\n- `docs/performance.md` already anticipates virtualization \"if measured\"; this ticket makes it measured and required.\n- Keep the public filter/sort/paginate domain functions; change where they run, not what they do.\n\nTicket file: tickets/WB-403-virtualization-scale.md\n\nSource: readme-gaps",
-      "status": "todo",
+      "description": "`README.md` lists \"~10,000 tasks before performance degrades\" as a known limitation because all\nrecords are loaded and filtered in memory. Virtualize rendering and move pagination to the\nrepository layer so the app stays smooth at scale.\n\n**Acceptance criteria**\n- [x] Task and project lists render with windowing so DOM node count stays bounded.\n- [x] A repository-level paged query avoids loading every record for list views.\n- [x] Filtering/sorting remain correct and instant for datasets of at least 50k tasks (documented benchmark).\n- [x] A repeatable benchmark script records render and filter timings in `docs/performance.md`.\n- [x] No regression to keyboard navigation, focus order, or the a11y axe checks.\n- [x] Update the \"Known Limitations\" section of README once the ceiling is raised.\n\n- `docs/performance.md` already anticipates virtualization \"if measured\"; this ticket makes it measured and required.\n- Keep the public filter/sort/paginate domain functions; change where they run, not what they do.\n\nTicket file: tickets/WB-403-virtualization-scale.md\n\nSource: readme-gaps",
+      "status": "done",
       "priority": "high",
       "tags": [
         "workboard",
@@ -355,8 +355,9 @@
         "gap:scale"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-16T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-16T00:00:00.000Z"
     },
     {
       "id": "d99b4728-208c-4fbd-81ff-07b6b89c87c7",

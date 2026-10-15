@@ -72,3 +72,23 @@ export const isValidProjectColor = (color: string): color is ProjectColor => {
 };
 
 export const DEFAULT_PROJECT_COLOR: ProjectColor = 'blue';
+
+/** The narrowable shape of a project list view. */
+export interface ProjectQuery {
+  /** Case-insensitive match against name and description. */
+  search?: string;
+}
+
+/** Name/description search, applied to an already-active list of projects. */
+export const matchesProjectQuery = (project: Project, query: ProjectQuery): boolean => {
+  if (!query.search) return true;
+  const needle = query.search.toLowerCase().trim();
+  if (!needle) return true;
+  return (
+    project.name.toLowerCase().includes(needle) ||
+    project.description.toLowerCase().includes(needle)
+  );
+};
+
+export const filterProjects = (projects: Project[], query: ProjectQuery = {}): Project[] =>
+  projects.filter((project) => matchesProjectQuery(project, query));

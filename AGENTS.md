@@ -39,6 +39,7 @@ React Hook Form + Zod, IndexedDB (with localStorage fallback). No backend, no ac
 | `npm run lint`                | ESLint (0 warnings tolerated)                                           |
 | `npm run typecheck`           | TypeScript (app + tests)                                                |
 | `npm run test:run`            | Unit/component tests once                                               |
+| `npm run bench`               | Benchmarks the task query pipeline and windowed list render             |
 | `npm run test:coverage`       | Tests with coverage                                                     |
 | `npm run test:e2e`            | Playwright E2E (starts the dev server, seeded with this repo's backlog) |
 | `npm run ci`                  | Full local gate (format, lint, typecheck, tickets, tests, build, e2e)   |

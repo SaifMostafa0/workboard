@@ -1,6 +1,7 @@
 import type { DomainError, StorageError } from '@/domain/errors';
 import { createNotFoundError } from '@/domain/errors';
 import type { Project, ProjectInput, ProjectUpdate } from '@/domain/project';
+import { filterProjects } from '@/domain/project';
 import {
   safeValidateProjectInput,
   safeValidateProjectUpdate,
@@ -153,16 +154,7 @@ export class LocalProjectRepository implements IProjectRepository {
     const listResult = await this.list();
     if (!listResult.ok) return listResult;
 
-    const lowerQuery = query.toLowerCase().trim();
-    if (!lowerQuery) return ok(listResult.value);
-
-    const filtered = listResult.value.filter(
-      (project) =>
-        project.name.toLowerCase().includes(lowerQuery) ||
-        project.description.toLowerCase().includes(lowerQuery)
-    );
-
-    return ok(filtered);
+    return ok(filterProjects(listResult.value, { search: query }));
   }
 
   async count(): Promise<Result<number, DomainError>> {

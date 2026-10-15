@@ -65,7 +65,8 @@ and `HANDOFF_COMPLETE.md`.
   no recurring tasks, no task dependencies/subtasks, no calendar/timeline.
 - Saved Views are applied on the Tasks page (filters encoded in the URL) and, like labels and
   preferences, round-trip through JSON export/import.
-- Scale ceiling ~10,000 tasks before performance degrades (in-memory filter/sort/paginate).
+- Scale: list rendering is virtualized and benchmarked to 50,000 tasks; filtering/sorting still
+  run in memory ([docs/performance.md](docs/performance.md)).
 - Single user, single device, manual JSON export to move data.
 
 ---
@@ -228,7 +229,8 @@ single-user board app"**: the command palette, keyboard navigation, optimistic
 updates, fast client-side filtering, and clean design tokens all echo Linear.
 
 - Linear is **real-time, multiplayer, Git-integrated, and battle-tested at scale**.
-- Workboard is **offline, free, private, and self-contained** — but single-user and ~10k-task-capped.
+- Workboard is **offline, free, private, and self-contained** — but single-user and memory-bound
+  at extreme task counts.
 - Linear's own speed comes from a server + sync engine; Workboard's comes from keeping
   everything in memory and the browser.
 
@@ -292,7 +294,8 @@ updates ~8 ms), lands in the same league for the workflows it supports. Jira lag
 perceived speed; Trello is easy but shallow.
 
 **Performance & scale.** Linear ≈ Jira ≈ Trello (server-backed, effectively
-unbounded) vs Workboard (~10k tasks ceiling, in-memory). Workboard wins raw
+unbounded) vs Workboard (virtualized rendering, in-memory filter/sort benchmarked to
+50k tasks). Workboard wins raw
 **first-paint/offline latency** (no network); loses on dataset size and concurrency.
 
 **Collaboration.** Jira = Trello = Linear (multiplayer) vs Workboard (❌). This is the
@@ -390,13 +393,13 @@ SSO/enterprise governance. Owning these would abandon Workboard's differentiator
 
 ## 10. Threats & risks to the position
 
-| Risk                                                          | Impact                                 | Mitigation                                                            |
-| ------------------------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------- |
-| "Local-only" reads as a limitation, not a feature             | Undermines the core pitch              | Market it as privacy/offline/ownership; add optional self-host sync   |
-| Linear/Trello free tiers keep improving                       | Narrows the "free" advantage           | Compete on offline + ownership + a11y, not just price                 |
-| ~10k-task scale ceiling                                       | Blocks power users                     | Virtualize lists; paginate at repo level; document the limit          |
-| No collaboration = no teams = a portfolio demo, not a product | Caps real adoption                     | Ship a self-hosted/optional sync path before positioning as a product |
-| Half-built Saved Views look unfinished                        | Visible credibility gap in a portfolio | ✅ Resolved (`WB-101`): views apply on the Tasks page                 |
+| Risk                                                          | Impact                                 | Mitigation                                                                   |
+| ------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------- |
+| "Local-only" reads as a limitation, not a feature             | Undermines the core pitch              | Market it as privacy/offline/ownership; add optional self-host sync          |
+| Linear/Trello free tiers keep improving                       | Narrows the "free" advantage           | Compete on offline + ownership + a11y, not just price                        |
+| Memory-bound at extreme task counts                           | Blocks power users                     | ✅ Resolved (`WB-403`): virtualized lists; filter/sort in-memory, documented |
+| No collaboration = no teams = a portfolio demo, not a product | Caps real adoption                     | Ship a self-hosted/optional sync path before positioning as a product        |
+| Half-built Saved Views look unfinished                        | Visible credibility gap in a portfolio | ✅ Resolved (`WB-101`): views apply on the Tasks page                        |
 
 ---
 

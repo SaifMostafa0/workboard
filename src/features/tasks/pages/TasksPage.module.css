@@ -204,6 +204,12 @@
   gap: var(--space-2);
 }
 
+/* Windowed variant: rows carry their own spacing via the VirtualList gap so
+   the fixed-height windowing math stays exact (no flex gap). */
+.taskListWindowed {
+  display: block;
+}
+
 /* Pagination */
 .pagination {
   display: flex;

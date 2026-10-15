@@ -11,6 +11,7 @@ import type {
   SavedViewUpdate,
   Task,
   TaskInput,
+  TaskQuery,
   TaskUpdate,
 } from '@/domain';
 import {
@@ -95,6 +96,8 @@ export const queryKeys = {
   project: (id: string) => ['projects', id] as const,
   tasks: (filters?: Record<string, unknown>) =>
     filters ? (['tasks', filters] as const) : (['tasks'] as const),
+  tasksPage: (query: TaskQuery) => ['tasks', 'page', query] as const,
+  taskSummary: ['tasks', 'summary'] as const,
   task: (id: string) => ['tasks', id] as const,
   trash: ['trash'] as const,
   settings: ['settings'] as const,
@@ -444,6 +447,38 @@ export function useTasks(filters?: { projectId?: string } & Record<string, unkno
     queryFn: async () => {
       const repo = getTaskRepository();
       const result = await repo.list(projectId);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+  });
+}
+
+/**
+ * One page of tasks for the list view. Filtering, sorting and paging happen in
+ * the repository (pure domain functions), so the component only ever holds the
+ * rows it renders.
+ */
+export function useTasksPage(query: TaskQuery) {
+  return useQuery({
+    queryKey: queryKeys.tasksPage(query),
+    queryFn: async () => {
+      const repo = getTaskRepository();
+      const result = await repo.listPage(query);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    // Keep the previous page on screen while the next one loads.
+    placeholderData: (previous) => previous,
+  });
+}
+
+/** Whole-collection task data (tags, total, sub-task progress) for the list view. */
+export function useTaskSummary() {
+  return useQuery({
+    queryKey: queryKeys.taskSummary,
+    queryFn: async () => {
+      const repo = getTaskRepository();
+      const result = await repo.summary();
       if (!result.ok) throw new Error(result.error.message);
       return result.value;
     },

@@ -47,6 +47,11 @@ interface TaskCardProps {
   subtaskProgress?: { done: number; total: number };
   /** When provided (and the task is top-level), renders an "Add sub-task" action. */
   onAddSubtask?: (task: { id: string }) => void;
+  /**
+   * Compact mode used when the list is windowed: the row is clamped to a fixed
+   * height so the windowing math stays exact.
+   */
+  dense?: boolean;
 }
 
 export function TaskCard({
@@ -64,6 +69,7 @@ export function TaskCard({
   isDragging = false,
   subtaskProgress,
   onAddSubtask,
+  dense = false,
 }: TaskCardProps) {
   const overdue = task.dueDate && isOverdue(task.dueDate) && task.status !== 'done';
   const dueToday = task.dueDate && isDueToday(task.dueDate) && task.status !== 'done';
@@ -89,7 +95,8 @@ export function TaskCard({
         styles[variant],
         styles[`priority-${task.priority}`],
         selected && styles.selected,
-        isDragging && styles.dragging
+        isDragging && styles.dragging,
+        dense && styles.dense
       )}
       role="listitem"
       draggable={draggable}

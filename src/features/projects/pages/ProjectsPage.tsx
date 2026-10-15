@@ -1,16 +1,31 @@
 import { EmptyState, Loading } from '@/components/feedback';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { VirtualList } from '@/components/ui/VirtualList';
 import type { Project } from '@/domain/project';
-import { PROJECT_COLORS, PROJECT_COLOR_HEX, isValidProjectColor } from '@/domain/project';
+import {
+  PROJECT_COLORS,
+  PROJECT_COLOR_HEX,
+  filterProjects,
+  isValidProjectColor,
+} from '@/domain/project';
 import { safeValidateProjectInput } from '@/domain/validation';
 import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } from '@/hooks/useData';
+import { useGridColumns } from '@/hooks/useGridColumns';
 import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning';
 import { formatRelativeTime } from '@/lib/date';
 import { AlertCircle, Edit, FolderKanban, Plus, Search, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './ProjectsPage.module.css';
+
+/** Tracks match `minmax(300px, 1fr)` in the CSS grid; see `.grid`. */
+const PROJECT_MIN_CARD_WIDTH = 300;
+/** `--space-4`, the grid gap; kept in sync with the CSS. */
+const PROJECT_GRID_GAP = 24;
+const PROJECT_ROW_HEIGHT = 200;
+const PROJECT_GRID_VIEWPORT_HEIGHT = 640;
+const PROJECT_WINDOW_THRESHOLD = 50;
 
 export function ProjectsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -131,12 +146,13 @@ export function ProjectsPage() {
   };
 
   // Filter projects based on search
-  const filteredProjects =
-    projects?.filter(
-      (p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchQuery.toLowerCase())
-    ) || [];
+  const filteredProjects = filterProjects(projects ?? [], { search: searchQuery });
+
+  const { ref: gridRef, columns } = useGridColumns<HTMLDivElement>(
+    PROJECT_MIN_CARD_WIDTH,
+    PROJECT_GRID_GAP
+  );
+  const gridWindowed = Math.ceil(filteredProjects.length / columns) > PROJECT_WINDOW_THRESHOLD;
 
   if (isLoading) {
     return (
@@ -205,16 +221,26 @@ export function ProjectsPage() {
           action={{ label: 'Create Project', onClick: () => setDialogOpen(true) }}
         />
       ) : (
-        <div className={styles.grid} role="list">
-          {filteredProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onEdit={() => setEditingProject(project)}
-              onDelete={() => handleDelete(project.id, project.name)}
-              isDeleting={deletingId === project.id}
-            />
-          ))}
+        <div ref={gridRef}>
+          <VirtualList
+            items={filteredProjects}
+            className={gridWindowed ? styles.gridWindowed : styles.grid}
+            columns={columns}
+            itemHeight={PROJECT_ROW_HEIGHT}
+            gap={PROJECT_GRID_GAP}
+            viewportHeight={PROJECT_GRID_VIEWPORT_HEIGHT}
+            threshold={PROJECT_WINDOW_THRESHOLD}
+            getKey={(project) => project.id}
+            aria-label="Projects"
+            renderItem={(project) => (
+              <ProjectCard
+                project={project}
+                onEdit={() => setEditingProject(project)}
+                onDelete={() => handleDelete(project.id, project.name)}
+                isDeleting={deletingId === project.id}
+              />
+            )}
+          />
         </div>
       )}
 

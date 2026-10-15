@@ -45,6 +45,13 @@ export default defineConfig({
     },
     globals: true,
     css: true,
+    benchmark: {
+      // The task sort reads a module-level constant (`TASK_PRIORITY_ORDER`) on
+      // every comparison, so Vitest's "export getter" heuristic fires on every
+      // run. The overhead is a constant per call, not a source of growing
+      // variance, so the warning is noise here.
+      suppressExportGetterWarnings: true,
+    },
     // The error-boundary tests deliberately throw during render. jsdom surfaces
     // that through its virtual console, which Vitest would otherwise report as
     // an unhandled error and fail the run on. The throw is asserted on in the

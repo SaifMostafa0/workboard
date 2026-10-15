@@ -21,6 +21,16 @@ const DB_VERSION = 1;
 const DATA_STORE = 'data';
 const META_STORE = 'meta';
 
+/**
+ * The keys for a collection are `workboard:<collection>:<id>`, so a key range
+ * from the prefix up to the last possible string that still starts with it
+ * selects exactly that collection. Using a range (instead of reading every key
+ * in the store and filtering in JS) means IndexedDB only deserializes the
+ * records we actually asked for — the difference between a bounded and an
+ * unbounded read as the store grows.
+ */
+const prefixRange = (prefix: string): IDBKeyRange => IDBKeyRange.bound(prefix, `${prefix}\uffff`);
+
 let dbPromise: Promise<IDBPDatabase<WorkboardDBSchema>> | null = null;
 
 const getDB = async (): Promise<IDBPDatabase<WorkboardDBSchema>> => {
@@ -84,16 +94,8 @@ export const indexedDBAdapter: StorageAdapter = {
   async getAll<T>(prefix: string): Promise<Result<T[], StorageError>> {
     try {
       const db = await getDB();
-      const allRecords = await db.getAll(DATA_STORE);
-      const allKeys = await db.getAllKeys(DATA_STORE);
-
-      const results: T[] = [];
-      allKeys.forEach((key, index) => {
-        if (typeof key === 'string' && key.startsWith(prefix)) {
-          results.push(allRecords[index] as T);
-        }
-      });
-      return ok(results);
+      const records = await db.getAll(DATA_STORE, prefixRange(prefix));
+      return ok(records as T[]);
     } catch (error) {
       return err(handleStorageError('getAll', error, prefix));
     }
@@ -103,11 +105,9 @@ export const indexedDBAdapter: StorageAdapter = {
     try {
       const db = await getDB();
       if (prefix) {
-        const allKeys = await db.getAllKeys(DATA_STORE);
-        for (const key of allKeys) {
-          if (typeof key === 'string' && key.startsWith(prefix)) {
-            await db.delete(DATA_STORE, key);
-          }
+        const keys = await db.getAllKeys(DATA_STORE, prefixRange(prefix));
+        for (const key of keys) {
+          await db.delete(DATA_STORE, key);
         }
       } else {
         await db.clear(DATA_STORE);
@@ -121,11 +121,8 @@ export const indexedDBAdapter: StorageAdapter = {
   async getKeys(prefix: string): Promise<Result<string[], StorageError>> {
     try {
       const db = await getDB();
-      const allKeys = await db.getAllKeys(DATA_STORE);
-      const keys = allKeys
-        .filter((key): key is string => typeof key === 'string' && key.startsWith(prefix))
-        .map((key) => key);
-      return ok(keys);
+      const keys = await db.getAllKeys(DATA_STORE, prefixRange(prefix));
+      return ok(keys.filter((key): key is string => typeof key === 'string'));
     } catch (error) {
       return err(handleStorageError('getKeys', error, prefix));
     }

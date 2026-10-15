@@ -3,7 +3,7 @@
 > **Generated file — do not edit.** Run `npm run tickets:build` after changing `tickets/WB-*.md`.
 > The ticket markdown files are the source of truth; see [docs/project-management.md](docs/project-management.md).
 
-**16 open / 12 done / 28 total** · last update 2026-10-16
+**15 open / 13 done / 28 total** · last update 2026-10-16
 
 ## Progress by project
 
@@ -12,7 +12,7 @@
 | WB — Roadmap T1 · Quick Wins | 2 | 2 | 4 |
 | WB — Roadmap T2 · Differentiators | 4 | 0 | 4 |
 | WB — Roadmap T3 · Platform | 5 | 0 | 5 |
-| WB — Product Gaps | 2 | 2 | 4 |
+| WB — Product Gaps | 1 | 3 | 4 |
 | WB — Engineering & AI-DX | 1 | 7 | 8 |
 | WB — Quality & Accessibility | 2 | 1 | 3 |
 
@@ -57,7 +57,7 @@ Capability gaps versus Jira, Trello and Linear, plus gaps found in the codebase.
 | ID | Title | Status | Priority | Assignee | Tags | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
 | WB-401 | Add epics / milestones above tasks | Done | high | agent:opencode | area:domain, area:ui, type:feature, gap:hierarchy | 2026-10-15 |
-| WB-403 | Virtualize long lists and raise the ~10k-task scale ceiling | To Do | high | unassigned | area:perf, area:ui, type:feature, gap:scale | 2026-10-14 |
+| WB-403 | Virtualize long lists and raise the ~10k-task scale ceiling | Done | high | agent:opencode | area:perf, area:ui, type:feature, gap:scale | 2026-10-16 |
 | WB-404 | Include labels and saved views in export/import | Done | high | agent:opencode | area:storage, area:docs, type:bug, gap:data | 2026-10-14 |
 | WB-402 | Add comments and an activity feed | To Do | medium | unassigned | area:domain, area:ui, type:feature, gap:collaboration | 2026-10-14 |
 

@@ -2,8 +2,10 @@ import { EmptyState, Loading } from '@/components/feedback';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select, type SelectOption } from '@/components/ui/Select';
+import { VirtualList } from '@/components/ui/VirtualList';
 import type { SavedView } from '@/domain/savedView';
 import type { Task, TaskPriority, TaskStatus } from '@/domain/task';
+import type { SortOrder, TaskQuery, TaskSortField } from '@/domain/taskQuery';
 import type { TaskInputValidated, TaskUpdateValidated } from '@/domain/validation';
 import { SavedViewsBar } from '@/features/saved-views/components/SavedViewsBar';
 import { TagFilter } from '@/features/tasks/components/TagFilter';
@@ -18,7 +20,8 @@ import {
   useProjects,
   useSavedViews,
   useSettings,
-  useTasks,
+  useTaskSummary,
+  useTasksPage,
   useUpdateTask,
 } from '@/hooks/useData';
 import {
@@ -67,6 +70,20 @@ const SORT_OPTIONS = [
 ] as const;
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+/** Stable identities so the derived values don't change on every render. */
+const EMPTY_TAGS: string[] = [];
+const EMPTY_TASKS: Task[] = [];
+const EMPTY_PROGRESS = new Map<string, { done: number; total: number }>();
+
+/**
+ * List rows are windowed at a uniform height (see {@link VirtualList}); this is
+ * the per-row box, including the gap between rows.
+ */
+const TASK_WINDOW_THRESHOLD = 30;
+const TASK_ROW_GAP = 8;
+const TASK_ROW_HEIGHT = 132;
+const TASK_LIST_VIEWPORT_HEIGHT = 640;
 
 const BULK_STATUS_OPTIONS: SelectOption[] = [
   { value: 'todo', label: 'To Do' },
@@ -156,19 +173,51 @@ export function TasksPage() {
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState(localSearch);
 
-  // Fetch data
-  const { data: tasks, isLoading: tasksLoading, error: tasksError } = useTasks();
+  // The list view asks the repository for a single page; the summary hook
+  // provides the whole-collection data the page also needs (tag options,
+  // active total, sub-task progress) without loading tasks into the component.
+  const taskQuery: TaskQuery = useMemo(
+    () => ({
+      search: debouncedSearch,
+      status: localStatus ? (localStatus as TaskStatus) : '',
+      priority: localPriority ? (localPriority as TaskPriority) : '',
+      projectId: localProject || undefined,
+      epicId: localEpic || undefined,
+      tags: localTags,
+      due: (localDue || '') as TaskQuery['due'],
+      includeSubtasks: showSubtasks,
+      includeCompleted: showCompleted,
+      sortBy: localSortBy as TaskSortField,
+      sortOrder: localSortOrder as SortOrder,
+      page: localPage,
+      pageSize: localPageSize,
+    }),
+    [
+      debouncedSearch,
+      localStatus,
+      localPriority,
+      localProject,
+      localEpic,
+      localTags,
+      localDue,
+      showSubtasks,
+      showCompleted,
+      localSortBy,
+      localSortOrder,
+      localPage,
+      localPageSize,
+    ]
+  );
+
+  const { data: taskPage, isLoading: tasksLoading, error: tasksError } = useTasksPage(taskQuery);
+  const { data: summary } = useTaskSummary();
   const { data: projects, error: projectsError } = useProjects();
   const { data: views } = useSavedViews();
   const { data: epics } = useEpics(localProject || undefined);
   const activeView = views?.find((view) => view.id === activeViewId) ?? null;
-  const availableTags = useMemo(() => {
-    const tags = new Set<string>();
-    for (const task of tasks ?? []) {
-      for (const tag of task.tags) tags.add(tag);
-    }
-    return [...tags].sort((a, b) => a.localeCompare(b));
-  }, [tasks]);
+  const availableTags = summary?.tags ?? EMPTY_TAGS;
+  const subtaskProgressById = summary?.subtaskProgress ?? EMPTY_PROGRESS;
+  const totalActiveTasks = summary?.total ?? 0;
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -237,146 +286,17 @@ export function TasksPage() {
     );
   };
 
+  // The repository already filtered, sorted and paged the list, so the
+  // component only ever holds the rows it renders.
+  const paginatedTasks = taskPage?.items ?? EMPTY_TASKS;
+  const totalItems = taskPage?.total ?? 0;
+  const totalPages = taskPage?.totalPages ?? 1;
+  const currentPage = taskPage?.page ?? 1;
+
   const handleAddSubtask = (task: { id: string }) => {
-    setSubtaskParent(tasks?.find((candidate) => candidate.id === task.id) ?? null);
+    setSubtaskParent(paginatedTasks.find((candidate) => candidate.id === task.id) ?? null);
   };
 
-  // Done/total of each parent's direct sub-tasks (used for the progress badge).
-  const subtaskProgressById = useMemo(() => {
-    const map = new Map<string, { done: number; total: number }>();
-    for (const task of tasks ?? []) {
-      if (!task.parentId) continue;
-      const entry = map.get(task.parentId) ?? { done: 0, total: 0 };
-      entry.total += 1;
-      if (task.status === 'done') entry.done += 1;
-      map.set(task.parentId, entry);
-    }
-    return map;
-  }, [tasks]);
-
-  // Filter tasks
-  const filteredTasks = useMemo(() => {
-    if (!tasks) return [];
-
-    return tasks.filter((task) => {
-      // Sub-tasks are hidden from the top-level list unless toggled on.
-      if (!showSubtasks && task.parentId) return false;
-
-      // Respect the "Show completed tasks" preference.
-      if (!showCompleted && task.status === 'done') return false;
-
-      // Text search
-      if (debouncedSearch) {
-        const query = debouncedSearch.toLowerCase();
-        const matchesTitle = task.title.toLowerCase().includes(query);
-        const matchesDescription = task.description.toLowerCase().includes(query);
-        const matchesTags = task.tags.some((tag) => tag.toLowerCase().includes(query));
-        if (!matchesTitle && !matchesDescription && !matchesTags) return false;
-      }
-
-      // Status filter
-      if (localStatus && task.status !== localStatus) return false;
-
-      // Priority filter
-      if (localPriority && task.priority !== localPriority) return false;
-
-      // Project filter
-      if (localProject && task.projectId !== localProject) return false;
-
-      // Epic filter
-      if (localEpic && task.epicId !== localEpic) return false;
-
-      // Tag filter — a task matches when it carries any selected tag.
-      if (localTags.length > 0 && !task.tags.some((tag) => localTags.includes(tag))) return false;
-
-      // Due date filter
-      if (localDue) {
-        const now = new Date();
-        const dueDate = task.dueDate ? new Date(task.dueDate) : null;
-        if (localDue === 'overdue') {
-          if (!dueDate || dueDate >= now || task.status === 'done') return false;
-        } else if (localDue === 'today') {
-          if (!dueDate || dueDate.toDateString() !== now.toDateString()) return false;
-        } else if (localDue === 'upcoming') {
-          const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-          if (!dueDate || dueDate < now || dueDate > weekLater || task.status === 'done')
-            return false;
-        } else if (localDue === 'no-date') {
-          if (dueDate) return false;
-        }
-      }
-
-      return true;
-    });
-  }, [
-    tasks,
-    showCompleted,
-    showSubtasks,
-    debouncedSearch,
-    localStatus,
-    localPriority,
-    localProject,
-    localDue,
-    localEpic,
-    localTags,
-  ]);
-
-  // Sort tasks
-  const sortedTasks = useMemo(() => {
-    return [...filteredTasks].sort((a, b) => {
-      let aVal: string | number, bVal: string | number;
-
-      switch (localSortBy) {
-        case 'dueDate':
-          aVal = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-          bVal = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-          break;
-        case 'priority': {
-          const priorityOrder: Record<TaskPriority, number> = {
-            urgent: 4,
-            high: 3,
-            medium: 2,
-            low: 1,
-          };
-          aVal = priorityOrder[a.priority] || 0;
-          bVal = priorityOrder[b.priority] || 0;
-          break;
-        }
-        case 'title':
-          aVal = a.title.toLowerCase();
-          bVal = b.title.toLowerCase();
-          break;
-        case 'createdAt':
-        case 'updatedAt':
-        default:
-          aVal = new Date(a[localSortBy as keyof Task] as string).getTime();
-          bVal = new Date(b[localSortBy as keyof Task] as string).getTime();
-      }
-
-      if (aVal === Infinity && bVal === Infinity) return 0;
-      if (aVal === Infinity) return 1;
-      if (bVal === Infinity) return -1;
-
-      const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-      return localSortOrder === 'asc' ? comparison : -comparison;
-    });
-  }, [filteredTasks, localSortBy, localSortOrder]);
-
-  // Pagination
-  const totalItems = sortedTasks.length;
-  const totalPages = Math.ceil(totalItems / localPageSize) || 1;
-  const currentPage = Math.min(Math.max(localPage, 1), totalPages);
-  const paginatedTasks = sortedTasks.slice(
-    (currentPage - 1) * localPageSize,
-    currentPage * localPageSize
-  );
-
-  // Selection only counts tasks that still exist, so a task deleted elsewhere
-  // (or by a bulk action) silently drops out of the selection.
-  const selectedTasks = useMemo(
-    () => (tasks ?? []).filter((task) => selectedIds.has(task.id)),
-    [tasks, selectedIds]
-  );
   const selectedOnPage = paginatedTasks.filter((task) => selectedIds.has(task.id)).length;
   const allOnPageSelected = paginatedTasks.length > 0 && selectedOnPage === paginatedTasks.length;
 
@@ -405,7 +325,7 @@ export function TasksPage() {
     });
   };
 
-  const selectedIdList = selectedTasks.map((task) => task.id);
+  const selectedIdList = useMemo(() => [...selectedIds], [selectedIds]);
 
   const handleBulkStatus = (status: TaskStatus) => {
     bulkUpdateTasks.mutate(
@@ -594,7 +514,7 @@ export function TasksPage() {
           <h1 className={styles.title}>Tasks</h1>
           <p className={styles.subtitle}>
             {totalItems} {totalItems === 1 ? 'task' : 'tasks'}
-            {hasActiveFilters && ` (filtered from ${tasks?.length || 0})`}
+            {hasActiveFilters && ` (filtered from ${totalActiveTasks})`}
             {activeView && ` · View: ${activeView.name}`}
           </p>
         </div>
@@ -846,13 +766,24 @@ export function TasksPage() {
         />
       ) : (
         <>
-          <div className={styles.taskList} role="list">
-            {paginatedTasks.map((task) => (
+          <VirtualList
+            items={paginatedTasks}
+            className={
+              paginatedTasks.length > TASK_WINDOW_THRESHOLD
+                ? styles.taskListWindowed
+                : styles.taskList
+            }
+            itemHeight={TASK_ROW_HEIGHT}
+            gap={TASK_ROW_GAP}
+            viewportHeight={TASK_LIST_VIEWPORT_HEIGHT}
+            threshold={TASK_WINDOW_THRESHOLD}
+            getKey={(task) => task.id}
+            aria-label="Task list"
+            renderItem={(task) => (
               <TaskCard
-                key={task.id}
                 task={task}
                 onStatusChange={(id, status) => updateTask.mutate({ id, update: { status } })}
-                onEdit={(t) => setEditingTask(tasks?.find((x) => x.id === t.id) ?? null)}
+                onEdit={(t) => setEditingTask(paginatedTasks.find((x) => x.id === t.id) ?? null)}
                 onDelete={(id, title) => {
                   const childCount = subtaskProgressById.get(id)?.total ?? 0;
                   const message =
@@ -864,14 +795,15 @@ export function TasksPage() {
                   }
                 }}
                 variant="list"
+                dense={paginatedTasks.length > TASK_WINDOW_THRESHOLD}
                 selectable={selectionMode}
                 selected={selectedIds.has(task.id)}
                 onSelect={toggleTaskSelected}
                 subtaskProgress={subtaskProgressById.get(task.id)}
                 onAddSubtask={handleAddSubtask}
               />
-            ))}
-          </div>
+            )}
+          />
 
           {/* Pagination */}
           {totalPages > 1 && (

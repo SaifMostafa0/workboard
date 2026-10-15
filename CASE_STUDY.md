@@ -41,14 +41,16 @@ const filtered = tasks.filter(
 **Why this works for Workboard:**
 
 - Typical user has < 500 tasks — well within memory limits
-- Filter operations complete in < 5ms (measured)
+- Filter operations complete in < 5ms at typical sizes (benchmarked to 50k tasks in
+  [docs/performance.md](docs/performance.md))
 - Instant UX: no loading spinners when changing filters
 - Shareable URLs: `?status=todo&priority=high&sort=dueDate&order=asc`
 - Works completely offline
 
 **Trade-offs Accepted:**
 
-- Won't scale to 10k+ tasks without virtualization
+- Filtering/sorting still scan the collection in memory (no index-backed paging yet); rendering is
+  virtualized so DOM size stays bounded
 - All data loads on initial page visit (mitigated by lazy-loading routes)
 - No server-side search indexing
 

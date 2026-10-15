@@ -266,7 +266,9 @@ Ensure your host supports SPA fallback (redirect all routes to `index.html`).
 - No file attachments
 - No recurring tasks
 - No task dependencies
-- Limited to ~10,000 tasks before performance degrades
+- List views are benchmarked to 50,000 tasks ([docs/performance.md](docs/performance.md)); rendering is
+  virtualized, but filtering/sorting still scan the collection in memory, so total task count is
+  bounded by available memory rather than by rendering
 
 ## Future Improvements
 

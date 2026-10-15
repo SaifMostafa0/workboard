@@ -65,6 +65,70 @@ jobs:
 }
 ```
 
+## List Scaling Benchmarks (measured)
+
+The task list is filtered, sorted and sliced by **pure domain functions** (`src/domain/taskQuery.ts`)
+and rendered through a dependency-free windowing component (`src/components/ui/VirtualList.tsx`).
+Both are covered by a repeatable benchmark:
+
+```bash
+npm run bench   # vitest bench --run --reporter=verbose
+```
+
+- `src/domain/__tests__/taskQuery.bench.ts` — the filter → sort → paginate pipeline at 1k / 10k / 50k tasks.
+- `src/components/ui/__tests__/VirtualList.bench.tsx` — rendering 50,000 rows with windowing on vs off.
+
+### Environment
+
+| Item    | Value                      |
+| ------- | -------------------------- |
+| Machine | AMD Ryzen 5 7600X (6 core) |
+| OS      | Windows 11 (10.0.26300)    |
+| Node    | v24.21.0                   |
+| Runner  | Vitest 5 (tinybench)       |
+| Date    | 2026-10-16                 |
+
+Numbers are the **mean** per call from a single run and are only meaningful relative to each other
+on the same machine. Re-run `npm run bench` to compare.
+
+### `queryTasks` (filter → sort → paginate)
+
+| Tasks  | Default (top-level, sorted by `updatedAt`) | Filtered (search + status + priority sort) |
+| ------ | ------------------------------------------ | ------------------------------------------ |
+| 1,000  | 0.28 ms                                    | 0.10 ms                                    |
+| 10,000 | 4.8 ms                                     | 1.9 ms                                     |
+| 50,000 | 26 ms                                      | 10 ms                                      |
+
+The default query sorts every top-level task, so it is dominated by the sort; the filtered query
+narrows the set first and is consequently faster. The pipeline runs off the render path (inside a
+React Query fetch), so even the 50k worst case (~26 ms) does not block typing or scrolling — the UI
+keeps showing the previous page while the next one resolves.
+
+### `VirtualList` render of 50,000 items
+
+| Mode                    | Mean render | Relative       |
+| ----------------------- | ----------- | -------------- |
+| Windowed (threshold 30) | 0.07 ms     | ~3,000× faster |
+| Unwindowed (no cap)     | 214 ms      | baseline       |
+
+Windowing renders only the rows near the viewport (plus overscan), so render cost is **constant** in
+the number of items and the DOM stays a fixed size. The unwindowed column exists only to show the
+difference; production never renders an entire list.
+
+### How the ceiling was raised
+
+The old "~10,000 tasks" ceiling came from three compounding costs, each removed or bounded:
+
+1. **Storage** — reads are key-range scoped in `indexedDBAdapter`, so a list never deserialises the
+   whole store.
+2. **Filtering/sorting** — runs in pure domain functions, and the list view asks the repository for a
+   single page (`taskRepository.listPage`) instead of holding every task in React state.
+3. **Rendering** — the list is windowed above a threshold, so DOM node count is bounded regardless of
+   collection size. Short lists (≤ threshold) render in full, unchanged, so keyboard navigation and
+   the existing E2E flows behave exactly as before.
+
+The projects grid uses the same component (`useGridColumns` computes the responsive column count).
+
 ## Performance Optimization Strategy
 
 ### 1. Code Splitting

@@ -82,6 +82,12 @@
   gap: var(--space-4);
 }
 
+/* Windowed variant: rows carry their own spacing via the VirtualList gap, and
+   the column count is computed in JS (see `useGridColumns`). */
+.gridWindowed {
+  display: block;
+}
+
 .card {
   position: relative;
   display: flex;

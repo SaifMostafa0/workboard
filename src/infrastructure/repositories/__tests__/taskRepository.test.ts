@@ -567,6 +567,71 @@ describe('LocalTaskRepository', () => {
     });
   });
 
+  describe('listPage', () => {
+    it('returns the first page with totals and excludes trashed tasks', async () => {
+      for (let i = 0; i < 5; i += 1) {
+        await repository.create({ ...validTaskInput, title: `Task ${i}` });
+      }
+      const trashed = await repository.create({ ...validTaskInput, title: 'Trashed' });
+      if (trashed.ok) await repository.delete(trashed.value.id);
+
+      const result = await repository.listPage({ page: 1, pageSize: 2 });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.total).toBe(5);
+        expect(result.value.totalPages).toBe(3);
+        expect(result.value.items).toHaveLength(2);
+      }
+    });
+
+    it('applies query filters before paging', async () => {
+      const projectId = '123e4567-e89b-42d3-a456-426614174001';
+      await repository.create({ ...validTaskInput, projectId, status: 'todo' });
+      await repository.create({ ...validTaskInput, projectId, status: 'done' });
+      await repository.create({ ...validTaskInput, status: 'todo' });
+
+      const result = await repository.listPage({ projectId, status: 'todo' });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.total).toBe(1);
+        expect(result.value.items[0]?.projectId).toBe(projectId);
+      }
+    });
+
+    it('reports a storage error', async () => {
+      adapter.setFailMode('getAll', createStorageError('QUOTA_EXCEEDED', 'boom'));
+      const result = await repository.listPage();
+      expect(result.ok).toBe(false);
+    });
+  });
+
+  describe('summary', () => {
+    it('returns the active total, distinct tags and sub-task progress in one pass', async () => {
+      const parent = await repository.create({ ...validTaskInput, tags: ['zeta', 'alpha'] });
+      if (!parent.ok) throw new Error('setup failed');
+      await repository.create({ ...validTaskInput, tags: ['alpha'], parentId: parent.value.id });
+      await repository.create({
+        ...validTaskInput,
+        tags: ['beta'],
+        parentId: parent.value.id,
+        status: 'done',
+      });
+      const trashed = await repository.create({ ...validTaskInput, tags: ['hidden'] });
+      if (trashed.ok) await repository.delete(trashed.value.id);
+
+      const result = await repository.summary();
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.total).toBe(3);
+        expect(result.value.tags).toEqual(['alpha', 'beta', 'zeta']);
+        expect(result.value.subtaskProgress.get(parent.value.id)).toEqual({ done: 1, total: 2 });
+      }
+    });
+  });
+
   describe('sub-tasks', () => {
     const otherProjectId = '123e4567-e89b-42d3-a456-4266141740ff';
 

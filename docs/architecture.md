@@ -119,14 +119,19 @@ useTasks(filters, sort, pagination)
 
 ### 1. Client-Side Filtering Over Server-Side
 
-**Decision**: All filtering, sorting, pagination happens in-memory after fetching all records.
+**Decision**: Filtering, sorting and pagination run as pure domain functions (`src/domain/taskQuery.ts`,
+`src/domain/pagination.ts`); the repository exposes a paged query, and long lists are windowed at render
+time by `VirtualList`.
 **Rationale**:
 
-- Dataset size: ~100s of tasks, well within memory limits
+- Dataset size: a single user's task list fits comfortably in memory
 - Simpler architecture: no query translation layer
 - Instant filter feedback
 - Works offline
-  **Trade-off**: Won't scale to 10k+ records without virtualization/pagination at repository level.
+- Benchmarked to 50,000 tasks ([performance.md](performance.md)); storage reads are key-range scoped
+  and only one page is held in React state
+  **Trade-off**: Filtering/sorting still scan the collection in memory (no index-backed paging yet), so
+  memory use — not rendering — is the remaining limit.
 
 ### 2. IndexedDB with localStorage Fallback
 

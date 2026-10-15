@@ -101,6 +101,29 @@
   flex-wrap: wrap;
 }
 
+/* Compact rows for windowed lists: the row must be a predictable height, so
+   anything that would otherwise wrap is clamped instead. */
+.list.dense {
+  height: 100%;
+  overflow: hidden;
+}
+
+.dense .titleLink {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dense .description {
+  -webkit-line-clamp: 1;
+}
+
+.dense .meta {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
 .content {
   padding: var(--space-3);
 }
