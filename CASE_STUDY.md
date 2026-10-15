@@ -55,7 +55,11 @@ const filtered = tasks.filter(
 - No server-side search indexing
 
 **Future Migration Path:**
-The repository interface (`IProjectRepository`, `ITaskRepository`) is designed to swap implementations. When a backend is added, only the repository implementation changes — hooks and components remain untouched.
+The strongest version of this seam is the storage adapter, not the repository class: the repositories
+are pure functions of a `StorageAdapter`, so mounting an HTTP-backed adapter on the existing factories
+yields fully contract-compliant repositories with no repository, hook or component changes. This was
+validated by a spike ([ADR 0001](docs/decisions/0001-sync-architecture.md), [WB-201](tickets/WB-201-sync-spike.md));
+local-only remains the default.
 
 ---
 

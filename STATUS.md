@@ -20,6 +20,7 @@ The project now **manages itself with Workboard** and is documented for AI agent
 
 | Date       | Work                                                             | Ticket                                                 |
 | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
+| 2026-10-16 | Sync spike: options report, ADR, and a working API-backed repo   | [WB-201](tickets/WB-201-sync-spike.md)                 |
 | 2026-10-16 | Virtualized lists + paged repository query; 50k-task benchmark   | [WB-403](tickets/WB-403-virtualization-scale.md)       |
 | 2026-10-16 | Dev reseed: the backlog returns whenever a dev app is empty      | [WB-507](tickets/WB-507-dev-reseed.md)                 |
 | 2026-10-15 | Dev-only seed of Workboard's own backlog; demo data removed      | [WB-506](tickets/WB-506-dev-seed-workboard-backlog.md) |
@@ -39,22 +40,25 @@ _None._ Pick from the next-up list below.
 
 ## Next up (highest priority)
 
-| ID                                     | Title                               | Why now                              |
-| -------------------------------------- | ----------------------------------- | ------------------------------------ |
-| [WB-201](tickets/WB-201-sync-spike.md) | Spike — optional self-hostable sync | Highest-priority open; unlocks teams |
+| ID                                              | Title                                       | Why now                                          |
+| ----------------------------------------------- | ------------------------------------------- | ------------------------------------------------ |
+| [WB-103](tickets/WB-103-task-dependencies.md)   | Add task dependencies (blocked by / blocks) | Tier 1 quick win; highest-priority open          |
+| [WB-104](tickets/WB-104-csv-markdown-export.md) | CSV/Markdown export + printable board       | Tier 1 quick win; complements JSON import/export |
 
 ## Metrics
 
 | Metric               | Value                         | Source                  |
 | -------------------- | ----------------------------- | ----------------------- |
-| Unit/component tests | 401 passing                   | `npm run test:run`      |
+| Unit/component tests | 441 passing                   | `npm run test:run`      |
 | E2E tests            | 154 passing, 2 skipped        | `npm run test:e2e`      |
-| Coverage             | 84.3% stmts / 79.6% branches  | `npm run test:coverage` |
+| Coverage             | 85.3% stmts / 78.5% branches  | `npm run test:coverage` |
 | Bundle budget        | 168 KB gzip JS (≤200 KB)      | `npm run size`          |
-| Backlog              | 28 tickets, 15 open / 13 done | `BACKLOG.md`            |
+| Backlog              | 28 tickets, 14 open / 14 done | `BACKLOG.md`            |
 
 ## Known limitations
 
-- No backend, accounts, collaboration, or sync.
+- No backend, accounts, collaboration, or sync. The path to optional sync has been de-risked and
+  documented ([ADR 0001](docs/decisions/0001-sync-architecture.md), [WB-201](tickets/WB-201-sync-spike.md)),
+  but nothing is wired in — local-only remains the default.
 - List rendering is virtualized and benchmarked to 50,000 tasks; filtering/sorting still run in memory
   ([WB-403](tickets/WB-403-virtualization-scale.md), [docs/performance.md](docs/performance.md)).

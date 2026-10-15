@@ -231,7 +231,8 @@ Data is stored locally in your browser:
 - **Primary**: IndexedDB (via `idb`)
 - **Fallback**: localStorage
 - **No server**: Data never leaves your browser
-- **No sync**: Not synchronized across devices
+- **No sync**: Not synchronized across devices — the path to optional self-hosted sync is
+  documented in [ADR 0001](docs/decisions/0001-sync-architecture.md)
 - **Export/Import**: Use JSON backup to transfer data (includes projects, tasks, labels and saved views)
 
 ## Deployment

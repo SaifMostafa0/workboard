@@ -78,6 +78,9 @@
 - **StorageAdapter**: Abstract interface for key-value + index operations
 - **IndexedDBAdapter**: Primary implementation using `idb`
 - **LocalStorageAdapter**: Fallback for unsupported environments
+- **RemoteStorageAdapter** (optional, prototype): implements `StorageAdapter` over HTTP, so the
+  _existing_ repositories can run against a server with no changes. Not wired in; local-only is
+  still the default. See [ADR 0001](decisions/0001-sync-architecture.md).
 - **Migrations**: Schema version tracking and data transformation
 - **Dev seed**: on a fresh profile — or any time the app is empty — development builds import
   Workboard's own backlog (`project-management/workboard-import.json`) via `loadDevSeed()`; the
@@ -327,7 +330,9 @@ const migrations: Migration[] = [v1_to_v2, v2_to_v3];
 
 - **Code Splitting**: Route-level `React.lazy` + `Suspense`
 - **Memoization**: `React.memo` for list items, `useMemo` for derived computations
-- **Virtualization**: Not needed initially (< 500 tasks), add if measured
+- **Virtualization**: Lists longer than a threshold are windowed at render time by `VirtualList`
+  (`src/lib/virtualWindow.ts`); pagination additionally bounds per-page DOM. See
+  [`performance.md`](performance.md).
 - **Bundle Analysis**: `vite-bundle-analyzer` in CI
 
 ## Accessibility Architecture
@@ -340,10 +345,10 @@ const migrations: Migration[] = [v1_to_v2, v2_to_v3];
 
 ## Future Extensibility Points
 
-| Feature     | Extension Point                                                      |
-| ----------- | -------------------------------------------------------------------- |
-| Backend API | Swap `LocalRepository` → `ApiRepository` implementing same interface |
-| Real-time   | Add WebSocket listener → invalidate React Query cache                |
-| Plugins     | Hook system in `useTasks` for custom filters/columns                 |
-| Multi-user  | Add `userId` to domain types, filter at repository level             |
-| Mobile App  | Share `domain/`, `infrastructure/repositories/` with React Native    |
+| Feature     | Extension Point                                                                                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend API | Swap the storage adapter for a remote one; repositories are pure functions of it. See [ADR 0001](decisions/0001-sync-architecture.md) |
+| Real-time   | Add WebSocket listener → invalidate React Query cache                                                                                 |
+| Plugins     | Hook system in `useTasks` for custom filters/columns                                                                                  |
+| Multi-user  | Add `userId` to domain types, filter at repository level                                                                              |
+| Mobile App  | Share `domain/`, `infrastructure/repositories/` with React Native                                                                     |
