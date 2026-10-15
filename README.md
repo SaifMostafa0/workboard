@@ -59,6 +59,11 @@ npm run dev
 
 The app will be available at `http://localhost:5173`
 
+> **Development data:** `npm run dev` seeds Workboard's own backlog (the generated
+> `project-management/workboard-import.json`) so you dogfood the app against its real tickets. It is
+> re-applied whenever the app has no projects, so clearing your data while developing is safe.
+> Production builds (`npm run preview`) start empty.
+
 ### Available Scripts
 
 | Command                  | Description                              |

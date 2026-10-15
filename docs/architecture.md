@@ -79,9 +79,10 @@
 - **IndexedDBAdapter**: Primary implementation using `idb`
 - **LocalStorageAdapter**: Fallback for unsupported environments
 - **Migrations**: Schema version tracking and data transformation
-- **Dev seed**: on a fresh profile, development builds import Workboard's own backlog
-  (`project-management/workboard-import.json`) via `loadDevSeed()`; the dynamic import is guarded by
-  `import.meta.env.DEV`, so production bundles ship no seed data and start empty
+- **Dev seed**: on a fresh profile — or any time the app is empty — development builds import
+  Workboard's own backlog (`project-management/workboard-import.json`) via `loadDevSeed()`; the
+  dynamic import is guarded by `import.meta.env.DEV`, so production bundles ship no seed data and
+  start empty
 
 ## Data Flow
 

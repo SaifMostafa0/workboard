@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportedAt": "2026-10-15T00:00:00.000Z",
+  "exportedAt": "2026-10-16T00:00:00.000Z",
   "projects": [
     {
       "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
@@ -493,6 +493,25 @@
       "updatedAt": "2026-10-15T00:00:00.000Z",
       "assignee": "agent:opencode",
       "completedAt": "2026-10-15T00:00:00.000Z"
+    },
+    {
+      "id": "e811e9eb-d213-4520-8480-7030807ae9ae",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "title": "WB-507 Dev-only reseed so the Workboard backlog always comes back in development",
+      "description": "Since WB-506 the app seeds Workboard's own backlog on first launch — but only once per browser\nprofile (`workboard:meta:seeded`). Developers who already had that flag set from the old demo data,\nor who delete their data while developing, end up with a permanently empty app and no obvious way\nback short of clearing site data or hand-importing `workboard-import.json`.\n\nMake development forgiving: in dev only, if the app has no projects, (re)import the backlog on\nstartup even when the seeded flag is already set. Production semantics are unchanged — it seeds\nnothing and never re-seeds after a wipe.\n\n**Acceptance criteria**\n- [x] `initializeApp` re-seeds in development whenever there are zero projects, regardless of the\n      seeded flag.\n- [x] Production builds still seed nothing and never re-seed after `clearAllData`.\n- [x] `loadDevSeed()` remains the single gate (`import.meta.env.DEV`) so no seed reaches `dist`.\n- [x] Unit tests cover both paths (dev re-seeds; production does not).\n- [x] Docs updated; gates green (format, lint, typecheck, tickets, unit tests, build, size, E2E).\n\n- Follow-up to [WB-506](WB-506-dev-seed-workboard-backlog.md).\n- Not a \"Reset to Demo\" revival: nothing in the UI changes, and production keeps the one-way\n  behaviour.\n\nTicket file: tickets/WB-507-dev-reseed.md\n\nSource: handoff",
+      "status": "done",
+      "priority": "low",
+      "tags": [
+        "workboard",
+        "wb-507",
+        "area:storage",
+        "type:chore",
+        "area:docs"
+      ],
+      "createdAt": "2026-10-16T00:00:00.000Z",
+      "updatedAt": "2026-10-16T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-16T00:00:00.000Z"
     },
     {
       "id": "2a2f487c-b7bf-4d37-89f9-cf374302f103",

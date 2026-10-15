@@ -250,13 +250,14 @@ export const clearAllData = async (
 };
 
 /**
- * One-time application setup.
+ * Application startup: runs migrations and, in development, keeps the app
+ * filled with this repository's own Workboard backlog.
  *
- * Runs any pending schema migrations and, on a brand new install, seeds the
- * app with this repository's own Workboard backlog in development (see
- * `loadDevSeed`). Production installs start empty — no placeholder data is
- * shipped. The "seeded" flag means we never re-seed once the user has cleared
- * their data.
+ * `loadDevSeed` returns `null` in production, so a production install never
+ * seeds anything and never re-seeds once the user has cleared their data (the
+ * `SEEDED_KEY` flag). In development it also refills an *empty* app — a fresh
+ * profile or data deleted while developing — so you never end up staring at an
+ * empty Workboard with no way back short of clearing site data.
  */
 export const initializeApp = async (
   adapter: StorageAdapter
@@ -264,20 +265,19 @@ export const initializeApp = async (
   const migrationResult = await runMigrations(adapter);
   if (!migrationResult.ok) return migrationResult;
 
-  const seededResult = await adapter.get<boolean>(SEEDED_KEY);
-  if (!seededResult.ok) return seededResult;
-  if (seededResult.value) return ok(undefined);
-
   const projectsResult = await adapter.getAll<StoredProject>(PROJECT_PREFIX);
   if (!projectsResult.ok) return projectsResult;
 
-  if (projectsResult.value.length === 0) {
-    const seed = await loadDevSeed();
-    if (seed) {
-      const seedResult = await importData(adapter, seed, { mode: 'merge' });
-      if (!seedResult.ok) return seedResult;
-    }
+  const seed = await loadDevSeed();
+  if (seed && projectsResult.value.length === 0) {
+    const seedResult = await importData(adapter, seed, { mode: 'merge' });
+    if (!seedResult.ok) return seedResult;
+    return adapter.set(SEEDED_KEY, true);
   }
+
+  const seededResult = await adapter.get<boolean>(SEEDED_KEY);
+  if (!seededResult.ok) return seededResult;
+  if (seededResult.value) return ok(undefined);
 
   return adapter.set(SEEDED_KEY, true);
 };

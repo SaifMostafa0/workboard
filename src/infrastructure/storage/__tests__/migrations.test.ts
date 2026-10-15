@@ -1,6 +1,6 @@
 import { validateImportData } from '@/domain/validation';
 import { FakeStorageAdapter } from '@/test/factories/fakeStorageAdapter';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import seedJson from '../../../../project-management/workboard-import.json';
 import {
   clearAllData,
@@ -34,6 +34,10 @@ describe('runMigrations', () => {
 });
 
 describe('initializeApp', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('seeds the Workboard backlog on a fresh install', async () => {
     const adapter = new FakeStorageAdapter();
 
@@ -47,16 +51,30 @@ describe('initializeApp', () => {
     expect(adapter.getValue('workboard:meta:seeded')).toBe(true);
   });
 
-  it('never re-seeds once the user has cleared their data', async () => {
+  it('re-seeds an emptied app in development so the backlog always comes back', async () => {
     const adapter = new FakeStorageAdapter();
     await initializeApp(adapter);
 
     await clearAllData(adapter);
-    const sizeAfterClear = adapter.getStoreSize();
+    expect(await adapter.getAll('workboard:projects:')).toMatchObject({ ok: true, value: [] });
 
     await initializeApp(adapter);
 
-    expect(adapter.getStoreSize()).toBe(sizeAfterClear);
+    const projects = await adapter.getAll('workboard:projects:');
+    expect(projects.ok && projects.value).toHaveLength(seedJson.projects.length);
+  });
+
+  it('never seeds or re-seeds in production', async () => {
+    vi.stubEnv('DEV', false);
+    const adapter = new FakeStorageAdapter();
+
+    await initializeApp(adapter);
+    expect(await adapter.getAll('workboard:projects:')).toMatchObject({ ok: true, value: [] });
+
+    const sizeAfterFirstRun = adapter.getStoreSize();
+    await initializeApp(adapter);
+    expect(adapter.getStoreSize()).toBe(sizeAfterFirstRun);
+    expect(await adapter.getAll('workboard:projects:')).toMatchObject({ ok: true, value: [] });
   });
 });
 

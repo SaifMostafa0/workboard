@@ -3,7 +3,7 @@
 Living snapshot of where the project is. **Update this file whenever you finish meaningful work**,
 alongside the relevant tickets. The generated [`BACKLOG.md`](BACKLOG.md) is the detailed ticket index.
 
-_Last updated: 2026-10-15_
+_Last updated: 2026-10-16_
 
 ## Where we are
 
@@ -20,6 +20,7 @@ The project now **manages itself with Workboard** and is documented for AI agent
 
 | Date       | Work                                                             | Ticket                                                 |
 | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
+| 2026-10-16 | Dev reseed: the backlog returns whenever a dev app is empty      | [WB-507](tickets/WB-507-dev-reseed.md)                 |
 | 2026-10-15 | Dev-only seed of Workboard's own backlog; demo data removed      | [WB-506](tickets/WB-506-dev-seed-workboard-backlog.md) |
 | 2026-10-15 | Epics / milestones with roll-up progress + epic filter           | [WB-401](tickets/WB-401-epics-milestones.md)           |
 | 2026-10-15 | Sub-tasks (parent/child) with progress + cascade delete          | [WB-102](tickets/WB-102-sub-tasks.md)                  |
@@ -45,11 +46,11 @@ _None._ Pick from the next-up list below.
 
 | Metric               | Value                         | Source                  |
 | -------------------- | ----------------------------- | ----------------------- |
-| Unit/component tests | 362 passing                   | `npm run test:run`      |
+| Unit/component tests | 363 passing                   | `npm run test:run`      |
 | E2E tests            | 154 passing, 2 skipped        | `npm run test:e2e`      |
-| Coverage             | 84.2% stmts / 77.2% branches  | `npm run test:coverage` |
+| Coverage             | 84.2% stmts / 77.5% branches  | `npm run test:coverage` |
 | Bundle budget        | 167 KB gzip JS (≤200 KB)      | `npm run size`          |
-| Backlog              | 27 tickets, 16 open / 11 done | `BACKLOG.md`            |
+| Backlog              | 28 tickets, 16 open / 12 done | `BACKLOG.md`            |
 
 ## Known limitations
 
