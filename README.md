@@ -8,15 +8,16 @@ A polished, responsive project and task management application demonstrating pro
 
 - **Project Management**: Create, edit, delete projects with color coding
 - **Task Management**: Full CRUD for tasks with status, priority, due dates, assignees, tags
+- **Epics**: Group tasks under project-scoped epics with done/total roll-up progress and a delete that detaches (never deletes) its tasks
 - **Sub-tasks**: Break a task into one level of sub-tasks with done/total progress and cascade delete/restore
 - **Kanban & List Views**: Switch between board and list layouts
-- **Advanced Filtering**: Search, filter by status/priority/project/due date, multi-column sorting
+- **Advanced Filtering**: Search, filter by status/priority/project/epic/due date, multi-column sorting
 - **Pagination**: Configurable page sizes with URL synchronization
 - **Trash & Undo**: Deleting is reversible — an inline Undo toast plus a Trash page to restore or remove items for good
 - **Bulk Actions**: Select multiple tasks to change their status or priority, or move them to Trash at once
 - **Command Palette**: `⌘/Ctrl + K` to jump anywhere or run actions, plus keyboard shortcuts (`?` for help, `g` then a letter to navigate)
 - **Data Persistence**: IndexedDB (with localStorage fallback) - works offline
-- **Import/Export**: JSON backup and restore with validation (projects, tasks, labels, saved views)
+- **Import/Export**: JSON backup and restore with validation (projects, tasks, epics, labels, saved views)
 - **Theme Support**: Light, dark, and system preference modes
 - **Accessibility**: WCAG 2.2 AA compliant
 - **Responsive Design**: Works on mobile, tablet, and desktop
@@ -129,7 +130,7 @@ src/
 │   └── feedback/           # Feedback components (Toast, Alert, Loading, ErrorBoundary)
 ├── features/               # Feature modules
 │   ├── dashboard/          # Dashboard page
-│   ├── projects/           # Projects CRUD + detail
+│   ├── projects/           # Projects CRUD + detail + epics
 │   ├── tasks/              # Tasks CRUD + filtering + sub-tasks
 │   ├── trash/              # Trash page (restore / permanently delete)
 │   └── settings/           # Settings & data management

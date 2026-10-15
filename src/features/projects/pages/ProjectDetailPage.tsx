@@ -1,23 +1,33 @@
 import { EmptyState, Loading } from '@/components/feedback';
 import { Button } from '@/components/ui/Button';
+import type { Epic } from '@/domain/epic';
+import { computeEpicProgress } from '@/domain/epic';
 import { PROJECT_COLOR_HEX, isValidProjectColor } from '@/domain/project';
 import type { Task, TaskPriority, TaskStatus } from '@/domain/task';
-import type { TaskInputValidated, TaskUpdateValidated } from '@/domain/validation';
+import type {
+  EpicInputValidated,
+  TaskInputValidated,
+  TaskUpdateValidated,
+} from '@/domain/validation';
 import { TaskCard } from '@/features/tasks/components/TaskCard';
 import { TaskFormDialog, TaskFormDialogWithData } from '@/features/tasks/components/TaskFormDialog';
 import {
+  useCreateEpic,
   useCreateTask,
+  useDeleteEpic,
   useDeleteTask,
   useEpics,
   useProject,
   useSettings,
   useTasks,
+  useUpdateEpic,
   useUpdateTask,
 } from '@/hooks/useData';
 import { cn } from '@/lib/cn';
-import { ArrowLeft, Kanban, List, ListTree, Plus } from 'lucide-react';
+import { ArrowLeft, Kanban, List, ListTree, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState, type DragEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { EpicFormDialog } from '../components/EpicFormDialog';
 import styles from './ProjectDetailPage.module.css';
 
 export function ProjectDetailPage() {
@@ -31,14 +41,19 @@ export function ProjectDetailPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showSubtasks, setShowSubtasks] = useState(false);
   const [subtaskParent, setSubtaskParent] = useState<Task | null>(null);
+  const [showCreateEpic, setShowCreateEpic] = useState(false);
+  const [editingEpic, setEditingEpic] = useState<Epic | null>(null);
 
   const { data: project, isLoading: projectLoading } = useProject(projectId || '');
-  const { data: epics } = useEpics();
+  const { data: epics } = useEpics(projectId || '');
   const { data: tasks, isLoading: tasksLoading } = useTasks({ projectId });
   const { data: settings } = useSettings();
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const createEpic = useCreateEpic();
+  const updateEpic = useUpdateEpic();
+  const deleteEpic = useDeleteEpic();
 
   const showCompleted = settings?.showCompletedTasks ?? true;
 
@@ -153,6 +168,31 @@ export function ProjectDetailPage() {
     setEditingTask(null);
   };
 
+  const handleCreateEpic = (data: EpicInputValidated) => {
+    createEpic.mutate(
+      { ...data, projectId: projectId! },
+      { onSuccess: () => setShowCreateEpic(false) }
+    );
+  };
+
+  const handleEditEpic = (data: EpicInputValidated) => {
+    if (!editingEpic) return;
+    updateEpic.mutate(
+      { id: editingEpic.id, update: data },
+      { onSuccess: () => setEditingEpic(null) }
+    );
+  };
+
+  const handleDeleteEpic = (epic: Epic) => {
+    if (
+      window.confirm(
+        `Move "${epic.name}" to Trash? Tasks assigned to it will be kept but unassigned.`
+      )
+    ) {
+      deleteEpic.mutate(epic.id);
+    }
+  };
+
   const updateViewMode = (mode: 'kanban' | 'list') => {
     setViewMode(mode);
     const params = new URLSearchParams(searchParams);
@@ -236,28 +276,52 @@ export function ProjectDetailPage() {
 
       {/* Epic progress roll-up */}
       <section className={styles.epicsBar} aria-label="Epic progress">
-        <h2 className={styles.epicsTitle}>Epics</h2>
+        <div className={styles.epicsHeader}>
+          <h2 className={styles.epicsTitle}>Epics</h2>
+          <Button variant="outline" size="sm" onClick={() => setShowCreateEpic(true)}>
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            New Epic
+          </Button>
+        </div>
         <div className={styles.epicsList}>
           {epics?.map((epic) => {
-            const epicTasks = allTasks.filter((t) => t.epicId === epic.id);
-            const done = epicTasks.filter((t) => t.status === 'done').length;
-            const total = epicTasks.length;
+            const { done, total, ratio } = computeEpicProgress(epic.id, allTasks);
             return (
               <div key={epic.id} className={styles.epicItem}>
                 <span className={styles.epicName}>{epic.name}</span>
                 <span className={styles.epicProgress}>
-                  {done}/{total}
+                  {done}/{total} ({Math.round(ratio * 100)}%)
                 </span>
                 <progress
-                  value={total > 0 ? done / total : 0}
+                  value={ratio}
                   max={1}
                   aria-label={`${epic.name}: ${done} of ${total} complete`}
                 />
+                <div className={styles.epicActions}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingEpic(epic)}
+                    aria-label={`Edit ${epic.name}`}
+                  >
+                    <Pencil className="w-4 h-4" aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteEpic(epic)}
+                    aria-label={`Delete ${epic.name}`}
+                  >
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
+                  </Button>
+                </div>
               </div>
             );
           })}
           {(!epics || epics.length === 0) && (
-            <p className={styles.epicEmpty}>No epics yet. Create one to group tasks.</p>
+            <p className={styles.epicEmpty}>
+              No epics yet. Create one to group tasks and track rolled-up progress.
+            </p>
           )}
         </div>
       </section>
@@ -334,6 +398,7 @@ export function ProjectDetailPage() {
         projectId={subtaskParent?.projectId ?? projectId!}
         parentId={subtaskParent?.id}
         parentTitle={subtaskParent?.title}
+        epics={epics}
         isLoading={createTask.isPending}
         onSubmit={handleCreateTask}
       />
@@ -353,9 +418,36 @@ export function ProjectDetailPage() {
             dueDate: editingTask.dueDate,
             assignee: editingTask.assignee,
             tags: editingTask.tags,
+            epicId: editingTask.epicId,
           }}
+          epics={epics}
           isLoading={updateTask.isPending}
           onSubmit={(data) => handleEditTask(data, editingTask.id)}
+        />
+      )}
+
+      {/* Create Epic Dialog */}
+      <EpicFormDialog
+        open={showCreateEpic}
+        onClose={() => setShowCreateEpic(false)}
+        projectId={projectId!}
+        isLoading={createEpic.isPending}
+        onSubmit={handleCreateEpic}
+      />
+
+      {/* Edit Epic Dialog */}
+      {editingEpic && (
+        <EpicFormDialog
+          open
+          onClose={() => setEditingEpic(null)}
+          projectId={projectId!}
+          initialData={{
+            id: editingEpic.id,
+            name: editingEpic.name,
+            description: editingEpic.description,
+          }}
+          isLoading={updateEpic.isPending}
+          onSubmit={handleEditEpic}
         />
       )}
     </div>

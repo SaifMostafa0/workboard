@@ -79,6 +79,7 @@ export const taskSchema = z.object({
 // Label schemas
 export const epicSchema = z.object({
   id: z.string().uuid('Invalid epic ID'),
+  projectId: z.string().uuid('Invalid project ID'),
   name: z.string().min(1, 'Epic name is required').max(100),
   description: z.string().max(500).optional(),
   createdAt: z.string().datetime({ offset: true }),
@@ -87,6 +88,7 @@ export const epicSchema = z.object({
 });
 
 export const epicInputSchema = z.object({
+  projectId: z.string().uuid('Invalid project ID'),
   name: z.string().min(1, 'Epic name is required').max(100),
   description: z.string().max(500, 'Description must be 500 characters or less').default(''),
 });
@@ -111,6 +113,7 @@ export const savedViewFiltersSchema = z.object({
   sort: z.string().optional(),
   order: z.enum(['asc', 'desc']).optional(),
   tags: z.array(z.string()).optional(),
+  epic: z.string().optional(),
 });
 
 export const savedViewSchema = z.object({
@@ -307,6 +310,43 @@ export const validateImportRelationships = (data: ImportDataValidated): Validati
         },
       ],
       'Tasks reference epics that are not part of this import'
+    );
+  }
+
+  // Check for orphan epics (missing project)
+  const orphanEpicProjectIds = data.epics
+    .map((epic) => epic.projectId)
+    .filter((id) => !projectIds.has(id));
+  if (orphanEpicProjectIds.length > 0) {
+    return createValidationError(
+      [
+        {
+          field: 'epics',
+          message: `Epics reference non-existent projects: ${[...new Set(orphanEpicProjectIds)].join(', ')}`,
+          code: 'orphan_epics',
+        },
+      ],
+      'Epics reference projects that are not part of this import'
+    );
+  }
+
+  // A task's epic must belong to the same project as the task.
+  const epicById = new Map(data.epics.map((epic) => [epic.id, epic]));
+  const crossProjectTasks = data.tasks.filter((task) => {
+    if (!task.epicId) return false;
+    const epic = epicById.get(task.epicId);
+    return epic ? epic.projectId !== task.projectId : false;
+  });
+  if (crossProjectTasks.length > 0) {
+    return createValidationError(
+      [
+        {
+          field: 'tasks',
+          message: `Tasks reference epics from another project: ${crossProjectTasks.map((task) => task.id).join(', ')}`,
+          code: 'epic_project_mismatch',
+        },
+      ],
+      'A task and its epic must belong to the same project'
     );
   }
 

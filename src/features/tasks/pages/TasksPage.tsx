@@ -160,7 +160,7 @@ export function TasksPage() {
   const { data: tasks, isLoading: tasksLoading, error: tasksError } = useTasks();
   const { data: projects, error: projectsError } = useProjects();
   const { data: views } = useSavedViews();
-  const { data: epics } = useEpics();
+  const { data: epics } = useEpics(localProject || undefined);
   const activeView = views?.find((view) => view.id === activeViewId) ?? null;
   const availableTags = useMemo(() => {
     const tags = new Set<string>();
@@ -555,6 +555,7 @@ export function TasksPage() {
     setLocalProject(next.project);
     setLocalDue(next.due);
     setLocalTags(next.tags);
+    setLocalEpic(next.epic ?? '');
     setLocalSortBy(next.sort);
     setLocalSortOrder(next.order);
     setLocalPage(1);
@@ -911,6 +912,7 @@ export function TasksPage() {
         projects={projects?.map((p) => ({ id: p.id, name: p.name }))}
         parentId={subtaskParent?.id}
         parentTitle={subtaskParent?.title}
+        epics={epics}
         isLoading={createTask.isPending}
         onSubmit={handleCreateTask}
       />
@@ -929,7 +931,9 @@ export function TasksPage() {
             dueDate: editingTask.dueDate,
             assignee: editingTask.assignee,
             tags: editingTask.tags,
+            epicId: editingTask.epicId,
           }}
+          epics={epics}
           isLoading={updateTask.isPending}
           onSubmit={handleEditTask}
         />

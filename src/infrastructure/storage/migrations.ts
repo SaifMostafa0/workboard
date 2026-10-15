@@ -145,7 +145,13 @@ export const importData = async (
   if (relationshipError) return err(relationshipError);
 
   if (options.mode === 'replace') {
-    for (const prefix of [PROJECT_PREFIX, TASK_PREFIX, LABEL_PREFIX, SAVED_VIEW_PREFIX]) {
+    for (const prefix of [
+      PROJECT_PREFIX,
+      TASK_PREFIX,
+      LABEL_PREFIX,
+      SAVED_VIEW_PREFIX,
+      EPIC_PREFIX,
+    ]) {
       const clearResult = await adapter.clear(prefix);
       if (!clearResult.ok) return clearResult;
     }

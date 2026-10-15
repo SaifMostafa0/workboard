@@ -1,6 +1,11 @@
 import type { Epic, EpicInput, EpicUpdate } from '@/domain/epic';
 import type { DomainError } from '@/domain/errors';
 import { createNotFoundError } from '@/domain/errors';
+import {
+  safeValidateEpicInput,
+  safeValidateEpicUpdate,
+  zodErrorToValidationError,
+} from '@/domain/validation';
 import type { Result, StorageAdapter } from '@/infrastructure/storage/storageAdapter';
 import {
   createCollectionPrefix,
@@ -31,7 +36,7 @@ export class LocalEpicRepository implements IEpicRepository {
     if (!result.ok) return err(result.error);
     const active = result.value.filter((e) => !e.deletedAt);
     if (projectId) {
-      return ok(active.filter((e) => e.id.startsWith(projectId)));
+      return ok(active.filter((e) => e.projectId === projectId));
     }
     return ok(active);
   }
@@ -51,9 +56,14 @@ export class LocalEpicRepository implements IEpicRepository {
   }
 
   async create(input: EpicInput): Promise<Result<Epic, DomainError>> {
+    const validation = safeValidateEpicInput(input);
+    if (!validation.success) {
+      return err(zodErrorToValidationError(validation.error));
+    }
+
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
-    const epic: Epic = { id, ...input, createdAt: now, updatedAt: now };
+    const epic: Epic = { id, ...validation.data, createdAt: now, updatedAt: now };
     const key = createStorageKey('epics', id);
     const setResult = await this.adapter.set(key, epic);
     if (!setResult.ok) return err(setResult.error);
@@ -63,7 +73,17 @@ export class LocalEpicRepository implements IEpicRepository {
   async update(id: string, update: EpicUpdate): Promise<Result<Epic, DomainError>> {
     const getResult = await this.get(id);
     if (!getResult.ok) return getResult;
-    const updated: Epic = { ...getResult.value, ...update, updatedAt: new Date().toISOString() };
+
+    const validation = safeValidateEpicUpdate(update);
+    if (!validation.success) {
+      return err(zodErrorToValidationError(validation.error));
+    }
+
+    const updated: Epic = {
+      ...getResult.value,
+      ...validation.data,
+      updatedAt: new Date().toISOString(),
+    };
     const key = createStorageKey('epics', id);
     const setResult = await this.adapter.set(key, updated);
     if (!setResult.ok) return err(setResult.error);
@@ -106,9 +126,7 @@ export class LocalEpicRepository implements IEpicRepository {
   }
 
   async listByProject(projectId: string): Promise<Result<Epic[], DomainError>> {
-    const result = await this.list(projectId);
-    if (!result.ok) return result;
-    return ok(result.value.filter((e) => e.id.startsWith(projectId)));
+    return this.list(projectId);
   }
 }
 

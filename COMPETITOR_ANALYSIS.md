@@ -242,41 +242,41 @@ is a feature), the opinionated defaults that reduce configuration, and the fact 
 
 Legend: ✅ full · 🟡 partial/paid-tier/limited · ❌ absent · ➖ N/A (single-user, local)
 
-| Capability                         |     Workboard      |     Jira      |  Trello   | Linear |
-| ---------------------------------- | :----------------: | :-----------: | :-------: | :----: |
-| Projects / boards                  |         ✅         |      ✅       |    ✅     |   ✅   |
-| Tasks / issues / cards             |         ✅         |      ✅       |    ✅     |   ✅   |
-| Kanban board                       |         ✅         |      ✅       |    ✅     |   ✅   |
-| List/table view                    |         ✅         |      ✅       |    🟡     |   ✅   |
-| Calendar / timeline / roadmap      |         ❌         |      ✅       |    🟡     |   ✅   |
-| Status / priority / due / assignee |         ✅         |      ✅       |    🟡     |   ✅   |
-| Labels / tags                      |         ✅         |      ✅       |    ✅     |   ✅   |
-| Advanced filter + sort             |         ✅         |      ✅       |    🟡     |   ✅   |
-| Saved views / filters              |         ✅         |      ✅       |    🟡     |   ✅   |
-| Bulk actions                       |         ✅         |      ✅       |    🟡     |   ✅   |
-| Subtasks / dependencies / epics    |   🟡 (sub-tasks)   |      ✅       |    🟡     |   ✅   |
-| Sprints / cycles / velocity        |         ❌         |      ✅       |    ❌     |   ✅   |
-| Reporting / dashboards             | 🟡 (basic metrics) |      ✅       |    🟡     |   ✅   |
-| Automation rules                   |         ❌         |      ✅       |    🟡     |   🟡   |
-| Real-time collaboration            |         ❌         |      ✅       |    ✅     |   ✅   |
-| Comments / mentions                |         ❌         |      ✅       |    ✅     |   ✅   |
-| File attachments                   |         ❌         |      ✅       |    🟡     |   ✅   |
-| Notifications / email              |         ❌         |      ✅       |    ✅     |   ✅   |
-| Mobile apps                        |   ❌ (web only)    |      ✅       |    ✅     |   ✅   |
-| Integrations / marketplace         |         ❌         |     ✅✅      |    ✅     |   🟡   |
-| Git / dev-tool integration         |         ❌         |      ✅       |    🟡     |  ✅✅  |
-| Auth / SSO / permissions           |         ❌         |      ✅       |    🟡     |   ✅   |
-| Offline / local-first              |         ✅         |      ❌       |    🟡     |   ❌   |
-| Data ownership / no-lock-in        |         ✅         |      🟡       |    🟡     |   🟡   |
-| Command palette / keyboard-first   |         ✅         |      🟡       |    🟡     |  ✅✅  |
-| Accessibility (WCAG 2.2 AA target) |         ✅         |      🟡       |    🟡     |   🟡   |
-| Free for unlimited use             |         ✅         | 🟡 (10 users) | 🟡 (caps) |   🟡   |
+| Capability                         |       Workboard       |     Jira      |  Trello   | Linear |
+| ---------------------------------- | :-------------------: | :-----------: | :-------: | :----: |
+| Projects / boards                  |          ✅           |      ✅       |    ✅     |   ✅   |
+| Tasks / issues / cards             |          ✅           |      ✅       |    ✅     |   ✅   |
+| Kanban board                       |          ✅           |      ✅       |    ✅     |   ✅   |
+| List/table view                    |          ✅           |      ✅       |    🟡     |   ✅   |
+| Calendar / timeline / roadmap      |          ❌           |      ✅       |    🟡     |   ✅   |
+| Status / priority / due / assignee |          ✅           |      ✅       |    🟡     |   ✅   |
+| Labels / tags                      |          ✅           |      ✅       |    ✅     |   ✅   |
+| Advanced filter + sort             |          ✅           |      ✅       |    🟡     |   ✅   |
+| Saved views / filters              |          ✅           |      ✅       |    🟡     |   ✅   |
+| Bulk actions                       |          ✅           |      ✅       |    🟡     |   ✅   |
+| Subtasks / dependencies / epics    | 🟡 (sub-tasks, epics) |      ✅       |    🟡     |   ✅   |
+| Sprints / cycles / velocity        |          ❌           |      ✅       |    ❌     |   ✅   |
+| Reporting / dashboards             |  🟡 (basic metrics)   |      ✅       |    🟡     |   ✅   |
+| Automation rules                   |          ❌           |      ✅       |    🟡     |   🟡   |
+| Real-time collaboration            |          ❌           |      ✅       |    ✅     |   ✅   |
+| Comments / mentions                |          ❌           |      ✅       |    ✅     |   ✅   |
+| File attachments                   |          ❌           |      ✅       |    🟡     |   ✅   |
+| Notifications / email              |          ❌           |      ✅       |    ✅     |   ✅   |
+| Mobile apps                        |     ❌ (web only)     |      ✅       |    ✅     |   ✅   |
+| Integrations / marketplace         |          ❌           |     ✅✅      |    ✅     |   🟡   |
+| Git / dev-tool integration         |          ❌           |      ✅       |    🟡     |  ✅✅  |
+| Auth / SSO / permissions           |          ❌           |      ✅       |    🟡     |   ✅   |
+| Offline / local-first              |          ✅           |      ❌       |    🟡     |   ❌   |
+| Data ownership / no-lock-in        |          ✅           |      🟡       |    🟡     |   🟡   |
+| Command palette / keyboard-first   |          ✅           |      🟡       |    🟡     |  ✅✅  |
+| Accessibility (WCAG 2.2 AA target) |          ✅           |      🟡       |    🟡     |   🟡   |
+| Free for unlimited use             |          ✅           | 🟡 (10 users) | 🟡 (caps) |   🟡   |
 
 **Reading the matrix:** Workboard is competitive on the **single-user data and
 interaction layer** and still absent from the **collaboration and integration
-layers**; hierarchy is now partial (sub-tasks shipped in `WB-102`; epics and
-dependencies are still open) — which is exactly its stated limitation, not a
-defect to hide.
+layers**; hierarchy is now largely covered (sub-tasks in `WB-102`, project-scoped
+epics in `WB-401`; task dependencies are still open) — which is exactly its stated
+limitation, not a defect to hide.
 
 ---
 
@@ -369,8 +369,10 @@ into genuine differentiators; the rest close credibility gaps toward "real tool"
 1. **Finish Saved Views** — ✅ **done** (`WB-101`): saved `filters` now apply on the Tasks page
    via URL state, with a "save current filters as a view" action and tag filtering. This closed the
    one half-built feature.
-2. **Sub-tasks** — ✅ **done** (`WB-102`): optional `parentId` with one-level nesting,
-   done/total progress, and cascade delete/restore through the trash. Task
+2. **Sub-tasks + epics** — ✅ **done** (`WB-102`, `WB-401`): optional `parentId` with one-level
+   nesting, done/total progress, and cascade delete/restore through the trash; plus project-scoped
+   epics above tasks with a done/total roll-up, an epic selector on the task form, an epic filter
+   (URL + saved views), and a delete that detaches rather than deletes tasks. Task
    dependencies (`blockedBy`) remain open (`WB-103`).
 3. **Multi-format export/import + print/CSV** — reinforce the data-ownership story
    (CSV/Markdown export, printable board).

@@ -61,4 +61,34 @@ describe('TaskFormDialog', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it('assigns the task to a selected epic', async () => {
+    const user = userEvent.setup();
+    const epicId = '123e4567-e89b-42d3-a456-426614174030';
+    const { onSubmit } = renderDialog({ epics: [{ id: epicId, name: 'Authentication' }] });
+
+    await user.type(screen.getByLabelText(/Title/), 'Add password reset');
+    await user.selectOptions(screen.getByLabelText(/Epic/), epicId);
+    await user.click(screen.getByRole('button', { name: 'Create Task' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Add password reset', epicId }),
+      expect.anything()
+    );
+  });
+
+  it('submits without an epic when none is chosen', async () => {
+    const user = userEvent.setup();
+    const { onSubmit } = renderDialog({ epics: [{ id: 'e1', name: 'Authentication' }] });
+
+    await user.type(screen.getByLabelText(/Title/), 'Unassigned task');
+    await user.click(screen.getByRole('button', { name: 'Create Task' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Unassigned task', epicId: undefined }),
+      expect.anything()
+    );
+  });
 });

@@ -17,15 +17,15 @@
 │  │  (useProjects, useTasks, useDashboard, useSettings)      │  │
 │  └──────────────────────────┬────────────────────────────────┘  │
 │                             │                                    │
-│         ┌───────────────────┼───────────────────┐               │
-│         ▼                   ▼                   ▼               │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
-│  │  Project    │    │   Task      │    │  Settings   │        │
-│  │ Repository  │    │ Repository  │    │ Repository  │        │
-│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘        │
-│         │                  │                  │                │
-│         └──────────────────┼──────────────────┘                │
-│                            ▼                                    │
+│         ┌────────────────┬───────────────┬───────────────┐      │
+│         ▼                ▼               ▼               ▼      │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────┐ │
+│  │  Project    │  │    Task     │  │    Epic     │  │Settings │ │
+│  │ Repository  │  │ Repository  │  │ Repository  │  │Repo     │ │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └────┬────┘ │
+│         │                │                │              │      │
+│         └────────────────┴───────┬────────┴──────────────┘      │
+│                                  ▼                              │
 │                 ┌─────────────────────┐                         │
 │                 │  Storage Adapter    │                         │
 │                 │  (IndexedDB/Local)  │                         │
@@ -52,10 +52,11 @@
 ### 3. Domain Layer (`src/domain/`)
 
 - **Pure TypeScript**: No React dependencies
-- **Types**: `Project`, `Task`, enums, branded types
+- **Types**: `Project`, `Task`, `Epic`, enums, branded types
 - **Validation**: Zod schemas for runtime validation
 - **Business Rules**: Pure functions for calculations
   - `calculateCompletionPercentage(tasks)`
+  - `computeEpicProgress(epicId, tasks)`
   - `isOverdue(task, referenceDate)`
   - `filterTasks(tasks, filters)`
   - `sortTasks(tasks, sortConfig)`
@@ -63,12 +64,12 @@
 
 ### 4. Repository Layer (`src/infrastructure/repositories/`)
 
-- **Interface**: `IProjectRepository`, `ITaskRepository`
-- **Implementations**: `LocalProjectRepository`, `LocalTaskRepository`
+- **Interface**: `IProjectRepository`, `ITaskRepository`, `IEpicRepository`
+- **Implementations**: `LocalProjectRepository`, `LocalTaskRepository`, `LocalEpicRepository`
 - **Responsibilities**:
   - CRUD operations
   - Query operations (list, search, filter)
-  - Relationship integrity (cascade delete)
+  - Relationship integrity (cascade delete; epics **detach** their tasks on delete)
   - Migration handling
 - **Error Handling**: Discriminated union results (`Ok<T>` / `Err<StorageError>`)
 
@@ -294,6 +295,7 @@ interface StorageSchema {
   version: number;
   projects: Record<ProjectId, StoredProject>;
   tasks: Record<TaskId, StoredTask>;
+  epics: Record<EpicId, StoredEpic>;
   settings: UserSettings;
 }
 ```

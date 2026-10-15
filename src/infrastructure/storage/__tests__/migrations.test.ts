@@ -61,7 +61,7 @@ describe('initializeApp', () => {
 });
 
 describe('clearAllData', () => {
-  it('removes projects, tasks, labels, saved views and settings but keeps schema metadata', async () => {
+  it('removes projects, tasks, labels, saved views, epics and settings but keeps schema metadata', async () => {
     const adapter = new FakeStorageAdapter();
     await initializeApp(adapter);
     await adapter.set('workboard:labels:123e4567-e89b-12d3-a456-426614174030', {
@@ -77,6 +77,14 @@ describe('clearAllData', () => {
       createdAt: '2024-01-01T00:00:00.000Z',
       updatedAt: '2024-01-01T00:00:00.000Z',
     });
+    await adapter.set('workboard:epics:123e4567-e89b-12d3-a456-426614174032', {
+      id: '123e4567-e89b-12d3-a456-426614174032',
+      projectId: '123e4567-e89b-12d3-a456-426614174033',
+      name: 'Auth',
+      description: '',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    });
 
     await clearAllData(adapter);
 
@@ -84,11 +92,13 @@ describe('clearAllData', () => {
     const tasks = await adapter.getAll('workboard:tasks:');
     const labels = await adapter.getAll('workboard:labels:');
     const savedViews = await adapter.getAll('workboard:savedViews:');
+    const epics = await adapter.getAll('workboard:epics:');
     const settings = await adapter.getAll('workboard:settings:');
     expect(projects.ok && projects.value).toEqual([]);
     expect(tasks.ok && tasks.value).toEqual([]);
     expect(labels.ok && labels.value).toEqual([]);
     expect(savedViews.ok && savedViews.value).toEqual([]);
+    expect(epics.ok && epics.value).toEqual([]);
     expect(settings.ok && settings.value).toEqual([]);
     expect(adapter.hasKey('workboard:meta:schema')).toBe(true);
     expect(adapter.hasKey('workboard:meta:seeded')).toBe(true);
@@ -168,6 +178,70 @@ describe('exportAllData / importData', () => {
     const savedViews = await target.getAll('workboard:savedViews:');
     expect(labels.ok && labels.value).toHaveLength(1);
     expect(savedViews.ok && savedViews.value).toHaveLength(1);
+  });
+
+  it('round-trips epics', async () => {
+    const source = new FakeStorageAdapter();
+    const project = {
+      id: '123e4567-e89b-12d3-a456-426614174050',
+      name: 'Project',
+      description: '',
+      color: 'blue',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    };
+    const epic = {
+      id: '123e4567-e89b-12d3-a456-426614174051',
+      projectId: project.id,
+      name: 'Authentication',
+      description: '',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    };
+    await source.set(`workboard:projects:${project.id}`, project);
+    await source.set(`workboard:epics:${epic.id}`, epic);
+
+    const exported = await exportAllData(source);
+    expect(exported.ok).toBe(true);
+    if (!exported.ok) return;
+    expect(exported.value.epics).toHaveLength(1);
+
+    const target = new FakeStorageAdapter();
+    const imported = await importData(target, exported.value, { mode: 'replace' });
+
+    expect(imported.ok).toBe(true);
+    expect(imported.ok && imported.value.epicsCreated).toBe(1);
+
+    const epics = await target.getAll('workboard:epics:');
+    expect(epics.ok && epics.value).toHaveLength(1);
+  });
+
+  it('replace mode removes existing epics before importing', async () => {
+    const adapter = new FakeStorageAdapter();
+    await adapter.set('workboard:epics:123e4567-e89b-12d3-a456-426614174052', {
+      id: '123e4567-e89b-12d3-a456-426614174052',
+      projectId: '123e4567-e89b-12d3-a456-426614174053',
+      name: 'Stale epic',
+      description: '',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    });
+
+    const imported = await importData(
+      adapter,
+      validateImportData({
+        version: 1,
+        projects: [],
+        tasks: [],
+        labels: [],
+        savedViews: [],
+        epics: [],
+      }),
+      { mode: 'replace' }
+    );
+
+    expect(imported.ok).toBe(true);
+    expect(adapter.hasKey('workboard:epics:123e4567-e89b-12d3-a456-426614174052')).toBe(false);
   });
 
   it('imports a legacy payload that predates labels and saved views', async () => {

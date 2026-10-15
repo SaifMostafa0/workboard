@@ -913,12 +913,12 @@ export function useDeleteSavedView() {
 }
 
 // Combined hook for convenience
-export function useEpics() {
+export function useEpics(projectId?: string) {
   return useQuery({
-    queryKey: queryKeys.epics,
+    queryKey: [...queryKeys.epics, projectId ?? null],
     queryFn: async () => {
       const repo = getEpicRepository();
-      const result = await repo.list();
+      const result = await repo.list(projectId);
       if (!result.ok) throw new Error(result.error.message);
       return result.value;
     },

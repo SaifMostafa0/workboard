@@ -304,8 +304,8 @@
       "id": "f77186c8-a539-44fe-9d93-efa3e5da1213",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000104",
       "title": "WB-401 Add epics / milestones above tasks",
-      "description": "Workboard's model is Project → Task. Jira and Linear add a planning tier (epic / milestone) above\ntasks, which is essential for grouping work and rolling up progress. This is the largest\nproduct-model gap versus the enterprise tools.\n\n**Acceptance criteria**\n- [x] Domain (`src/domain/epic.ts`) with `Epic` / `EpicInput`; `Task` gained optional `epicId`; `validation.ts` adds schemas + import/export/relationships; `epicRepository` with CRUD + detach-on-delete via `useDeleteEpic`; hooks `useEpics`/`useCreateEpic`/`useUpdateEpic`/`useDeleteEpic`; `migrations` exports/imports/clears `epics`.\n- [ ] Epics appear on the project detail view with rolled-up progress (done / total, % complete).\n- [ ] Tasks can be assigned to an epic in the task form; unassigned tasks remain valid.\n- [ ] An epic filter is available on the Tasks page and in saved views.\n- [ ] Deleting an epic detaches tasks rather than deleting them (documented behaviour).\n- [ ] Schema change is additive and backward compatible; migrations tested.\n- [ ] Domain and component tests cover roll-ups and detach-on-delete.\n\n- Sequence with `WB-102` (sub-tasks) to avoid two competing hierarchy mechanisms.\n- Decide and document the relationship: is an epic also a task type, or a separate entity? Recommendation: separate entity for clarity.\n\nTicket file: tickets/WB-401-epics-milestones.md\n\nSource: competitor-analysis",
-      "status": "in_progress",
+      "description": "Workboard's model is Project → Task. Jira and Linear add a planning tier (epic / milestone) above\ntasks, which is essential for grouping work and rolling up progress. This is the largest\nproduct-model gap versus the enterprise tools.\n\n**Acceptance criteria**\n- [x] Domain (`src/domain/epic.ts`) with `Epic` / `EpicInput`; `Task` gained optional `epicId`; `validation.ts` adds schemas + import/export/relationships; `epicRepository` with CRUD + detach-on-delete via `useDeleteEpic`; hooks `useEpics`/`useCreateEpic`/`useUpdateEpic`/`useDeleteEpic`; `migrations` exports/imports/clears `epics`.\n- [x] Epics appear on the project detail view with rolled-up progress (done / total, % complete).\n- [x] Tasks can be assigned to an epic in the task form; unassigned tasks remain valid.\n- [x] An epic filter is available on the Tasks page and in saved views.\n- [x] Deleting an epic detaches tasks rather than deleting them (documented behaviour).\n- [x] Schema change is additive and backward compatible; migrations tested.\n- [x] Domain and component tests cover roll-ups and detach-on-delete.\n\n- Sequence with `WB-102` (sub-tasks) to avoid two competing hierarchy mechanisms.\n- Decide and document the relationship: is an epic also a task type, or a separate entity? Recommendation: separate entity for clarity.\n\nTicket file: tickets/WB-401-epics-milestones.md\n\nSource: competitor-analysis",
+      "status": "done",
       "priority": "high",
       "tags": [
         "workboard",
@@ -317,7 +317,8 @@
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
       "updatedAt": "2026-10-15T00:00:00.000Z",
-      "assignee": "agent:opencode"
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-15T00:00:00.000Z"
     },
     {
       "id": "6524de51-5b54-4dd3-8567-63939800374d",

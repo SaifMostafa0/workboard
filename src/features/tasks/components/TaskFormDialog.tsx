@@ -26,6 +26,8 @@ interface TaskFormDialogProps {
   onSubmit: (data: TaskInputValidated | TaskUpdateValidated) => void;
   /** When provided and creating (not editing), a project selector is shown. */
   projects?: Array<{ id: string; name: string }>;
+  /** Optional list of epics in the target project for the epic selector. */
+  epics?: Array<{ id: string; name: string }>;
   /** When set, the new task is created as a sub-task of this task. */
   parentId?: string;
   /** Display title of the parent task (for the sub-task context note). */
@@ -42,6 +44,7 @@ export function TaskFormDialog({
   projects,
   parentId,
   parentTitle,
+  epics,
 }: TaskFormDialogProps) {
   const isEditing = !!taskId;
   const isSubtask = !isEditing && !!parentId;
@@ -65,6 +68,7 @@ export function TaskFormDialog({
       assignee: '',
       tags: [] as string[],
       parentId,
+      epicId: undefined,
     },
     mode: 'onChange',
   });
@@ -158,6 +162,20 @@ export function TaskFormDialog({
         </div>
 
         <div className={styles.row}>
+          <Select
+            {...register('epicId', {
+              setValueAs: (value) => (value === '' ? undefined : value),
+            })}
+            label="Epic (optional)"
+            options={[
+              { value: '', label: 'No epic' },
+              ...(epics ?? []).map((e) => ({ value: e.id, label: e.name })),
+            ]}
+            error={errors.epicId?.message}
+          />
+        </div>
+
+        <div className={styles.row}>
           <Input
             {...register('dueDate', {
               setValueAs: (value) => (value === '' ? undefined : value),
@@ -219,6 +237,7 @@ export function TaskFormDialogWithData({
   initialData,
   isLoading,
   onSubmit,
+  epics,
 }: TaskFormDialogWithDataProps) {
   const isEditing = !!initialData?.id;
   const schema = isEditing ? taskUpdateSchema : taskInputSchema;
@@ -240,6 +259,7 @@ export function TaskFormDialogWithData({
       dueDate: undefined,
       assignee: '',
       tags: [] as string[],
+      epicId: undefined,
       ...initialData,
     },
     mode: 'onChange',
@@ -327,6 +347,20 @@ export function TaskFormDialogWithData({
             label="Priority"
             options={TASK_PRIORITIES.map((p) => ({ value: p, label: p }))}
             error={errors.priority?.message}
+          />
+        </div>
+
+        <div className={styles.row}>
+          <Select
+            {...register('epicId', {
+              setValueAs: (value) => (value === '' ? undefined : value),
+            })}
+            label="Epic (optional)"
+            options={[
+              { value: '', label: 'No epic' },
+              ...(epics ?? []).map((e) => ({ value: e.id, label: e.name })),
+            ]}
+            error={errors.epicId?.message}
           />
         </div>
 

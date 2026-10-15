@@ -8,6 +8,7 @@ import {
   validateProjectInput,
   validateProjectUpdate,
   validateTask,
+  validateTaskEpicReference,
   validateTaskInput,
   validateTaskProjectReference,
   validateTaskUpdate,
@@ -286,6 +287,31 @@ describe('Validation', () => {
       expect(result.savedViews).toEqual([]);
     });
 
+    it('defaults epics to an empty array for legacy payloads', () => {
+      const result = validateImportData(validImportData);
+      expect(result.epics).toEqual([]);
+    });
+
+    it('parses epics when present', () => {
+      const result = validateImportData({
+        ...validImportData,
+        epics: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174030',
+            projectId: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'Authentication',
+            description: 'Sign-in and sessions',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+      });
+
+      expect(result.epics).toHaveLength(1);
+      expect(result.epics[0]?.name).toBe('Authentication');
+      expect(result.epics[0]?.projectId).toBe('123e4567-e89b-12d3-a456-426614174000');
+    });
+
     it('parses labels and saved views when present', () => {
       const result = validateImportData({
         ...validImportData,
@@ -393,6 +419,39 @@ describe('Validation', () => {
       const result = validateTaskProjectReference(task, projectIds);
       expect(result).not.toBeNull();
       expect(result?.type).toBe('VALIDATION_ERROR');
+    });
+  });
+
+  describe('validateTaskEpicReference', () => {
+    const task = {
+      projectId: '123e4567-e89b-12d3-a456-426614174000',
+      title: 'Test',
+      description: '',
+      status: 'todo' as const,
+      priority: 'medium' as const,
+      tags: [],
+      epicId: undefined,
+    };
+
+    it('returns null when no epic is assigned', () => {
+      expect(validateTaskEpicReference(task, new Set())).toBeNull();
+    });
+
+    it('returns null when the epic exists', () => {
+      const result = validateTaskEpicReference(
+        { ...task, epicId: '123e4567-e89b-12d3-a456-426614174001' },
+        new Set(['123e4567-e89b-12d3-a456-426614174001'])
+      );
+      expect(result).toBeNull();
+    });
+
+    it('returns an error for a dangling epic reference', () => {
+      const result = validateTaskEpicReference(
+        { ...task, epicId: '123e4567-e89b-12d3-a456-426614174002' },
+        new Set(['123e4567-e89b-12d3-a456-426614174001'])
+      );
+      expect(result).not.toBeNull();
+      expect(result?.issues[0]?.code).toBe('invalid_epic_reference');
     });
   });
 
@@ -556,6 +615,169 @@ describe('Validation', () => {
       const result = validateImportRelationships(data);
       expect(result).not.toBeNull();
       expect(result?.issues[0]?.field).toBe('savedViews');
+    });
+
+    it('accepts a task whose epic belongs to the same project', () => {
+      const data = {
+        version: 1,
+        projects: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'Project',
+            description: '',
+            color: 'blue' as const,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+        tasks: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174001',
+            projectId: '123e4567-e89b-12d3-a456-426614174000',
+            title: 'Task',
+            description: '',
+            status: 'todo' as const,
+            priority: 'medium' as const,
+            tags: [],
+            epicId: '123e4567-e89b-12d3-a456-426614174030',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+        labels: [],
+        savedViews: [],
+        epics: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174030',
+            projectId: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'Auth',
+            description: '',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+      };
+
+      expect(validateImportRelationships(data)).toBeNull();
+    });
+
+    it('returns error for orphan epics', () => {
+      const data = {
+        version: 1,
+        projects: [],
+        tasks: [],
+        labels: [],
+        savedViews: [],
+        epics: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174030',
+            projectId: '123e4567-e89b-12d3-a456-426614174099',
+            name: 'Auth',
+            description: '',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+      };
+
+      const result = validateImportRelationships(data);
+      expect(result).not.toBeNull();
+      expect(result?.issues[0]?.code).toBe('orphan_epics');
+    });
+
+    it('returns error for tasks that reference epics from another project', () => {
+      const data = {
+        version: 1,
+        projects: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'Project A',
+            description: '',
+            color: 'blue' as const,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+          {
+            id: '123e4567-e89b-12d3-a456-426614174002',
+            name: 'Project B',
+            description: '',
+            color: 'red' as const,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+        tasks: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174001',
+            projectId: '123e4567-e89b-12d3-a456-426614174000',
+            title: 'Task',
+            description: '',
+            status: 'todo' as const,
+            priority: 'medium' as const,
+            tags: [],
+            epicId: '123e4567-e89b-12d3-a456-426614174030',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+        labels: [],
+        savedViews: [],
+        epics: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174030',
+            projectId: '123e4567-e89b-12d3-a456-426614174002',
+            name: 'Auth',
+            description: '',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+      };
+
+      const result = validateImportRelationships(data);
+      expect(result).not.toBeNull();
+      expect(result?.issues[0]?.code).toBe('epic_project_mismatch');
+    });
+
+    it('returns error for duplicate epic IDs', () => {
+      const data = {
+        version: 1,
+        projects: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'Project',
+            description: '',
+            color: 'blue' as const,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+        tasks: [],
+        labels: [],
+        savedViews: [],
+        epics: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174030',
+            projectId: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'Auth',
+            description: '',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+          {
+            id: '123e4567-e89b-12d3-a456-426614174030',
+            projectId: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'Auth again',
+            description: '',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+      };
+
+      const result = validateImportRelationships(data);
+      expect(result).not.toBeNull();
+      expect(result?.issues[0]?.field).toBe('epics');
     });
   });
 });
