@@ -7,10 +7,14 @@ coverage
 playwright-report
 test-results
 blob-report
+.lighthouseci
 
 # Dependencies / lockfiles
 node_modules
 package-lock.json
+
+# Plain-text assets without a Prettier parser
+public/robots.txt
 
 # Generated / minified
 *.min.*

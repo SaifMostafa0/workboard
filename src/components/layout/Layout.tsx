@@ -127,8 +127,6 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           sidebarOpen && styles.sidebarOpen,
           sidebarCollapsed && styles.sidebarCollapsed
         )}
-        role="navigation"
-        aria-label="Main navigation"
       >
         <div className={styles.sidebarHeader}>
           {!sidebarCollapsed && <span className={styles.logo}>Workboard</span>}
@@ -145,7 +143,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
           </button>
         </div>
 
-        <nav className={styles.nav}>
+        <nav className={styles.nav} aria-label="Main navigation">
           <ul className={styles.navList}>
             {navigation.map(({ path, label, icon: Icon }) => (
               <li key={path} className={styles.navItem}>

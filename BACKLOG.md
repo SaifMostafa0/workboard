@@ -3,7 +3,7 @@
 > **Generated file — do not edit.** Run `npm run tickets:build` after changing `tickets/WB-*.md`.
 > The ticket markdown files are the source of truth; see [docs/project-management.md](docs/project-management.md).
 
-**8 open / 21 done / 29 total** · last update 2026-10-26
+**7 open / 22 done / 29 total** · last update 2026-10-26
 
 ## Progress by project
 
@@ -14,7 +14,7 @@
 | WB — Roadmap T3 · Platform | 5 | 0 | 5 |
 | WB — Product Gaps | 1 | 3 | 4 |
 | WB — Engineering & AI-DX | 0 | 9 | 9 |
-| WB — Quality & Accessibility | 2 | 1 | 3 |
+| WB — Quality & Accessibility | 1 | 2 | 3 |
 
 ## WB — Roadmap T1 · Quick Wins
 
@@ -84,7 +84,7 @@ Accessibility, performance budgets, and test-depth improvements.
 | ID | Title | Status | Priority | Assignee | Tags | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
 | WB-601 | Improve Select and DatePicker keyboard and ARIA support | Done | high | agent:opencode | area:a11y, area:ui, type:bug, ai:agent-friendly | 2026-10-15 |
-| WB-602 | Wire a Lighthouse CI performance budget gate | To Do | medium | unassigned | area:perf, area:ci, type:chore | 2026-10-14 |
+| WB-602 | Wire a Lighthouse CI performance budget gate | Done | medium | agent:opencode | area:perf, area:ci, type:chore | 2026-10-26 |
 | WB-603 | Raise branch coverage and cover labels and saved views | To Do | medium | unassigned | area:ci, type:test, area:domain | 2026-10-14 |
 
 ---

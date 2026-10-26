@@ -21,6 +21,9 @@ playwright-report
 blob-report
 test-results
 
+# Lighthouse CI output
+.lighthouseci
+
 # Environment
 .env
 .env.*

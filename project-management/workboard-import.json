@@ -581,8 +581,8 @@
       "id": "eefd2a32-b18a-40c6-9c24-aa5c54d96821",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000106",
       "title": "WB-602 Wire a Lighthouse CI performance budget gate",
-      "description": "`docs/performance.md` defines Lighthouse and Core Web Vitals targets and a `lighthouse-budget.json`,\nbut the numbers are aspirational because nothing runs them in CI. Turn the budgets into a gate.\n\n**Acceptance criteria**\n- [ ] A GitHub Actions job runs Lighthouse against the production preview for `/`, `/projects`, `/tasks`, `/settings`.\n- [ ] The existing `lighthouse-budget.json` is enforced; the job fails on regressions below target.\n- [ ] Measured results are recorded in `docs/performance.md` (replacing the template with real numbers).\n- [ ] The bundle-size budget check is part of the same job or a sibling job.\n- [ ] The job is documented in the README CI section.\n\n- Keep thresholds in the budget file, not hard-coded in the workflow.\n- If lab variance causes flakes, use median-of-runs with a small tolerance and document it.\n\nTicket file: tickets/WB-602-lighthouse-ci-gate.md\n\nSource: performance-doc",
-      "status": "todo",
+      "description": "`docs/performance.md` defines Lighthouse and Core Web Vitals targets and a `lighthouse-budget.json`,\nbut the numbers are aspirational because nothing runs them in CI. Turn the budgets into a gate.\n\n**Acceptance criteria**\n- [x] A GitHub Actions job runs Lighthouse against the production preview for `/`, `/projects`, `/tasks`, `/settings`.\n- [x] The existing `lighthouse-budget.json` is enforced; the job fails on regressions below target.\n- [x] Measured results are recorded in `docs/performance.md` (replacing the template with real numbers).\n- [x] The bundle-size budget check is part of the same job or a sibling job.\n- [x] The job is documented in the README CI section.\n\n- Keep thresholds in the budget file, not hard-coded in the workflow.\n- If lab variance causes flakes, use median-of-runs with a small tolerance and document it.\n\nTicket file: tickets/WB-602-lighthouse-ci-gate.md\n\nSource: performance-doc",
+      "status": "done",
       "priority": "medium",
       "tags": [
         "workboard",
@@ -592,8 +592,9 @@
         "type:chore"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-26T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-26T00:00:00.000Z"
     },
     {
       "id": "bad587aa-d133-473f-93ae-ed14d4522cbf",

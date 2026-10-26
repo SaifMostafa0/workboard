@@ -88,3 +88,34 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 7
+
+  lighthouse:
+    name: Lighthouse CI & bundle budget
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Check bundle size budget
+        run: npm run size
+
+      # Thresholds, URLs, run count, and the preview server all live in
+      # lighthouse-budget.json rather than in this workflow.
+      - name: Run Lighthouse CI against the production preview
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: ./lighthouse-budget.json
+          uploadArtifacts: true
+          artifactName: lighthouse-results

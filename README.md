@@ -94,6 +94,11 @@ The app will be available at `http://localhost:5173`
   formatting, lint, typecheck, unit/integration tests with coverage, the production
   build, a bundle-size budget check, and Playwright E2E tests (Chromium), including
   automated accessibility (axe) scans of every page. Reports are uploaded as artifacts.
+- **Lighthouse CI** (the `lighthouse` job in the same workflow): builds the production
+  bundle, enforces the gzip bundle budget, then audits `/`, `/projects`, `/tasks`, and
+  `/settings` against the production preview. Thresholds, URLs, and the three-run
+  median live in [`lighthouse-budget.json`](lighthouse-budget.json); regressions fail
+  the job and the Lighthouse reports are uploaded as artifacts.
 - **Dependabot** (`.github/dependabot.yml`): weekly grouped npm and GitHub Actions
   update PRs.
 - **Git hooks** (Husky + lint-staged): `pre-commit` runs ESLint and Prettier on staged
@@ -235,7 +240,12 @@ Production build targets:
 - Lighthouse Accessibility: ≥95
 - Lighthouse Best Practices: ≥95
 - Lighthouse SEO: ≥90
-- Bundle size: ≤100KB gzipped JS
+- Bundle size: ≤200KB gzipped JS and ≤20KB gzipped CSS
+
+Lighthouse audits `/`, `/projects`, `/tasks`, and `/settings` on the production build. The
+three-run median must clear the budgets in `lighthouse-budget.json`; see
+[docs/performance.md](docs/performance.md) for the latest measured baseline and
+methodology.
 
 ## Data Storage
 
