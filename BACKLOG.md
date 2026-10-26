@@ -3,14 +3,14 @@
 > **Generated file — do not edit.** Run `npm run tickets:build` after changing `tickets/WB-*.md`.
 > The ticket markdown files are the source of truth; see [docs/project-management.md](docs/project-management.md).
 
-**9 open / 20 done / 29 total** · last update 2026-10-26
+**8 open / 21 done / 29 total** · last update 2026-10-26
 
 ## Progress by project
 
 | Project | Open | Done | Total |
 | --- | ---: | ---: | ---: |
 | WB — Roadmap T1 · Quick Wins | 0 | 4 | 4 |
-| WB — Roadmap T2 · Differentiators | 1 | 3 | 4 |
+| WB — Roadmap T2 · Differentiators | 0 | 4 | 4 |
 | WB — Roadmap T3 · Platform | 5 | 0 | 5 |
 | WB — Product Gaps | 1 | 3 | 4 |
 | WB — Engineering & AI-DX | 0 | 9 | 9 |
@@ -36,7 +36,7 @@ Tier 2 roadmap: features that turn Workboard's gaps into differentiators.
 | WB-201 | Spike — optional self-hostable sync behind the repository interface | Done | high | agent:opencode | tier:2, area:sync, area:storage, type:spike | 2026-10-16 |
 | WB-202 | Add a calendar view | Done | medium | agent:opencode | tier:2, area:ui, area:ux, type:feature | 2026-10-26 |
 | WB-203 | Add a timeline / roadmap view | Done | medium | agent:opencode | tier:2, area:ui, area:ux, type:feature | 2026-10-26 |
-| WB-204 | Add basic reporting — cycle time, throughput and overdue trend | To Do | medium | unassigned | tier:2, area:ui, area:domain, type:feature | 2026-10-14 |
+| WB-204 | Add basic reporting — cycle time, throughput and overdue trend | Done | medium | agent:opencode | tier:2, area:ui, area:domain, type:feature | 2026-10-26 |
 
 ## WB — Roadmap T3 · Platform
 

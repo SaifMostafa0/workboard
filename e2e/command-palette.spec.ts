@@ -59,4 +59,15 @@ test.describe('Keyboard shortcuts', () => {
     await page.waitForURL('/projects');
     await expect(page.locator('h1')).toContainText('Projects');
   });
+
+  test('g then i navigates to Reports', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    await page.keyboard.press('g');
+    await page.keyboard.press('i');
+
+    await page.waitForURL(/\/reports/);
+    await expect(page.locator('h1')).toContainText('Reports');
+  });
 });

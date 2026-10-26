@@ -7,6 +7,7 @@ const PAGES = [
   { name: 'Tasks', path: '/tasks' },
   { name: 'Calendar', path: '/calendar' },
   { name: 'Timeline', path: '/timeline' },
+  { name: 'Reports', path: '/reports' },
   { name: 'Trash', path: '/trash' },
   { name: 'Settings', path: '/settings' },
 ] as const;

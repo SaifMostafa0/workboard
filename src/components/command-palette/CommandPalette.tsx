@@ -3,6 +3,7 @@ import { useSettings, useUpdateSettings } from '@/hooks/useData';
 import { cn } from '@/lib/cn';
 import {
   CalendarDays,
+  ChartColumn,
   FolderKanban,
   LayoutDashboard,
   ListTodo,
@@ -96,6 +97,14 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
         keywords: 'roadmap gantt plan dates',
         icon: <SquareChartGantt className="w-4 h-4" aria-hidden="true" />,
         run: go('/timeline'),
+      },
+      {
+        id: 'nav-reports',
+        group: 'Navigation',
+        label: 'Go to Reports',
+        keywords: 'analytics metrics insights throughput cycle time overdue trends',
+        icon: <ChartColumn className="w-4 h-4" aria-hidden="true" />,
+        run: go('/reports'),
       },
       {
         id: 'nav-trash',

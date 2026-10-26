@@ -14,6 +14,7 @@ A polished, responsive project and task management application demonstrating pro
 - **Kanban & List Views**: Switch between board and list layouts
 - **Calendar View**: Month and week due-date calendars with project colours, overdue emphasis, and a keyboard-navigable day grid
 - **Timeline / Roadmap**: Project rows with date-scaled task bars, day/week/month zoom, a today marker, and URL-backed filters
+- **Reports**: Weekly throughput, per-project cycle time, and an overdue trend over a 4/8/12-week range, with every chart value mirrored in an accessible table
 - **Advanced Filtering**: Search, filter by status/priority/project/epic/due date/dependency, multi-column sorting
 - **Pagination**: Configurable page sizes with URL synchronization
 - **Trash & Undo**: Deleting is reversible — an inline Undo toast plus a Trash page to restore or remove items for good
@@ -118,8 +119,13 @@ lint the files you stage.
 | `g` then `d`       | Go to Dashboard                              |
 | `g` then `p`       | Go to Projects                               |
 | `g` then `t`       | Go to Tasks                                  |
+| `g` then `c`       | Go to Calendar                               |
+| `g` then `m`       | Go to Timeline                               |
+| `g` then `i`       | Go to Reports                                |
 | `g` then `r`       | Go to Trash                                  |
 | `g` then `s`       | Go to Settings                               |
+| `g` then `l`       | Go to Labels                                 |
+| `g` then `v`       | Go to Saved Views                            |
 | `↑` / `↓`, `Enter` | Move through and run command palette results |
 | `Esc`              | Close the palette or a dialog                |
 
@@ -141,6 +147,9 @@ src/
 │   ├── dashboard/          # Dashboard page
 │   ├── projects/           # Projects CRUD + detail + epics
 │   ├── tasks/              # Tasks CRUD + filtering + sub-tasks
+│   ├── calendar/           # Month/week due-date calendar
+│   ├── timeline/           # Roadmap/timeline view
+│   ├── reports/            # Throughput, cycle-time, overdue reports
 │   ├── trash/              # Trash page (restore / permanently delete)
 │   └── settings/           # Settings & data management
 ├── domain/                 # Domain types, validation, business logic
@@ -298,7 +307,7 @@ Ensure your host supports SPA fallback (redirect all routes to `index.html`).
 - Real-time updates via WebSockets
 - User accounts & teams
 - File attachments
-- Reporting & analytics
+- Advanced reporting & custom dashboards
 - Mobile app (React Native)
 
 ## Project Management

@@ -6,6 +6,7 @@ export * from './export';
 export * from './label';
 export * from './pagination';
 export * from './project';
+export * from './reporting';
 export * from './savedView';
 export * from './task';
 export * from './taskQuery';

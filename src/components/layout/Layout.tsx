@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 import { isApplePlatform } from '@/lib/hotkeys';
 import {
   CalendarDays,
+  ChartColumn,
   FolderKanban,
   LayoutDashboard,
   ListTodo,
@@ -31,6 +32,7 @@ const navigation = [
   { path: '/tasks', label: 'Tasks', icon: ListTodo },
   { path: '/calendar', label: 'Calendar', icon: CalendarDays },
   { path: '/timeline', label: 'Timeline', icon: SquareChartGantt },
+  { path: '/reports', label: 'Reports', icon: ChartColumn },
   { path: '/labels', label: 'Labels', icon: Tag },
   { path: '/saved-views', label: 'Saved Views', icon: Save },
   { path: '/trash', label: 'Trash', icon: Trash2 },

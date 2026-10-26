@@ -8,11 +8,11 @@ _Last updated: 2026-10-26_
 ## Where we are
 
 Workboard is **feature-complete as a portfolio app**: projects & tasks CRUD, epics with roll-up
-progress, sub-tasks with progress, Kanban + list + month/week calendar + timeline/roadmap views, advanced filtering
-with URL state, labels, saved views, trash with undo, bulk actions, command palette + keyboard
-shortcuts, theme support, JSON import/export, CSV and Markdown snapshots, a printable board and task
-list, WCAG 2.2 AA target, and a full test/CI setup. It is local-first (IndexedDB + localStorage
-fallback) with no backend.
+progress, sub-tasks with progress, Kanban + list + month/week calendar + timeline/roadmap and
+reporting views, advanced filtering with URL state, labels, saved views, trash with undo, bulk
+actions, command palette + keyboard shortcuts, theme support, JSON import/export, CSV and Markdown
+snapshots, a printable board and task list, WCAG 2.2 AA target, and a full test/CI setup. It is
+local-first (IndexedDB + localStorage fallback) with no backend.
 
 The project now **manages itself with Workboard** and is documented for AI agent teams
 (see [`AGENTS.md`](AGENTS.md) and [`docs/project-management.md`](docs/project-management.md)).
@@ -21,6 +21,7 @@ The project now **manages itself with Workboard** and is documented for AI agent
 
 | Date       | Work                                                             | Ticket                                                 |
 | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
+| 2026-10-26 | Reports: throughput, cycle time, overdue trend, 4/8/12 weeks     | [WB-204](tickets/WB-204-reporting.md)                  |
 | 2026-10-26 | Timeline/roadmap: project rows, zoom, today marker, URL filters  | [WB-203](tickets/WB-203-timeline-view.md)              |
 | 2026-10-26 | Mobile Kanban E2E: touch fallback + keyboard parity              | [WB-508](tickets/WB-508-mobile-dnd-e2e.md)             |
 | 2026-10-26 | Data-driven E2E specs: removed seeded ticket fixtures            | [WB-509](tickets/WB-509-e2e-data-driven.md)            |
@@ -47,19 +48,19 @@ _None._ Pick from the next-up list below.
 
 ## Next up (highest priority)
 
-| ID                                    | Title               | Why now                                 |
-| ------------------------------------- | ------------------- | --------------------------------------- |
-| [WB-204](tickets/WB-204-reporting.md) | Add basic reporting | Completes the Tier 2 view/reporting set |
+| ID                                        | Title                          | Why now                                             |
+| ----------------------------------------- | ------------------------------ | --------------------------------------------------- |
+| [WB-602](tickets/WB-602-lighthouse-ci.md) | Lighthouse CI performance gate | Turns the documented performance budget into a gate |
 
 ## Metrics
 
 | Metric               | Value                          | Source                  |
 | -------------------- | ------------------------------ | ----------------------- |
-| Unit/component tests | 513 passing                    | `npm run test:run`      |
-| E2E tests            | 177 passing, 1 skipped         | `npm run test:e2e`      |
-| Coverage             | 87.30% stmts / 79.94% branches | `npm run test:coverage` |
-| Bundle budget        | 180.82 kB gzip JS (≤200 KB)    | `npm run size`          |
-| Backlog              | 29 tickets, 9 open / 20 done   | `BACKLOG.md`            |
+| Unit/component tests | 523 passing                    | `npm run test:run`      |
+| E2E tests            | 185 passing, 1 skipped         | `npm run test:e2e`      |
+| Coverage             | 87.73% stmts / 80.71% branches | `npm run test:coverage` |
+| Bundle budget        | 184.96 kB gzip JS (≤200 KB)    | `npm run size`          |
+| Backlog              | 29 tickets, 8 open / 21 done   | `BACKLOG.md`            |
 
 ## Known limitations
 

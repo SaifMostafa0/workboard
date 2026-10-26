@@ -50,17 +50,18 @@ and `HANDOFF_COMPLETE.md`.
 - React 18 + TypeScript + Vite; React Router v7; TanStack Query; React Hook Form + Zod.
 - Storage: IndexedDB via `idb`, localStorage fallback. **No server, nothing leaves the browser.**
 - Views: Dashboard, Projects (+ project Kanban), global Tasks (Kanban/list), Calendar
-  (month/week due dates), Timeline/roadmap, Labels, Saved Views, Trash, Settings.
+  (month/week due dates), Timeline/roadmap, Reports, Labels, Saved Views, Trash, Settings.
 - Features: CRUD for projects/tasks, status/priority/due date/assignee/tags, overdue
   indicators, search + multi-filter + sort + pagination with shareable URL state,
   a month/week calendar with project colours and overdue emphasis, a project-row timeline
-  with day/week/month zoom, bulk actions, soft delete + undo toast + trash/restore/purge,
+  with day/week/month zoom, weekly throughput / cycle-time / overdue reporting with
+  accessible charts and tables, bulk actions, soft delete + undo toast + trash/restore/purge,
   Kanban drag & drop,
   command palette + `g`-key navigation + shortcuts dialog, light/dark/system theme,
   JSON import/export with validation, and a dev-only seed of Workboard's own backlog.
 - Accessibility: WCAG 2.2 AA target, axe scans in E2E, focus management, live regions.
-- Quality: 513 unit tests (87.3% stmts / 79.94% branches), 178 E2E tests (177 pass, 1
-  desktop-only skip), lint/typecheck clean, 180.82 KB gzip JS, Lighthouse targets (perf ≥90,
+- Quality: 523 unit tests (87.73% stmts / 80.71% branches), 186 E2E tests (185 pass, 1
+  desktop-only skip), lint/typecheck clean, 184.96 KB gzip JS, Lighthouse targets (perf ≥90,
   a11y ≥95).
 
 **Honest gaps (from `README.md` "Known Limitations" and `HANDOFF_COMPLETE.md`)**
@@ -68,6 +69,9 @@ and `HANDOFF_COMPLETE.md`.
 - No real-time collaboration, no backend/API, no auth, no file attachments,
   no recurring tasks. The calendar covers month/week due dates, and the timeline adds
   project-row roadmapping with day/week/month zoom (task dates only, no dependency arrows yet).
+- Reporting is intentionally lightweight: weekly throughput, per-project cycle time, and an
+  overdue trend over 4/8/12 weeks. There are no custom dashboards, velocity forecasting, or
+  exportable report snapshots.
 - Saved Views are applied on the Tasks page (filters encoded in the URL) and, like labels and
   preferences, round-trip through JSON export/import.
 - Scale: list rendering is virtualized and benchmarked to 50,000 tasks; filtering/sorting still
@@ -249,35 +253,35 @@ is a feature), the opinionated defaults that reduce configuration, and the fact 
 
 Legend: ✅ full · 🟡 partial/paid-tier/limited · ❌ absent · ➖ N/A (single-user, local)
 
-| Capability                         |       Workboard       |     Jira      |  Trello   | Linear |
-| ---------------------------------- | :-------------------: | :-----------: | :-------: | :----: |
-| Projects / boards                  |          ✅           |      ✅       |    ✅     |   ✅   |
-| Tasks / issues / cards             |          ✅           |      ✅       |    ✅     |   ✅   |
-| Kanban board                       |          ✅           |      ✅       |    ✅     |   ✅   |
-| List/table view                    |          ✅           |      ✅       |    🟡     |   ✅   |
-| Calendar / timeline / roadmap      |          ✅           |      ✅       |    🟡     |   ✅   |
-| Status / priority / due / assignee |          ✅           |      ✅       |    🟡     |   ✅   |
-| Labels / tags                      |          ✅           |      ✅       |    ✅     |   ✅   |
-| Advanced filter + sort             |          ✅           |      ✅       |    🟡     |   ✅   |
-| Saved views / filters              |          ✅           |      ✅       |    🟡     |   ✅   |
-| Bulk actions                       |          ✅           |      ✅       |    🟡     |   ✅   |
-| Subtasks / dependencies / epics    | 🟡 (sub-tasks, epics) |      ✅       |    🟡     |   ✅   |
-| Sprints / cycles / velocity        |          ❌           |      ✅       |    ❌     |   ✅   |
-| Reporting / dashboards             |  🟡 (basic metrics)   |      ✅       |    🟡     |   ✅   |
-| Automation rules                   |          ❌           |      ✅       |    🟡     |   🟡   |
-| Real-time collaboration            |          ❌           |      ✅       |    ✅     |   ✅   |
-| Comments / mentions                |          ❌           |      ✅       |    ✅     |   ✅   |
-| File attachments                   |          ❌           |      ✅       |    🟡     |   ✅   |
-| Notifications / email              |          ❌           |      ✅       |    ✅     |   ✅   |
-| Mobile apps                        |     ❌ (web only)     |      ✅       |    ✅     |   ✅   |
-| Integrations / marketplace         |          ❌           |     ✅✅      |    ✅     |   🟡   |
-| Git / dev-tool integration         |          ❌           |      ✅       |    🟡     |  ✅✅  |
-| Auth / SSO / permissions           |          ❌           |      ✅       |    🟡     |   ✅   |
-| Offline / local-first              |          ✅           |      ❌       |    🟡     |   ❌   |
-| Data ownership / no-lock-in        |          ✅           |      🟡       |    🟡     |   🟡   |
-| Command palette / keyboard-first   |          ✅           |      🟡       |    🟡     |  ✅✅  |
-| Accessibility (WCAG 2.2 AA target) |          ✅           |      🟡       |    🟡     |   🟡   |
-| Free for unlimited use             |          ✅           | 🟡 (10 users) | 🟡 (caps) |   🟡   |
+| Capability                         |       Workboard        |     Jira      |  Trello   | Linear |
+| ---------------------------------- | :--------------------: | :-----------: | :-------: | :----: |
+| Projects / boards                  |           ✅           |      ✅       |    ✅     |   ✅   |
+| Tasks / issues / cards             |           ✅           |      ✅       |    ✅     |   ✅   |
+| Kanban board                       |           ✅           |      ✅       |    ✅     |   ✅   |
+| List/table view                    |           ✅           |      ✅       |    🟡     |   ✅   |
+| Calendar / timeline / roadmap      |           ✅           |      ✅       |    🟡     |   ✅   |
+| Status / priority / due / assignee |           ✅           |      ✅       |    🟡     |   ✅   |
+| Labels / tags                      |           ✅           |      ✅       |    ✅     |   ✅   |
+| Advanced filter + sort             |           ✅           |      ✅       |    🟡     |   ✅   |
+| Saved views / filters              |           ✅           |      ✅       |    🟡     |   ✅   |
+| Bulk actions                       |           ✅           |      ✅       |    🟡     |   ✅   |
+| Subtasks / dependencies / epics    | 🟡 (sub-tasks, epics)  |      ✅       |    🟡     |   ✅   |
+| Sprints / cycles / velocity        |           ❌           |      ✅       |    ❌     |   ✅   |
+| Reporting / dashboards             | 🟡 (trends, no custom) |      ✅       |    🟡     |   ✅   |
+| Automation rules                   |           ❌           |      ✅       |    🟡     |   🟡   |
+| Real-time collaboration            |           ❌           |      ✅       |    ✅     |   ✅   |
+| Comments / mentions                |           ❌           |      ✅       |    ✅     |   ✅   |
+| File attachments                   |           ❌           |      ✅       |    🟡     |   ✅   |
+| Notifications / email              |           ❌           |      ✅       |    ✅     |   ✅   |
+| Mobile apps                        |     ❌ (web only)      |      ✅       |    ✅     |   ✅   |
+| Integrations / marketplace         |           ❌           |     ✅✅      |    ✅     |   🟡   |
+| Git / dev-tool integration         |           ❌           |      ✅       |    🟡     |  ✅✅  |
+| Auth / SSO / permissions           |           ❌           |      ✅       |    🟡     |   ✅   |
+| Offline / local-first              |           ✅           |      ❌       |    🟡     |   ❌   |
+| Data ownership / no-lock-in        |           ✅           |      🟡       |    🟡     |   🟡   |
+| Command palette / keyboard-first   |           ✅           |      🟡       |    🟡     |  ✅✅  |
+| Accessibility (WCAG 2.2 AA target) |           ✅           |      🟡       |    🟡     |   🟡   |
+| Free for unlimited use             |           ✅           | 🟡 (10 users) | 🟡 (caps) |   🟡   |
 
 **Reading the matrix:** Workboard is competitive on the **single-user data and
 interaction layer** and still absent from the **collaboration and integration
@@ -389,8 +393,9 @@ into genuine differentiators; the rest close credibility gaps toward "real tool"
 behind the existing repository interface (the architecture already anticipates this).
 Turns "no collaboration" into "collaboration _you_ host." 5. **Timeline/roadmap view** - ✅ **done**
 (`WB-202`, `WB-203`): month/week calendar plus project-row roadmapping with day/week/month zoom,
-a today marker, URL filters, and keyboard-focusable bars. 6. **Basic reporting** - cycle time,
-throughput, overdue trend (uses existing metrics).
+a today marker, URL filters, and keyboard-focusable bars. 6. **Basic reporting** - ✅ **done**
+(`WB-204`): 4/8/12-week throughput, per-project cycle time, and an overdue trend computed by a
+pure domain model, with accessible chart bars and mirrored data tables.
 
 **Tier 3 — Platform** 7. **File attachments** (IndexedDB blobs), **recurring tasks**, **reminders/notifications**. 8. **Public REST/plugin API** and webhooks. 9. **PWA / installable offline app** + optional encrypted backup.
 

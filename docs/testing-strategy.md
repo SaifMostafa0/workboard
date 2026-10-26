@@ -171,11 +171,23 @@ and out-of-window tasks. The Playwright journey creates a task with a due date, 
 rendered bar, range navigation, all zoom levels, project/status filters, keyboard focus, and the
 existing edit dialog.
 
+#### Reports
+
+Reporting maths lives in `src/domain/reporting.ts` with an injected `now` and fixed timestamp
+fixtures. Unit tests cover the 4/8/12-week range model, completed-task boundaries, weekly throughput,
+overdue snapshots (including tasks completed later), per-project averages, ungrouped/deleted
+projects, invalid timestamps, and empty data. The Playwright specs read the rendered metrics and
+weekly table instead of assuming seeded values: one creates a task marked done and checks the
+throughput total and current-week row increase; another advances the browser clock past midnight
+and checks an open due-today task becomes overdue. Chart bars are keyboard-operable and the same
+numbers are available in tables for every range.
+
 #### Accessibility (axe)
 
 `e2e/accessibility.spec.ts` runs [axe-core](https://github.com/dequelabs/axe-core) against
-every page (Dashboard, Projects, Tasks, Calendar, Timeline, Trash, Settings) and fails on any WCAG
-2.1 A/AA violation. Colour-contrast and landmark/label regressions are therefore caught in CI.
+every page (Dashboard, Projects, Tasks, Calendar, Timeline, Reports, Trash, Settings) and fails on
+any WCAG 2.1 A/AA violation. Colour-contrast and landmark/label regressions are therefore caught
+in CI.
 
 ### 4. Visual Regression (Optional)
 

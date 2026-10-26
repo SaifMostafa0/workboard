@@ -11,6 +11,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
   { keys: ['G', 'T'], description: 'Go to Tasks' },
   { keys: ['G', 'C'], description: 'Go to Calendar' },
   { keys: ['G', 'M'], description: 'Go to Timeline' },
+  { keys: ['G', 'I'], description: 'Go to Reports' },
   { keys: ['G', 'R'], description: 'Go to Trash' },
   { keys: ['G', 'S'], description: 'Go to Settings' },
   { keys: ['G', 'L'], description: 'Go to Labels' },

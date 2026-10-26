@@ -218,6 +218,15 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
 }
 ```
 
+## Accessible Charts
+
+Reporting charts never rely on height or colour alone. Each week is a real `<button>` with an
+explicit accessible name (`Week of October 25, 2026: 5 tasks completed`) and `aria-pressed` for the
+selected week; the visible value and keyboard-selected summary repeat the number. A semantic table
+below the charts mirrors every value, so screen-reader and keyboard users can read the full data set
+without interpreting the graphics. Overdue bars use a distinct colour **and** the word "overdue" in
+the chart heading, labels, and table column.
+
 ## Design Tokens for Accessibility
 
 ```css
@@ -278,7 +287,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
 
 ### Automated (CI)
 
-- [ ] `axe-core` in Playwright E2E: 0 violations on `/`, `/projects`, `/tasks`, `/calendar`, `/timeline`, `/trash`, `/settings`
+- [ ] `axe-core` in Playwright E2E: 0 violations on `/`, `/projects`, `/tasks`, `/calendar`, `/timeline`, `/reports`, `/trash`, `/settings`
 - [ ] `eslint-plugin-jsx-a11y` in lint pipeline
 - [ ] Color contrast audit via `vitest` + `color-contrast-checker`
 

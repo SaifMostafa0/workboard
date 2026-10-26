@@ -15,7 +15,7 @@ test.describe('Dashboard', () => {
     await expect(page.locator('text=Total Tasks')).toBeVisible();
     await expect(page.locator('text=Completed')).toBeVisible();
     await expect(page.locator('p', { hasText: 'In Progress' })).toBeVisible();
-    await expect(page.locator('text=Overdue')).toBeVisible();
+    await expect(page.getByText('Overdue', { exact: true })).toBeVisible();
   });
 
   test('shows upcoming due dates section', async ({ page }) => {

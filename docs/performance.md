@@ -269,6 +269,7 @@ if (import.meta.env.DEV) {
 | `/projects`     | ≤40KB   | ≤8KB     | ≤2.0s      |
 | `/projects/:id` | ≤45KB   | ≤10KB    | ≤2.2s      |
 | `/tasks`        | ≤40KB   | ≤8KB     | ≤2.0s      |
+| `/reports`      | ≤35KB   | ≤7KB     | ≤1.8s      |
 | `/settings`     | ≤25KB   | ≤5KB     | ≤1.5s      |
 
 ## Regression Detection

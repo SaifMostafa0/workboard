@@ -58,6 +58,12 @@ interface Task {
 - `/projects` — Project list
 - `/projects/:projectId` — Project details and task board
 - `/tasks` — Global task list
+- `/calendar` — Month/week due-date calendar
+- `/timeline` — Project-row roadmap
+- `/reports` — Throughput, cycle-time, and overdue reports
+- `/labels` — Label management
+- `/saved-views` — Saved filter views
+- `/trash` — Soft-deleted items
 - `/settings` — Display preferences and data management
 - Unknown paths — 404 page
 
@@ -69,6 +75,15 @@ interface Task {
 - Upcoming due dates
 - Recent activity / recently updated tasks
 - Empty state with creation shortcuts
+
+### Reports
+
+- 4, 8, or 12-week selectable range, stored in the URL and canonicalised on first load
+- Weekly throughput (tasks completed per week)
+- Average cycle time per project, plus an overall average
+- Overdue trend sampled at each week end, derived from due dates and completion history
+- Dependency-free charts with focusable week bars and an equivalent semantic data table
+- All metrics computed locally from stored timestamps; nothing is uploaded
 
 ### Projects
 

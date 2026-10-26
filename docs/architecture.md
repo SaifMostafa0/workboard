@@ -182,6 +182,11 @@ The Timeline follows the same pattern with `zoom` (`day`/`week`/`month`), `date`
 date for the visible window), `project`, and `status`. Its date-to-position maths lives in
 `src/domain/timeline.ts`, so the page only renders ticks, rows, and already-positioned bars.
 
+Reports keep the selected range in `weeks` (`4`/`8`/`12`) and canonicalise `/reports` to
+`/reports?weeks=8`. `src/domain/reporting.ts` builds the weekly buckets, per-project cycle
+time, and historical overdue snapshots from `createdAt`, `completedAt`, and `dueDate`; the
+page renders those values as dependency-free chart bars plus equivalent data tables.
+
 ## Type System Strategy
 
 ### Branded Types for IDs
