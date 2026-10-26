@@ -162,11 +162,20 @@ card — the same control that provides the keyboard alternative. The E2E spec b
 Playwright device rather than skipping mobile: desktop dispatches drag events, mobile clicks the
 status button, and a separate test drives it with the keyboard.
 
+#### Timeline / roadmap
+
+The timeline's date maths is a pure domain model (`src/domain/timeline.ts`): window construction,
+date-to-percentage placement, tick generation, and lane packing for overlapping bars. Unit tests
+cover day/week/month ranges, zoom navigation, edge dates, filters, empty projects, undated tasks,
+and out-of-window tasks. The Playwright journey creates a task with a due date, then exercises the
+rendered bar, range navigation, all zoom levels, project/status filters, keyboard focus, and the
+existing edit dialog.
+
 #### Accessibility (axe)
 
 `e2e/accessibility.spec.ts` runs [axe-core](https://github.com/dequelabs/axe-core) against
-every page (Dashboard, Projects, Tasks, Calendar, Trash, Settings) and fails on any WCAG 2.1 A/AA
-violation. Colour-contrast and landmark/label regressions are therefore caught in CI.
+every page (Dashboard, Projects, Tasks, Calendar, Timeline, Trash, Settings) and fails on any WCAG
+2.1 A/AA violation. Colour-contrast and landmark/label regressions are therefore caught in CI.
 
 ### 4. Visual Regression (Optional)
 

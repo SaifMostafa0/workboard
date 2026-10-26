@@ -8,6 +8,7 @@ import { ProjectsPage } from '@/features/projects/pages/ProjectsPage';
 import { SavedViewsPage } from '@/features/saved-views/pages/SavedViewsPage';
 import { SettingsPage } from '@/features/settings/pages/SettingsPage';
 import { TasksPage } from '@/features/tasks/pages/TasksPage';
+import { TimelinePage } from '@/features/timeline/pages/TimelinePage';
 import { TrashPage } from '@/features/trash/pages/TrashPage';
 import { Route, Routes } from 'react-router-dom';
 
@@ -22,6 +23,7 @@ export function App() {
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/tasks/new" element={<TasksPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/timeline" element={<TimelinePage />} />
         <Route path="/labels" element={<LabelsPage />} />
         <Route path="/saved-views" element={<SavedViewsPage />} />
         <Route path="/settings" element={<SettingsPage />} />

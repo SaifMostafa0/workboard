@@ -178,6 +178,10 @@ The Calendar follows the same rule: `view` (`month`/`week`), `date` (visible ran
 `day` (selected date) and `project` (filter) live in the query string. Defaults are
 canonicalised on first load so `/calendar` becomes a shareable month link.
 
+The Timeline follows the same pattern with `zoom` (`day`/`week`/`month`), `date` (anchor
+date for the visible window), `project`, and `status`. Its date-to-position maths lives in
+`src/domain/timeline.ts`, so the page only renders ticks, rows, and already-positioned bars.
+
 ## Type System Strategy
 
 ### Branded Types for IDs

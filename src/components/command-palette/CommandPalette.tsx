@@ -11,6 +11,7 @@ import {
   Rows3,
   Search,
   Settings,
+  SquareChartGantt,
   Sun,
   Trash2,
 } from 'lucide-react';
@@ -87,6 +88,14 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
         keywords: 'due dates schedule month week',
         icon: <CalendarDays className="w-4 h-4" aria-hidden="true" />,
         run: go('/calendar'),
+      },
+      {
+        id: 'nav-timeline',
+        group: 'Navigation',
+        label: 'Go to Timeline',
+        keywords: 'roadmap gantt plan dates',
+        icon: <SquareChartGantt className="w-4 h-4" aria-hidden="true" />,
+        run: go('/timeline'),
       },
       {
         id: 'nav-trash',

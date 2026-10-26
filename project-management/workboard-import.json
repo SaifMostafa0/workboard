@@ -176,8 +176,8 @@
       "id": "d9fff0d7-9e42-457e-acfb-121d7074414c",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000102",
       "title": "WB-203 Add a timeline / roadmap view",
-      "description": "A horizontal timeline showing tasks or epics across time gives planning context that the board\nand list lack. This is a common reason teams move to Asana or Monday.com.\n\n**Acceptance criteria**\n- [ ] A `/timeline` route renders project rows and task bars positioned by due date (and a start date if added later).\n- [ ] Bars scale across day/week/month zoom levels with a \"today\" marker.\n- [ ] Overdue and completed tasks are visually distinct; hovering/focusing a bar summarises the task.\n- [ ] Project and status filters apply, driven by the URL like other views.\n- [ ] Keyboard navigable; bars are focusable and announce their dates.\n- [ ] Handles empty projects and tasks without dates gracefully.\n- [ ] Component tests for the date-to-pixel scaling maths.\n\n- Depends conceptually on `WB-102` (parent/child) if timelines should roll up epics; can ship task-only first.\n- Keep the layout CSS-based; avoid a heavy Gantt library to protect the bundle budget.\n\nTicket file: tickets/WB-203-timeline-view.md\n\nSource: competitor-analysis",
-      "status": "todo",
+      "description": "A horizontal timeline showing tasks or epics across time gives planning context that the board\nand list lack. This is a common reason teams move to Asana or Monday.com.\n\n**Acceptance criteria**\n- [x] A `/timeline` route renders project rows and task bars positioned by due date (and a start date if added later).\n- [x] Bars scale across day/week/month zoom levels with a \"today\" marker.\n- [x] Overdue and completed tasks are visually distinct; hovering/focusing a bar summarises the task.\n- [x] Project and status filters apply, driven by the URL like other views.\n- [x] Keyboard navigable; bars are focusable and announce their dates.\n- [x] Handles empty projects and tasks without dates gracefully.\n- [x] Component tests for the date-to-pixel scaling maths.\n\n- Depends conceptually on `WB-102` (parent/child) if timelines should roll up epics; can ship task-only first.\n- Keep the layout CSS-based; avoid a heavy Gantt library to protect the bundle budget.\n\nTicket file: tickets/WB-203-timeline-view.md\n\nSource: competitor-analysis",
+      "status": "done",
       "priority": "medium",
       "tags": [
         "workboard",
@@ -188,8 +188,9 @@
         "type:feature"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-26T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-26T00:00:00.000Z"
     },
     {
       "id": "5f45c777-577a-483e-87e4-f7fd33aacb06",

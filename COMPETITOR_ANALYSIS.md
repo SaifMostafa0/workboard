@@ -50,21 +50,24 @@ and `HANDOFF_COMPLETE.md`.
 - React 18 + TypeScript + Vite; React Router v7; TanStack Query; React Hook Form + Zod.
 - Storage: IndexedDB via `idb`, localStorage fallback. **No server, nothing leaves the browser.**
 - Views: Dashboard, Projects (+ project Kanban), global Tasks (Kanban/list), Calendar
-  (month/week due dates), Labels, Saved Views, Trash, Settings.
+  (month/week due dates), Timeline/roadmap, Labels, Saved Views, Trash, Settings.
 - Features: CRUD for projects/tasks, status/priority/due date/assignee/tags, overdue
   indicators, search + multi-filter + sort + pagination with shareable URL state,
-  a month/week calendar with project colours and overdue emphasis, bulk actions,
-  soft delete + undo toast + trash/restore/purge, Kanban drag & drop,
+  a month/week calendar with project colours and overdue emphasis, a project-row timeline
+  with day/week/month zoom, bulk actions, soft delete + undo toast + trash/restore/purge,
+  Kanban drag & drop,
   command palette + `g`-key navigation + shortcuts dialog, light/dark/system theme,
   JSON import/export with validation, and a dev-only seed of Workboard's own backlog.
 - Accessibility: WCAG 2.2 AA target, axe scans in E2E, focus management, live regions.
-- Quality: 280 unit tests (~89.6% stmts / 78.5% branches), 144 E2E tests, lint/typecheck
-  clean, bundle budget ≤100 KB gzip, Lighthouse targets (perf ≥90, a11y ≥95).
+- Quality: 513 unit tests (87.3% stmts / 79.94% branches), 178 E2E tests (177 pass, 1
+  desktop-only skip), lint/typecheck clean, 180.82 KB gzip JS, Lighthouse targets (perf ≥90,
+  a11y ≥95).
 
 **Honest gaps (from `README.md` "Known Limitations" and `HANDOFF_COMPLETE.md`)**
 
 - No real-time collaboration, no backend/API, no auth, no file attachments,
-  no recurring tasks, no timeline/Gantt view (a month/week due-date calendar is available).
+  no recurring tasks. The calendar covers month/week due dates, and the timeline adds
+  project-row roadmapping with day/week/month zoom (task dates only, no dependency arrows yet).
 - Saved Views are applied on the Tasks page (filters encoded in the URL) and, like labels and
   preferences, round-trip through JSON export/import.
 - Scale: list rendering is virtualized and benchmarked to 50,000 tasks; filtering/sorting still
@@ -252,7 +255,7 @@ Legend: ✅ full · 🟡 partial/paid-tier/limited · ❌ absent · ➖ N/A (sin
 | Tasks / issues / cards             |          ✅           |      ✅       |    ✅     |   ✅   |
 | Kanban board                       |          ✅           |      ✅       |    ✅     |   ✅   |
 | List/table view                    |          ✅           |      ✅       |    🟡     |   ✅   |
-| Calendar / timeline / roadmap      |          ❌           |      ✅       |    🟡     |   ✅   |
+| Calendar / timeline / roadmap      |          ✅           |      ✅       |    🟡     |   ✅   |
 | Status / priority / due / assignee |          ✅           |      ✅       |    🟡     |   ✅   |
 | Labels / tags                      |          ✅           |      ✅       |    ✅     |   ✅   |
 | Advanced filter + sort             |          ✅           |      ✅       |    🟡     |   ✅   |
@@ -384,9 +387,10 @@ into genuine differentiators; the rest close credibility gaps toward "real tool"
 
 **Tier 2 — Differentiators** 4. **Optional, self-hostable sync (CRDT/`Yjs` or a tiny API)** — add an `ApiRepository`
 behind the existing repository interface (the architecture already anticipates this).
-Turns "no collaboration" into "collaboration _you_ host." 5. **Timeline/roadmap view** - the month/week
-due-date calendar is done (`WB-202`); the remaining gap is a timeline/Gantt. 6. **Basic reporting** -
-cycle time, throughput, overdue trend (uses existing metrics).
+Turns "no collaboration" into "collaboration _you_ host." 5. **Timeline/roadmap view** - ✅ **done**
+(`WB-202`, `WB-203`): month/week calendar plus project-row roadmapping with day/week/month zoom,
+a today marker, URL filters, and keyboard-focusable bars. 6. **Basic reporting** - cycle time,
+throughput, overdue trend (uses existing metrics).
 
 **Tier 3 — Platform** 7. **File attachments** (IndexedDB blobs), **recurring tasks**, **reminders/notifications**. 8. **Public REST/plugin API** and webhooks. 9. **PWA / installable offline app** + optional encrypted backup.
 

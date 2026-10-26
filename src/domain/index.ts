@@ -9,4 +9,5 @@ export * from './project';
 export * from './savedView';
 export * from './task';
 export * from './taskQuery';
+export * from './timeline';
 export * from './validation';

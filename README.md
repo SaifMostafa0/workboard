@@ -13,6 +13,7 @@ A polished, responsive project and task management application demonstrating pro
 - **Task Dependencies**: Mark a task as "blocked by" others — a derived Blocked badge, cycle prevention, and a dependency filter
 - **Kanban & List Views**: Switch between board and list layouts
 - **Calendar View**: Month and week due-date calendars with project colours, overdue emphasis, and a keyboard-navigable day grid
+- **Timeline / Roadmap**: Project rows with date-scaled task bars, day/week/month zoom, a today marker, and URL-backed filters
 - **Advanced Filtering**: Search, filter by status/priority/project/epic/due date/dependency, multi-column sorting
 - **Pagination**: Configurable page sizes with URL synchronization
 - **Trash & Undo**: Deleting is reversible — an inline Undo toast plus a Trash page to restore or remove items for good
