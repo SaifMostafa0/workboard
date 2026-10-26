@@ -69,6 +69,7 @@ describe('savedViewFilters', () => {
           project: 'p1',
           due: 'today',
           tags: ['a', 'b'],
+          epic: 'e1',
           blocked: 'true',
           sort: 'dueDate',
           order: 'asc',
@@ -81,6 +82,7 @@ describe('savedViewFilters', () => {
       expect(params.get('project')).toBe('p1');
       expect(params.get('due')).toBe('today');
       expect(params.get('tags')).toBe('a,b');
+      expect(params.get('epic')).toBe('e1');
       expect(params.get('blocked')).toBe('true');
       expect(params.get('sort')).toBe('dueDate');
       expect(params.get('order')).toBe('asc');
@@ -128,6 +130,14 @@ describe('savedViewFilters', () => {
     it('drops defaults when capturing a view', () => {
       expect(taskFiltersToViewFilters(filters())).toEqual({});
     });
+
+    it('captures priority, due date, epic and blocked filters', () => {
+      expect(
+        taskFiltersToViewFilters(
+          filters({ priority: 'high', due: 'overdue', epic: 'e1', blocked: 'true' })
+        )
+      ).toEqual({ priority: 'high', due: 'overdue', epic: 'e1', blocked: 'true' });
+    });
   });
 
   describe('hasActiveTaskFilters', () => {
@@ -158,6 +168,25 @@ describe('savedViewFilters', () => {
       expect(summary).toContain('Project: Website Redesign');
       expect(summary).toContain('Tags: design');
       expect(summary).toContain('Sort: title');
+    });
+
+    it('describes priority, due, epic, blocked and ordering filters', () => {
+      const summary = describeViewFilters({
+        priority: 'high',
+        project: 'deleted-project',
+        due: 'overdue',
+        epic: 'e1',
+        blocked: 'true',
+        order: 'asc',
+      });
+
+      expect(summary).toContain('Priority: high');
+      expect(summary).toContain('Project: selected');
+      expect(summary).toContain('Due: overdue');
+      expect(summary).toContain('Epic: selected');
+      expect(summary).toContain('Blocked');
+      expect(summary).toContain('Order: asc');
+      expect(describeViewFilters({ blocked: 'false' })).toContain('Not blocked');
     });
   });
 });

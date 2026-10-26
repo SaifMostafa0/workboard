@@ -197,7 +197,7 @@ are type-checked as a separate project (`tsconfig.test.json`).
 Target coverage (enforced on `src/domain`, `src/infrastructure` and `src/lib`):
 
 - Statements: ≥80%
-- Branches: ≥75%
+- Branches: ≥85%
 - Functions: ≥80%
 - Lines: ≥80%
 

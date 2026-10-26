@@ -111,6 +111,31 @@ describe('LocalProjectRepository', () => {
       expect(result.ok).toBe(true);
       if (result.ok) expect(result.value).toEqual([]);
     });
+
+    it('lists trashed projects newest first', async () => {
+      await adapter.set('workboard:projects:older', {
+        id: 'older',
+        name: 'Older',
+        description: '',
+        color: 'blue',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-02T00:00:00.000Z',
+        deletedAt: '2024-01-02T00:00:00.000Z',
+      });
+      await adapter.set('workboard:projects:newer', {
+        id: 'newer',
+        name: 'Newer',
+        description: '',
+        color: 'red',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-03T00:00:00.000Z',
+        deletedAt: '2024-01-03T00:00:00.000Z',
+      });
+
+      const result = await repository.listDeleted();
+
+      expect(result.ok && result.value.map((project) => project.id)).toEqual(['newer', 'older']);
+    });
   });
 
   describe('update', () => {
@@ -279,6 +304,60 @@ describe('LocalProjectRepository', () => {
       const result = await repository.listDeleted();
 
       expect(result.ok).toBe(false);
+    });
+
+    it('returns an error when list fails', async () => {
+      adapter.setFailMode('getAll', createStorageError('PERMISSION_DENIED', 'read failed'));
+      const result = await repository.list();
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('returns an error when a create write fails', async () => {
+      adapter.setFailMode('set', createStorageError('QUOTA_EXCEEDED', 'write failed'));
+      const result = await repository.create({
+        name: 'Test',
+        description: '',
+        color: 'blue',
+      });
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('returns an error when an update write fails', async () => {
+      const createResult = await repository.create({
+        name: 'Test',
+        description: '',
+        color: 'blue',
+      });
+      if (!createResult.ok) throw new Error('setup failed');
+
+      adapter.setFailMode('set', createStorageError('QUOTA_EXCEEDED', 'write failed'));
+      const result = await repository.update(createResult.value.id, { name: 'Updated' });
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('returns an error when a restore write fails', async () => {
+      const createResult = await repository.create({
+        name: 'Test',
+        description: '',
+        color: 'blue',
+      });
+      if (!createResult.ok) throw new Error('setup failed');
+      await repository.delete(createResult.value.id);
+
+      adapter.setFailMode('set', createStorageError('QUOTA_EXCEEDED', 'write failed'));
+      const result = await repository.restore(createResult.value.id);
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('propagates errors from search and count', async () => {
+      adapter.setFailMode('getAll', createStorageError('PERMISSION_DENIED', 'read failed'));
+
+      expect((await repository.search('test')).ok).toBe(false);
+      expect((await repository.count()).ok).toBe(false);
     });
   });
 

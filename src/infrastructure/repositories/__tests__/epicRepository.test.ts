@@ -1,4 +1,5 @@
 import type { EpicInput } from '@/domain/epic';
+import { createStorageError } from '@/domain/errors';
 import { createEpicRepository } from '@/infrastructure/repositories/epicRepository';
 import { FakeStorageAdapter } from '@/test/factories/fakeStorageAdapter';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -151,6 +152,86 @@ describe('LocalEpicRepository', () => {
 
       expect(purged.ok).toBe(true);
       expect(adapter.getStoreSize()).toBe(0);
+    });
+  });
+
+  describe('error handling', () => {
+    const readError = () => createStorageError('PERMISSION_DENIED', 'read failed');
+    const writeError = () => createStorageError('QUOTA_EXCEEDED', 'write failed');
+
+    it('propagates list and listDeleted read errors', async () => {
+      adapter.setFailMode('getAll', readError());
+
+      expect((await repository.list()).ok).toBe(false);
+      expect((await repository.listDeleted()).ok).toBe(false);
+    });
+
+    it('propagates get read errors', async () => {
+      adapter.setFailMode('get', readError());
+
+      const result = await repository.get('any-epic');
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('returns an error when a create write fails', async () => {
+      adapter.setFailMode('set', writeError());
+
+      const result = await repository.create(input());
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('rejects an invalid update payload', async () => {
+      const created = await repository.create(input());
+      if (!created.ok) throw new Error('setup failed');
+
+      const result = await repository.update(created.value.id, { name: '' });
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('returns an error when an update write fails', async () => {
+      const created = await repository.create(input());
+      if (!created.ok) throw new Error('setup failed');
+      adapter.setFailMode('set', writeError());
+
+      const result = await repository.update(created.value.id, { name: 'Renamed' });
+
+      expect(result.ok).toBe(false);
+    });
+
+    it('propagates delete read and write errors', async () => {
+      const created = await repository.create(input());
+      if (!created.ok) throw new Error('setup failed');
+
+      adapter.setFailMode('get', readError());
+      expect((await repository.delete(created.value.id)).ok).toBe(false);
+
+      adapter.clearFailMode();
+      adapter.setFailMode('set', writeError());
+      expect((await repository.delete(created.value.id)).ok).toBe(false);
+    });
+
+    it('propagates restore read and write errors', async () => {
+      const created = await repository.create(input());
+      if (!created.ok) throw new Error('setup failed');
+
+      adapter.setFailMode('get', readError());
+      expect((await repository.restore(created.value.id)).ok).toBe(false);
+
+      adapter.clearFailMode();
+      await repository.delete(created.value.id);
+      adapter.setFailMode('set', writeError());
+      expect((await repository.restore(created.value.id)).ok).toBe(false);
+    });
+
+    it('propagates purge delete errors', async () => {
+      adapter.setFailMode('delete', createStorageError('PERMISSION_DENIED', 'delete failed'));
+
+      const result = await repository.purge('any-epic');
+
+      expect(result.ok).toBe(false);
     });
   });
 });

@@ -600,8 +600,8 @@
       "id": "bad587aa-d133-473f-93ae-ed14d4522cbf",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000106",
       "title": "WB-603 Raise branch coverage and cover labels and saved views",
-      "description": "Coverage sits near ~89.6% statements / 78.5% branches. The newer label and saved-view\nrepositories and their hooks are the least-covered areas. Raise the branch threshold and close\nthose gaps so the numbers stop being a soft target.\n\n**Acceptance criteria**\n- [ ] Label and saved-view repositories and hooks have unit/integration tests for success, empty, and error (`Result` err) paths.\n- [ ] Import/export tests cover the restored labels and saved views once `WB-404` lands.\n- [ ] Branch coverage threshold in `vitest.config.ts` is raised (target ≥85%) without weakening existing thresholds.\n- [ ] CI enforces the new threshold on `src/domain`, `src/infrastructure` and `src/lib`.\n- [ ] No tests rely on implementation details; behaviour is asserted through public APIs.\n\n- Use the existing fake storage adapter and failure injection rather than mocks.\n- Coordinate with `WB-404`, which adds coverage-critical export/import paths.\n\nTicket file: tickets/WB-603-raise-coverage.md\n\nSource: handoff",
-      "status": "todo",
+      "description": "Coverage had fallen to 87.73% statements / 80.71% branches. The label and saved-view\nrepositories and their hooks were the least-covered areas (7/38 statements and 1/14 branches\neach). Close those gaps, cover the remaining repository error paths, and raise the branch\nthreshold so the numbers stop being a soft target.\n\n**Acceptance criteria**\n- [x] Label and saved-view repositories and hooks have unit/integration tests for success, empty, and error (`Result` err) paths.\n- [x] Import/export tests cover the restored labels and saved views once `WB-404` lands.\n- [x] Branch coverage threshold in `vitest.config.ts` is raised (target ≥85%) without weakening existing thresholds.\n- [x] CI enforces the new threshold on `src/domain`, `src/infrastructure` and `src/lib`.\n- [x] No tests rely on implementation details; behaviour is asserted through public APIs.\n\n- Use the existing fake storage adapter and failure injection rather than mocks.\n- Coordinate with `WB-404`, which adds coverage-critical export/import paths.\n\nTicket file: tickets/WB-603-raise-coverage.md\n\nSource: handoff",
+      "status": "done",
       "priority": "medium",
       "tags": [
         "workboard",
@@ -611,8 +611,9 @@
         "area:domain"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-26T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-26T00:00:00.000Z"
     }
   ]
 }

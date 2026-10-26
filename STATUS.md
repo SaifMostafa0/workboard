@@ -21,6 +21,7 @@ The project now **manages itself with Workboard** and is documented for AI agent
 
 | Date       | Work                                                             | Ticket                                                 |
 | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
+| 2026-10-26 | Coverage gate: label/saved-view paths, 85% branch threshold      | [WB-603](tickets/WB-603-raise-coverage.md)             |
 | 2026-10-26 | Lighthouse CI gate: median budgets, preview audits, bundle check | [WB-602](tickets/WB-602-lighthouse-ci-gate.md)         |
 | 2026-10-26 | Reports: throughput, cycle time, overdue trend, 4/8/12 weeks     | [WB-204](tickets/WB-204-reporting.md)                  |
 | 2026-10-26 | Timeline/roadmap: project rows, zoom, today marker, URL filters  | [WB-203](tickets/WB-203-timeline-view.md)              |
@@ -49,20 +50,22 @@ _None._ Pick from the next-up list below.
 
 ## Next up (highest priority)
 
-| ID                                         | Title                              | Why now                                               |
-| ------------------------------------------ | ---------------------------------- | ----------------------------------------------------- |
-| [WB-603](tickets/WB-603-raise-coverage.md) | Raise branch coverage & close gaps | Locks in the remaining label/saved-view coverage debt |
+| ID                                               | Title                  | Why now                                             |
+| ------------------------------------------------ | ---------------------- | --------------------------------------------------- |
+| [WB-301](tickets/WB-301-file-attachments.md)     | File attachments       | Highest-priority remaining roadmap feature          |
+| [WB-305](tickets/WB-305-pwa-encrypted-backup.md) | PWA + encrypted backup | Offline installability and data-ownership hardening |
+| [WB-402](tickets/WB-402-comments-activity.md)    | Comments & activity    | Collaboration groundwork on the local data model    |
 
 ## Metrics
 
 | Metric               | Value                                   | Source                  |
 | -------------------- | --------------------------------------- | ----------------------- |
-| Unit/component tests | 523 passing                             | `npm run test:run`      |
+| Unit/component tests | 583 passing                             | `npm run test:run`      |
 | E2E tests            | 185 passing, 1 skipped                  | `npm run test:e2e`      |
-| Coverage             | 87.73% stmts / 80.71% branches          | `npm run test:coverage` |
+| Coverage             | 92.06% stmts / 85.47% branches          | `npm run test:coverage` |
 | Lighthouse baseline  | 96 / 100 / 100 / 100 (perf/a11y/BP/SEO) | Lighthouse CI           |
 | Bundle budget        | 184.96 kB JS / 15.39 kB CSS gzip        | `npm run size`          |
-| Backlog              | 29 tickets, 7 open / 22 done            | `BACKLOG.md`            |
+| Backlog              | 29 tickets, 6 open / 23 done            | `BACKLOG.md`            |
 
 ## Known limitations
 

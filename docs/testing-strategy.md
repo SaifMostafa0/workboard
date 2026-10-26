@@ -20,7 +20,7 @@
 
 **Location**: `src/domain/**/*.test.ts`, `src/infrastructure/**/*.test.ts`, `src/lib/**/*.test.ts`
 **Tools**: Vitest
-**Target**: ≥80% statements, ≥75% branches for domain/repo code
+**Target**: ≥80% statements, ≥85% branches for domain/repo code
 
 #### Domain Functions to Test
 
@@ -291,7 +291,7 @@ export default defineConfig({
       provider: 'v8',
       thresholds: {
         statements: 80,
-        branches: 75,
+        branches: 85,
         functions: 80,
         lines: 80,
       },

@@ -1,4 +1,15 @@
-import { useDeleteEpic } from '@/hooks/useData';
+import { createStorageError } from '@/domain/errors';
+import {
+  useCreateLabel,
+  useCreateSavedView,
+  useDeleteEpic,
+  useDeleteLabel,
+  useDeleteSavedView,
+  useLabels,
+  useSavedViews,
+  useUpdateLabel,
+  useUpdateSavedView,
+} from '@/hooks/useData';
 import type * as StorageModule from '@/infrastructure/storage';
 import { FakeStorageAdapter } from '@/test/factories/fakeStorageAdapter';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -116,5 +127,244 @@ describe('useDeleteEpic', () => {
     const loose = await readTask(TASK_WITHOUT_EPIC);
     expect(loose).not.toBeNull();
     expect(loose?.id).toBe(TASK_WITHOUT_EPIC);
+  });
+});
+
+const LABEL_ID = 'label-1';
+const SAVED_VIEW_ID = 'view-1';
+
+function seedLabel() {
+  return adapter.set(`workboard:labels:${LABEL_ID}`, {
+    id: LABEL_ID,
+    name: 'Bug',
+    color: '#e11d48',
+    createdAt: NOW,
+    updatedAt: NOW,
+  });
+}
+
+function seedSavedView() {
+  return adapter.set(`workboard:savedViews:${SAVED_VIEW_ID}`, {
+    id: SAVED_VIEW_ID,
+    name: 'My work',
+    filters: { status: 'todo' },
+    createdAt: NOW,
+    updatedAt: NOW,
+  });
+}
+
+describe('label hooks', () => {
+  beforeEach(async () => {
+    adapter.clearFailMode();
+    await adapter.clear();
+  });
+
+  it('returns an empty list when no labels exist', async () => {
+    const { result } = renderHook(() => useLabels(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual([]);
+  });
+
+  it('returns stored labels', async () => {
+    await seedLabel();
+    const { result } = renderHook(() => useLabels(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.map((label) => label.name)).toEqual(['Bug']);
+  });
+
+  it('surfaces list errors', async () => {
+    adapter.setFailMode('getAll', createStorageError('PERMISSION_DENIED', 'read failed'));
+    const { result } = renderHook(() => useLabels(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(Error);
+  });
+
+  it('creates a label and persists it', async () => {
+    const { result } = renderHook(() => useCreateLabel(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate({ name: 'Regression', color: '#2563eb' });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const id = result.current.data?.id;
+    expect(id).toBeDefined();
+    expect(await adapter.get(`workboard:labels:${id}`)).toMatchObject({
+      ok: true,
+      value: { name: 'Regression' },
+    });
+  });
+
+  it('surfaces create errors', async () => {
+    adapter.setFailMode('set', createStorageError('QUOTA_EXCEEDED', 'write failed'));
+    const { result } = renderHook(() => useCreateLabel(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate({ name: 'Regression' });
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it('updates a label and persists the change', async () => {
+    await seedLabel();
+    const { result } = renderHook(() => useUpdateLabel(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate({ id: LABEL_ID, update: { name: 'Regression' } });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(await adapter.get(`workboard:labels:${LABEL_ID}`)).toMatchObject({
+      ok: true,
+      value: { name: 'Regression' },
+    });
+  });
+
+  it('surfaces update errors', async () => {
+    await seedLabel();
+    adapter.setFailMode('set', createStorageError('QUOTA_EXCEEDED', 'write failed'));
+    const { result } = renderHook(() => useUpdateLabel(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate({ id: LABEL_ID, update: { name: 'Regression' } });
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it('deletes a label', async () => {
+    await seedLabel();
+    const { result } = renderHook(() => useDeleteLabel(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate(LABEL_ID);
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(adapter.hasKey(`workboard:labels:${LABEL_ID}`)).toBe(false);
+  });
+
+  it('surfaces delete errors', async () => {
+    await seedLabel();
+    adapter.setFailMode('delete', createStorageError('PERMISSION_DENIED', 'delete failed'));
+    const { result } = renderHook(() => useDeleteLabel(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate(LABEL_ID);
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe('saved view hooks', () => {
+  beforeEach(async () => {
+    adapter.clearFailMode();
+    await adapter.clear();
+  });
+
+  it('returns an empty list when no saved views exist', async () => {
+    const { result } = renderHook(() => useSavedViews(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual([]);
+  });
+
+  it('returns stored saved views', async () => {
+    await seedSavedView();
+    const { result } = renderHook(() => useSavedViews(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.map((view) => view.name)).toEqual(['My work']);
+  });
+
+  it('surfaces list errors', async () => {
+    adapter.setFailMode('getAll', createStorageError('PERMISSION_DENIED', 'read failed'));
+    const { result } = renderHook(() => useSavedViews(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(Error);
+  });
+
+  it('creates a saved view and persists it', async () => {
+    const { result } = renderHook(() => useCreateSavedView(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate({ name: 'Blocked work', filters: { blocked: 'true' } });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const id = result.current.data?.id;
+    expect(id).toBeDefined();
+    expect(await adapter.get(`workboard:savedViews:${id}`)).toMatchObject({
+      ok: true,
+      value: { name: 'Blocked work' },
+    });
+  });
+
+  it('surfaces create errors', async () => {
+    adapter.setFailMode('set', createStorageError('QUOTA_EXCEEDED', 'write failed'));
+    const { result } = renderHook(() => useCreateSavedView(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate({ name: 'Blocked work', filters: {} });
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it('updates a saved view and persists the change', async () => {
+    await seedSavedView();
+    const { result } = renderHook(() => useUpdateSavedView(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate({ id: SAVED_VIEW_ID, update: { name: 'Blocked work' } });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(await adapter.get(`workboard:savedViews:${SAVED_VIEW_ID}`)).toMatchObject({
+      ok: true,
+      value: { name: 'Blocked work' },
+    });
+  });
+
+  it('surfaces update errors', async () => {
+    await seedSavedView();
+    adapter.setFailMode('set', createStorageError('QUOTA_EXCEEDED', 'write failed'));
+    const { result } = renderHook(() => useUpdateSavedView(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate({ id: SAVED_VIEW_ID, update: { name: 'Blocked work' } });
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it('deletes a saved view', async () => {
+    await seedSavedView();
+    const { result } = renderHook(() => useDeleteSavedView(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate(SAVED_VIEW_ID);
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(adapter.hasKey(`workboard:savedViews:${SAVED_VIEW_ID}`)).toBe(false);
+  });
+
+  it('surfaces delete errors', async () => {
+    await seedSavedView();
+    adapter.setFailMode('delete', createStorageError('PERMISSION_DENIED', 'delete failed'));
+    const { result } = renderHook(() => useDeleteSavedView(), { wrapper: createWrapper() });
+
+    await act(async () => {
+      result.current.mutate(SAVED_VIEW_ID);
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
