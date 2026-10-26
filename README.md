@@ -19,6 +19,7 @@ A polished, responsive project and task management application demonstrating pro
 - **Command Palette**: `⌘/Ctrl + K` to jump anywhere or run actions, plus keyboard shortcuts (`?` for help, `g` then a letter to navigate)
 - **Data Persistence**: IndexedDB (with localStorage fallback) - works offline
 - **Import/Export**: JSON backup and restore with validation (projects, tasks, epics, labels, saved views)
+- **Human-friendly exports**: CSV for tasks and projects, Markdown for the backlog, plus a print/PDF view of boards and lists
 - **Theme Support**: Light, dark, and system preference modes
 - **Accessibility**: WCAG 2.2 AA compliant
 - **Responsive Design**: Works on mobile, tablet, and desktop
@@ -236,6 +237,24 @@ Data is stored locally in your browser:
   documented in [ADR 0001](docs/decisions/0001-sync-architecture.md)
 - **Export/Import**: Use JSON backup to transfer data (includes projects, tasks, labels and saved views)
 
+### Export formats
+
+Settings → Data Management offers four ways out of the app:
+
+| Format           | Filename                            | Contents                                                                   |
+| ---------------- | ----------------------------------- | -------------------------------------------------------------------------- |
+| JSON             | `workboard-export-YYYY-MM-DD.json`  | Full backup (projects, tasks, epics, labels, saved views, preferences).    |
+| Tasks CSV        | `workboard-tasks-YYYY-MM-DD.csv`    | Every active task with stable column headers and RFC 4180 escaping.        |
+| Projects CSV     | `workboard-projects-YYYY-MM-DD.csv` | Project names, descriptions, colours and timestamps.                       |
+| Backlog Markdown | `workboard-backlog-YYYY-MM-DD.md`   | The current backlog grouped by project, in the same shape as `BACKLOG.md`. |
+
+The CSV exports are designed for spreadsheets and scripting: fields containing commas, quotes or
+line breaks are quoted and embedded quotes are doubled. JSON remains the lossless backup format.
+
+For PDF, use the browser's **Print → Save as PDF** on any project board or task list. The print
+stylesheet drops the navigation, filters and action buttons, and unclamps card text so the
+content is readable on paper.
+
 ## Deployment
 
 ### Netlify (Recommended)
@@ -267,7 +286,6 @@ Ensure your host supports SPA fallback (redirect all routes to `index.html`).
 - No user authentication
 - No file attachments
 - No recurring tasks
-- No task dependencies
 - List views are benchmarked to 50,000 tasks ([docs/performance.md](docs/performance.md)); rendering is
   virtualized, but filtering/sorting still scan the collection in memory, so total task count is
   bounded by available memory rather than by rendering
@@ -278,7 +296,6 @@ Ensure your host supports SPA fallback (redirect all routes to `index.html`).
 - Real-time updates via WebSockets
 - User accounts & teams
 - File attachments
-- Task dependencies & subtasks
 - Calendar view
 - Reporting & analytics
 - Mobile app (React Native)

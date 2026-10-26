@@ -229,6 +229,28 @@
   white-space: nowrap;
 }
 
+/* Print / Save as PDF: content only, no filters or controls. */
+@media print {
+  .container {
+    max-width: none;
+    padding: 0;
+  }
+
+  .header > button,
+  .filterBar,
+  .savedViewsBar,
+  .controls,
+  .bulkBar,
+  .pagination {
+    display: none !important;
+  }
+
+  .taskListWindowed {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
 @media (max-width: 640px) {
   .controls {
     flex-direction: column;

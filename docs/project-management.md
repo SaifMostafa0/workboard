@@ -136,6 +136,24 @@ npm run tickets:build
 > **Fixed:** as of [WB-404](../tickets/WB-404-export-labels-saved-views.md) the app's export includes
 > labels, saved views and preferences, so an export is a full backup. (Previously it omitted them.)
 
+### Human-friendly exports
+
+The JSON export is the lossless backup and the only format `tickets:sync` accepts. Settings also
+offers read-only outputs for people and reports:
+
+| Format           | Filename                            | Use                                                            |
+| ---------------- | ----------------------------------- | -------------------------------------------------------------- |
+| Tasks CSV        | `workboard-tasks-YYYY-MM-DD.csv`    | Spreadsheets/pivots. Stable columns, RFC 4180 escaping.        |
+| Projects CSV     | `workboard-projects-YYYY-MM-DD.csv` | Project inventory (name, description, colour, timestamps).     |
+| Backlog Markdown | `workboard-backlog-YYYY-MM-DD.md`   | Status reports and docs; mirrors the `BACKLOG.md` table shape. |
+
+These formats are one-way snapshots: editing them does **not** feed back into Workboard or the
+ticket files. Use JSON for a round-trip and `tickets:sync` for updating ticket frontmatter.
+
+For PDF reports, use the browser's Print → Save as PDF on a project board or the task list. A print
+stylesheet hides navigation, filters and action buttons; project columns become a page-safe stack
+and card text is no longer clamped.
+
 ---
 
 ## 5. Definition of done

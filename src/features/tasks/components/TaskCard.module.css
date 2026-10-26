@@ -378,3 +378,26 @@
     grid-template-columns: 4px 1fr;
   }
 }
+
+/* Print / Save as PDF: no interactive chrome and no clamped text. */
+@media print {
+  .card {
+    break-inside: avoid;
+    border-color: #d1d5db;
+    box-shadow: none;
+  }
+
+  .actions,
+  .kanbanActions,
+  .checkbox,
+  .updated {
+    display: none !important;
+  }
+
+  .description,
+  .list .description {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+  }
+}

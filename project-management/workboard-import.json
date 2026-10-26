@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportedAt": "2026-10-16T00:00:00.000Z",
+  "exportedAt": "2026-10-26T00:00:00.000Z",
   "projects": [
     {
       "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
@@ -116,8 +116,8 @@
       "id": "ff610e88-9367-4dc6-8f36-0b86f77f68bb",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
       "title": "WB-104 Add CSV and Markdown export plus a printable board",
-      "description": "JSON export/import exists, but it is machine-oriented. Reinforce Workboard's data-ownership\nstory with human-friendly outputs: CSV for spreadsheets, Markdown for docs and status reports,\nand a print/PDF view of a board.\n\n**Acceptance criteria**\n- [ ] Settings offers CSV export of tasks (and projects) with stable column headers and RFC 4180 escaping.\n- [ ] Settings offers Markdown export of the current backlog (reuse the BACKLOG.md table shape).\n- [ ] A print stylesheet renders the project board and task list cleanly for PDF (no nav chrome).\n- [ ] Export actions are keyboard accessible and announce completion.\n- [ ] Round-trip unit tests prove exported CSV parses back to the same values.\n- [ ] Documentation in README and `docs/project-management.md` describes each format.\n\n- Keep generation in a pure function so it is unit-testable without the DOM.\n- Reuse `date-fns` formatting already used in the app; do not hand-roll date strings.\n\nTicket file: tickets/WB-104-csv-markdown-export.md\n\nSource: competitor-analysis",
-      "status": "todo",
+      "description": "JSON export/import exists, but it is machine-oriented. Reinforce Workboard's data-ownership\nstory with human-friendly outputs: CSV for spreadsheets, Markdown for docs and status reports,\nand a print/PDF view of a board.\n\n**Acceptance criteria**\n- [x] Settings offers CSV export of tasks (and projects) with stable column headers and RFC 4180 escaping.\n- [x] Settings offers Markdown export of the current backlog (reuse the BACKLOG.md table shape).\n- [x] A print stylesheet renders the project board and task list cleanly for PDF (no nav chrome).\n- [x] Export actions are keyboard accessible and announce completion.\n- [x] Round-trip unit tests prove exported CSV parses back to the same values.\n- [x] Documentation in README and `docs/project-management.md` describes each format.\n\n- Keep generation in a pure function so it is unit-testable without the DOM.\n- Reuse `date-fns` formatting already used in the app; do not hand-roll date strings.\n\nTicket file: tickets/WB-104-csv-markdown-export.md\n\nSource: competitor-analysis",
+      "status": "done",
       "priority": "medium",
       "tags": [
         "workboard",
@@ -128,8 +128,9 @@
         "type:feature"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-26T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-26T00:00:00.000Z"
     },
     {
       "id": "bf14ac88-1471-490c-89a2-2027a62e6961",

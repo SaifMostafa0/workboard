@@ -21,9 +21,7 @@ test.describe('Filters and Search', () => {
 
     // Only done tasks remain
     await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-104 Add CSV and Markdown' })).toHaveCount(
-      0
-    );
+    await expect(page.locator('article', { hasText: 'WB-202 Add a calendar view' })).toHaveCount(0);
   });
 
   test('filters by priority', async ({ page }) => {
@@ -32,9 +30,7 @@ test.describe('Filters and Search', () => {
     await expect(
       page.locator('article', { hasText: 'WB-403 Virtualize long lists' })
     ).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-104 Add CSV and Markdown' })).toHaveCount(
-      0
-    );
+    await expect(page.locator('article', { hasText: 'WB-202 Add a calendar view' })).toHaveCount(0);
   });
 
   test('filters by project', async ({ page }) => {
@@ -64,7 +60,7 @@ test.describe('Filters and Search', () => {
     // Should apply all filters (AND logic) — every visible card is todo + medium
     const cards = page.locator('article');
     await expect(cards.first()).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-104 Add CSV and Markdown' })).toBeVisible();
+    await expect(page.locator('article', { hasText: 'WB-202 Add a calendar view' })).toBeVisible();
     await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toHaveCount(0);
   });
 

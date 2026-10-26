@@ -339,3 +339,45 @@
     min-width: 0;
   }
 }
+
+/* Print / Save as PDF: the board becomes a stack of readable sections. */
+@media print {
+  .container {
+    max-width: none;
+    padding: 0;
+  }
+
+  .header,
+  .backLink,
+  .epicActions {
+    display: none !important;
+  }
+
+  .projectInfo,
+  .epicsBar {
+    break-inside: avoid;
+    border-color: #d1d5db;
+    box-shadow: none;
+  }
+
+  .kanbanBoard {
+    display: block;
+    min-height: 0;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .column {
+    max-width: none;
+    min-width: 0;
+    margin-bottom: 1rem;
+    break-inside: avoid;
+    background: #fff;
+    border-color: #d1d5db;
+    box-shadow: none;
+  }
+
+  .columnContent {
+    overflow: visible;
+  }
+}

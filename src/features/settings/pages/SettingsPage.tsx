@@ -3,11 +3,14 @@ import { Alert } from '@/components/feedback/Alert';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
+import { backlogToMarkdown, projectsToCsv, tasksToCsv } from '@/domain';
 import {
   useClearAllData,
   useExportData,
   useImportData,
+  useProjects,
   useSettings,
+  useTasks,
   useUpdateSettings,
 } from '@/hooks/useData';
 import { cn } from '@/lib/cn';
@@ -16,6 +19,8 @@ import {
   Database,
   Download,
   FileJson,
+  FileSpreadsheet,
+  FileText,
   Monitor,
   Moon,
   Palette,
@@ -44,8 +49,31 @@ const THEME_OPTIONS = [
   { value: 'system', label: 'System', icon: Monitor },
 ] as const;
 
+/** Download generated text without a round-trip through the server. */
+function downloadTextFile(contents: string, filename: string, type: string): void {
+  const blob = new Blob([contents], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  // Revoking synchronously can cancel the download before the browser reads the blob.
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}
+
+const fileDateStamp = (): string => new Date().toISOString().slice(0, 10);
+
+interface ExportNotice {
+  title: string;
+  message: string;
+}
+
 export function SettingsPage() {
   const { data: settings, isLoading, error } = useSettings();
+  const { data: projects } = useProjects();
+  const { data: tasks } = useTasks();
   const updateSettings = useUpdateSettings();
   const exportData = useExportData();
   const importData = useImportData();
@@ -57,7 +85,8 @@ export function SettingsPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
   const [importError, setImportError] = useState<string | null>(null);
-  const [exportSuccess, setExportSuccess] = useState(false);
+  const [exportNotice, setExportNotice] = useState<ExportNotice | null>(null);
+  const exportDataReady = Boolean(projects && tasks);
 
   const {
     register,
@@ -98,9 +127,50 @@ export function SettingsPage() {
   const handleExport = () => {
     exportData.mutate(undefined, {
       onSuccess: () => {
-        setExportSuccess(true);
-        setTimeout(() => setExportSuccess(false), 3000);
+        setExportNotice({
+          title: 'Export complete',
+          message: 'Your data has been downloaded as a JSON file.',
+        });
       },
+    });
+  };
+
+  const handleExportTasksCsv = () => {
+    if (!tasks || !projects) return;
+    downloadTextFile(
+      tasksToCsv(tasks, projects),
+      `workboard-tasks-${fileDateStamp()}.csv`,
+      'text/csv;charset=utf-8'
+    );
+    setExportNotice({
+      title: 'Tasks CSV exported',
+      message: `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'} downloaded as CSV.`,
+    });
+  };
+
+  const handleExportProjectsCsv = () => {
+    if (!projects) return;
+    downloadTextFile(
+      projectsToCsv(projects),
+      `workboard-projects-${fileDateStamp()}.csv`,
+      'text/csv;charset=utf-8'
+    );
+    setExportNotice({
+      title: 'Projects CSV exported',
+      message: `${projects.length} ${projects.length === 1 ? 'project' : 'projects'} downloaded as CSV.`,
+    });
+  };
+
+  const handleExportBacklogMarkdown = () => {
+    if (!tasks || !projects) return;
+    downloadTextFile(
+      backlogToMarkdown(tasks, projects),
+      `workboard-backlog-${fileDateStamp()}.md`,
+      'text/markdown;charset=utf-8'
+    );
+    setExportNotice({
+      title: 'Backlog Markdown exported',
+      message: `The current backlog (${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}) downloaded as Markdown.`,
     });
   };
 
@@ -176,14 +246,14 @@ export function SettingsPage() {
         <p className={styles.subtitle}>Manage your preferences and data</p>
       </header>
 
-      {exportSuccess && (
+      {exportNotice && (
         <Alert
           type="success"
-          title="Export Complete"
+          title={exportNotice.title}
           dismissible
-          onDismiss={() => setExportSuccess(false)}
+          onDismiss={() => setExportNotice(null)}
         >
-          Your data has been downloaded as a JSON file.
+          {exportNotice.message}
         </Alert>
       )}
 
@@ -288,6 +358,70 @@ export function SettingsPage() {
             >
               <Download className="w-4 h-4" aria-hidden="true" />
               Export JSON
+            </Button>
+          </div>
+
+          <div className={styles.dataCard}>
+            <div className={styles.dataCardHeader}>
+              <FileSpreadsheet className={styles.dataCardIcon} aria-hidden="true" />
+              <div>
+                <h3 className={styles.dataCardTitle}>Export Tasks CSV</h3>
+                <p className={styles.dataCardDesc}>
+                  Every active task with stable columns and RFC 4180 escaping, ready for a
+                  spreadsheet
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleExportTasksCsv}
+              disabled={!exportDataReady}
+              className={styles.dataCardButton}
+            >
+              <Download className="w-4 h-4" aria-hidden="true" />
+              Export Tasks CSV
+            </Button>
+          </div>
+
+          <div className={styles.dataCard}>
+            <div className={styles.dataCardHeader}>
+              <FileSpreadsheet className={styles.dataCardIcon} aria-hidden="true" />
+              <div>
+                <h3 className={styles.dataCardTitle}>Export Projects CSV</h3>
+                <p className={styles.dataCardDesc}>
+                  The project list with colours and timestamps, for spreadsheets and reports
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleExportProjectsCsv}
+              disabled={!exportDataReady}
+              className={styles.dataCardButton}
+            >
+              <Download className="w-4 h-4" aria-hidden="true" />
+              Export Projects CSV
+            </Button>
+          </div>
+
+          <div className={styles.dataCard}>
+            <div className={styles.dataCardHeader}>
+              <FileText className={styles.dataCardIcon} aria-hidden="true" />
+              <div>
+                <h3 className={styles.dataCardTitle}>Export Backlog Markdown</h3>
+                <p className={styles.dataCardDesc}>
+                  The current backlog as a Markdown table, in the same shape as BACKLOG.md
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleExportBacklogMarkdown}
+              disabled={!exportDataReady}
+              className={styles.dataCardButton}
+            >
+              <Download className="w-4 h-4" aria-hidden="true" />
+              Export Backlog Markdown
             </Button>
           </div>
 

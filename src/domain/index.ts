@@ -1,6 +1,7 @@
 export * from './dependency';
 export * from './epic';
 export * from './errors';
+export * from './export';
 export * from './label';
 export * from './pagination';
 export * from './project';
