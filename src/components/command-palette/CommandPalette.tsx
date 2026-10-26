@@ -2,6 +2,7 @@ import { useTheme } from '@/app/providers';
 import { useSettings, useUpdateSettings } from '@/hooks/useData';
 import { cn } from '@/lib/cn';
 import {
+  CalendarDays,
   FolderKanban,
   LayoutDashboard,
   ListTodo,
@@ -78,6 +79,14 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
         keywords: 'todo items',
         icon: <ListTodo className="w-4 h-4" aria-hidden="true" />,
         run: go('/tasks'),
+      },
+      {
+        id: 'nav-calendar',
+        group: 'Navigation',
+        label: 'Go to Calendar',
+        keywords: 'due dates schedule month week',
+        icon: <CalendarDays className="w-4 h-4" aria-hidden="true" />,
+        run: go('/calendar'),
       },
       {
         id: 'nav-trash',

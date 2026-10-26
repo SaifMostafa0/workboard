@@ -31,9 +31,13 @@ test.describe('Saved views', () => {
     await expect(page).toHaveURL(/status=todo/);
     await expect(page.getByText(`View: ${viewName}`)).toBeVisible();
 
-    // Only todo tasks remain: a todo task is shown, a done task is filtered out.
-    await expect(page.locator('article', { hasText: 'WB-202 Add a calendar view' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toHaveCount(0);
+    // Only todo tasks remain: every visible card has the To Do badge.
+    const cards = page.locator('article');
+    await expect(cards.first()).toBeVisible();
+    const visibleCount = await cards.count();
+    await expect(cards.filter({ has: page.getByText('To Do', { exact: true }) })).toHaveCount(
+      visibleCount
+    );
 
     // Choosing "All views" returns to the default state.
     await page.selectOption('select[aria-label="Apply a saved view"]', { label: 'All views' });

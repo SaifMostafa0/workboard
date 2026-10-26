@@ -12,6 +12,7 @@ A polished, responsive project and task management application demonstrating pro
 - **Sub-tasks**: Break a task into one level of sub-tasks with done/total progress and cascade delete/restore
 - **Task Dependencies**: Mark a task as "blocked by" others — a derived Blocked badge, cycle prevention, and a dependency filter
 - **Kanban & List Views**: Switch between board and list layouts
+- **Calendar View**: Month and week due-date calendars with project colours, overdue emphasis, and a keyboard-navigable day grid
 - **Advanced Filtering**: Search, filter by status/priority/project/epic/due date/dependency, multi-column sorting
 - **Pagination**: Configurable page sizes with URL synchronization
 - **Trash & Undo**: Deleting is reversible — an inline Undo toast plus a Trash page to restore or remove items for good
@@ -296,7 +297,6 @@ Ensure your host supports SPA fallback (redirect all routes to `index.html`).
 - Real-time updates via WebSockets
 - User accounts & teams
 - File attachments
-- Calendar view
 - Reporting & analytics
 - Mobile app (React Native)
 

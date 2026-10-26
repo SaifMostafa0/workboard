@@ -17,11 +17,25 @@ test.describe('Filters and Search', () => {
   });
 
   test('filters by status', async ({ page }) => {
+    // Widen the page so both done and open seed tasks are present before filtering.
+    await page.selectOption('select[id="page-size"]', '50');
+
+    const cards = page.locator('article');
+    const todoCard = cards.filter({ has: page.getByText('To Do', { exact: true }) }).first();
+    await expect(todoCard).toBeVisible();
+    const todoTitle = (await todoCard.locator('h3').innerText()).trim();
+
     await page.selectOption('select[aria-label="Filter by status"]', 'done');
 
-    // Only done tasks remain
-    await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-202 Add a calendar view' })).toHaveCount(0);
+    // Every visible card is done, and the open task we captured is gone.
+    await expect(cards.first()).toBeVisible();
+    const visibleCount = await cards.count();
+    await expect(cards.filter({ has: page.getByText('Done', { exact: true }) })).toHaveCount(
+      visibleCount
+    );
+    await expect(
+      cards.filter({ has: page.getByRole('heading', { name: todoTitle, exact: true }) })
+    ).toHaveCount(0);
   });
 
   test('filters by priority', async ({ page }) => {
@@ -57,11 +71,16 @@ test.describe('Filters and Search', () => {
     await page.selectOption('select[aria-label="Filter by status"]', 'todo');
     await page.selectOption('select[aria-label="Filter by priority"]', 'medium');
 
-    // Should apply all filters (AND logic) — every visible card is todo + medium
+    // Should apply all filters (AND logic) — every visible card is todo + medium.
     const cards = page.locator('article');
     await expect(cards.first()).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-202 Add a calendar view' })).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toHaveCount(0);
+    const visibleCount = await cards.count();
+    await expect(cards.filter({ has: page.getByText('To Do', { exact: true }) })).toHaveCount(
+      visibleCount
+    );
+    await expect(cards.filter({ has: page.getByText('Medium', { exact: true }) })).toHaveCount(
+      visibleCount
+    );
   });
 
   test('clears all filters', async ({ page }) => {

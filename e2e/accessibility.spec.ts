@@ -5,6 +5,7 @@ const PAGES = [
   { name: 'Dashboard', path: '/' },
   { name: 'Projects', path: '/projects' },
   { name: 'Tasks', path: '/tasks' },
+  { name: 'Calendar', path: '/calendar' },
   { name: 'Trash', path: '/trash' },
   { name: 'Settings', path: '/settings' },
 ] as const;

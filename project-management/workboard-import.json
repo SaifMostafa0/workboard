@@ -156,8 +156,8 @@
       "id": "1ba7a544-bb5b-4f30-a0b4-b9df482278b6",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000102",
       "title": "WB-202 Add a calendar view",
-      "description": "Due dates exist but can only be seen in a list. A calendar (month/week) view is table stakes in\nTrello Premium and Asana and makes due dates actionable.\n\n**Acceptance criteria**\n- [ ] A `/calendar` route renders tasks by `dueDate` in a month grid, with a week view.\n- [ ] Tasks are grouped and colour-coded by project; overdue tasks are visually distinct.\n- [ ] Clicking a day shows that day's tasks; clicking a task opens the task detail.\n- [ ] View state (range, project filter) is stored in the URL for shareable links.\n- [ ] Fully keyboard navigable and screen-reader friendly (grid semantics, roving tabindex or equivalent).\n- [ ] Empty and no-due-date states are handled explicitly.\n- [ ] Component tests for date bucketing; one E2E journey.\n\n- Reuse the existing date utilities and design tokens; do not add a calendar dependency unless the a11y story is verified.\n\nTicket file: tickets/WB-202-calendar-view.md\n\nSource: competitor-analysis",
-      "status": "todo",
+      "description": "Due dates exist but can only be seen in a list. A calendar (month/week) view is table stakes in\nTrello Premium and Asana and makes due dates actionable.\n\n**Acceptance criteria**\n- [x] A `/calendar` route renders tasks by `dueDate` in a month grid, with a week view.\n- [x] Tasks are grouped and colour-coded by project; overdue tasks are visually distinct.\n- [x] Clicking a day shows that day's tasks; clicking a task opens the task detail.\n- [x] View state (range, project filter) is stored in the URL for shareable links.\n- [x] Fully keyboard navigable and screen-reader friendly (grid semantics, roving tabindex or equivalent).\n- [x] Empty and no-due-date states are handled explicitly.\n- [x] Component tests for date bucketing; one E2E journey.\n\n- Reuse the existing date utilities and design tokens; do not add a calendar dependency unless the a11y story is verified.\n\nTicket file: tickets/WB-202-calendar-view.md\n\nSource: competitor-analysis",
+      "status": "done",
       "priority": "medium",
       "tags": [
         "workboard",
@@ -168,8 +168,9 @@
         "type:feature"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-26T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-26T00:00:00.000Z"
     },
     {
       "id": "d9fff0d7-9e42-457e-acfb-121d7074414c",

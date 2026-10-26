@@ -278,7 +278,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
 
 ### Automated (CI)
 
-- [ ] `axe-core` in Playwright E2E: 0 violations on `/`, `/projects`, `/tasks`, `/settings`
+- [ ] `axe-core` in Playwright E2E: 0 violations on `/`, `/projects`, `/tasks`, `/calendar`, `/trash`, `/settings`
 - [ ] `eslint-plugin-jsx-a11y` in lint pipeline
 - [ ] Color contrast audit via `vitest` + `color-contrast-checker`
 

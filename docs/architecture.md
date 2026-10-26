@@ -174,6 +174,10 @@ time by `VirtualList`.
 - Browser back/forward works
 - Server-side rendering ready (future)
 
+The Calendar follows the same rule: `view` (`month`/`week`), `date` (visible range),
+`day` (selected date) and `project` (filter) live in the query string. Defaults are
+canonicalised on first load so `/calendar` becomes a shareable month link.
+
 ## Type System Strategy
 
 ### Branded Types for IDs

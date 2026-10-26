@@ -6,6 +6,7 @@ import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys';
 import { cn } from '@/lib/cn';
 import { isApplePlatform } from '@/lib/hotkeys';
 import {
+  CalendarDays,
   FolderKanban,
   LayoutDashboard,
   ListTodo,
@@ -27,6 +28,7 @@ const navigation = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/projects', label: 'Projects', icon: FolderKanban },
   { path: '/tasks', label: 'Tasks', icon: ListTodo },
+  { path: '/calendar', label: 'Calendar', icon: CalendarDays },
   { path: '/labels', label: 'Labels', icon: Tag },
   { path: '/saved-views', label: 'Saved Views', icon: Save },
   { path: '/trash', label: 'Trash', icon: Trash2 },

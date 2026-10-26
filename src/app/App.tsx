@@ -1,5 +1,6 @@
 import { NotFoundPage } from '@/app/pages/NotFoundPage';
 import { Layout } from '@/components/layout/Layout';
+import { CalendarPage } from '@/features/calendar/pages/CalendarPage';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { LabelsPage } from '@/features/labels/pages/LabelsPage';
 import { ProjectDetailPage } from '@/features/projects/pages/ProjectDetailPage';
@@ -20,6 +21,7 @@ export function App() {
         <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/tasks/new" element={<TasksPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/labels" element={<LabelsPage />} />
         <Route path="/saved-views" element={<SavedViewsPage />} />
         <Route path="/settings" element={<SettingsPage />} />

@@ -14,6 +14,7 @@ const GO_ROUTES: Record<string, string> = {
   d: '/',
   p: '/projects',
   t: '/tasks',
+  c: '/calendar',
   r: '/trash',
   s: '/settings',
 };
@@ -22,7 +23,7 @@ const GO_ROUTES: Record<string, string> = {
  * Registers the app-wide keyboard shortcuts:
  *  - Ctrl/⌘ + K: command palette
  *  - ?: keyboard shortcuts help
- *  - g then d/p/t/r/s: jump to Dashboard/Projects/Tasks/Trash/Settings
+ *  - g then d/p/t/c/r/s: jump to Dashboard/Projects/Tasks/Calendar/Trash/Settings
  */
 export function useGlobalHotkeys({ onOpenPalette, onOpenShortcuts }: GlobalHotkeysOptions) {
   const navigate = useNavigate();

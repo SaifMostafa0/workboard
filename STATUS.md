@@ -8,10 +8,11 @@ _Last updated: 2026-10-26_
 ## Where we are
 
 Workboard is **feature-complete as a portfolio app**: projects & tasks CRUD, epics with roll-up
-progress, sub-tasks with progress, Kanban + list views, advanced filtering with URL state, labels,
-saved views, trash with undo, bulk actions, command palette + keyboard shortcuts, theme support,
-JSON import/export, CSV and Markdown snapshots, a printable board and task list, WCAG 2.2 AA target,
-and a full test/CI setup. It is local-first (IndexedDB + localStorage fallback) with no backend.
+progress, sub-tasks with progress, Kanban + list + month/week calendar views, advanced filtering
+with URL state, labels, saved views, trash with undo, bulk actions, command palette + keyboard
+shortcuts, theme support, JSON import/export, CSV and Markdown snapshots, a printable board and task
+list, WCAG 2.2 AA target, and a full test/CI setup. It is local-first (IndexedDB + localStorage
+fallback) with no backend.
 
 The project now **manages itself with Workboard** and is documented for AI agent teams
 (see [`AGENTS.md`](AGENTS.md) and [`docs/project-management.md`](docs/project-management.md)).
@@ -20,6 +21,7 @@ The project now **manages itself with Workboard** and is documented for AI agent
 
 | Date       | Work                                                             | Ticket                                                 |
 | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
+| 2026-10-26 | Calendar view: month/week grids, project colours, URL state      | [WB-202](tickets/WB-202-calendar-view.md)              |
 | 2026-10-26 | CSV/Markdown exports, keyboard-triggered downloads, print layout | [WB-104](tickets/WB-104-csv-markdown-export.md)        |
 | 2026-10-16 | Task dependencies: "blocked by" with cycle prevention + filter   | [WB-103](tickets/WB-103-task-dependencies.md)          |
 | 2026-10-16 | Sync spike: options report, ADR, and a working API-backed repo   | [WB-201](tickets/WB-201-sync-spike.md)                 |
@@ -42,19 +44,20 @@ _None._ Pick from the next-up list below.
 
 ## Next up (highest priority)
 
-| ID                                        | Title               | Why now                                                       |
-| ----------------------------------------- | ------------------- | ------------------------------------------------------------- |
-| [WB-202](tickets/WB-202-calendar-view.md) | Add a calendar view | Next Tier 2 differentiator; reuses the filtered task pipeline |
+| ID                                         | Title                                  | Why now                                        |
+| ------------------------------------------ | -------------------------------------- | ---------------------------------------------- |
+| [WB-508](tickets/WB-508-mobile-dnd-e2e.md) | Un-skip and fix mobile Kanban drag E2E | Two E2E tests are still skipped                |
+| [WB-203](tickets/WB-203-timeline-view.md)  | Add a timeline / roadmap view          | Next Tier 2 view; builds on the calendar model |
 
 ## Metrics
 
 | Metric               | Value                          | Source                  |
 | -------------------- | ------------------------------ | ----------------------- |
-| Unit/component tests | 492 passing                    | `npm run test:run`      |
-| E2E tests            | 166 passing, 2 skipped         | `npm run test:e2e`      |
-| Coverage             | 86.24% stmts / 79.32% branches | `npm run test:coverage` |
-| Bundle budget        | 171.61 kB gzip JS (≤200 KB)    | `npm run size`          |
-| Backlog              | 28 tickets, 12 open / 16 done  | `BACKLOG.md`            |
+| Unit/component tests | 502 passing                    | `npm run test:run`      |
+| E2E tests            | 170 passing, 2 skipped         | `npm run test:e2e`      |
+| Coverage             | 86.69% stmts / 79.69% branches | `npm run test:coverage` |
+| Bundle budget        | 176.43 kB gzip JS (≤200 KB)    | `npm run size`          |
+| Backlog              | 28 tickets, 11 open / 17 done  | `BACKLOG.md`            |
 
 ## Known limitations
 
