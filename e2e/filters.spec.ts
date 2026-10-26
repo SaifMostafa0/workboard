@@ -1,4 +1,28 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+
+const taskCards = (page: Page) => page.locator('article[data-task-id]');
+
+async function taskId(card: Locator): Promise<string> {
+  const id = await card.getAttribute('data-task-id');
+  if (!id) throw new Error('Task card is missing data-task-id');
+  return id;
+}
+
+async function taskTitle(card: Locator): Promise<string> {
+  return (await card.locator('h3').innerText()).trim();
+}
+
+/** Wait until the rendered list is non-empty and every visible card matches the selector. */
+async function expectAllCardsMatch(page: Page, selector: string): Promise<void> {
+  const cards = taskCards(page);
+  await expect
+    .poll(async () => {
+      const total = await cards.count();
+      if (total === 0) return false;
+      return (await page.locator(selector).count()) === total;
+    })
+    .toBe(true);
+}
 
 test.describe('Filters and Search', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,79 +31,121 @@ test.describe('Filters and Search', () => {
   });
 
   test('searches tasks by title', async ({ page }) => {
-    await page.fill('input[placeholder="Search tasks..."]', 'Virtualize');
+    const cards = taskCards(page);
+    await expect(cards.first()).toBeVisible();
 
-    // Should filter results down to the matching task
-    await expect(
-      page.locator('article', { hasText: 'WB-403 Virtualize long lists' })
-    ).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-101 Finish Saved Views' })).toHaveCount(0);
+    const first = cards.first();
+    const second = cards.nth(1);
+    const [firstId, secondId, firstTitle] = await Promise.all([
+      taskId(first),
+      taskId(second),
+      taskTitle(first),
+    ]);
+
+    await page.fill('input[placeholder="Search tasks..."]', firstTitle);
+
+    // The searched task remains; an unrelated task is filtered out.
+    await expect(page.locator(`article[data-task-id="${firstId}"]`)).toBeVisible();
+    await expect(page.locator(`article[data-task-id="${secondId}"]`)).toHaveCount(0);
   });
 
   test('filters by status', async ({ page }) => {
     // Widen the page so both done and open seed tasks are present before filtering.
     await page.selectOption('select[id="page-size"]', '50');
 
-    const cards = page.locator('article');
-    const todoCard = cards.filter({ has: page.getByText('To Do', { exact: true }) }).first();
-    await expect(todoCard).toBeVisible();
-    const todoTitle = (await todoCard.locator('h3').innerText()).trim();
+    const todoId = await taskId(page.locator('article[data-task-status="todo"]').first());
 
     await page.selectOption('select[aria-label="Filter by status"]', 'done');
+    await expect(page).toHaveURL((url) => url.searchParams.get('status') === 'done');
 
     // Every visible card is done, and the open task we captured is gone.
-    await expect(cards.first()).toBeVisible();
-    const visibleCount = await cards.count();
-    await expect(cards.filter({ has: page.getByText('Done', { exact: true }) })).toHaveCount(
-      visibleCount
-    );
-    await expect(
-      cards.filter({ has: page.getByRole('heading', { name: todoTitle, exact: true }) })
-    ).toHaveCount(0);
+    await expectAllCardsMatch(page, 'article[data-task-status="done"]');
+    await expect(page.locator(`article[data-task-id="${todoId}"]`)).toHaveCount(0);
   });
 
   test('filters by priority', async ({ page }) => {
-    await page.selectOption('select[aria-label="Filter by priority"]', 'high');
+    await page.selectOption('select[id="page-size"]', '50');
 
-    await expect(
-      page.locator('article', { hasText: 'WB-403 Virtualize long lists' })
-    ).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-202 Add a calendar view' })).toHaveCount(0);
+    const highCard = page.locator('article[data-task-priority="high"]').first();
+    const mediumCard = page.locator('article[data-task-priority="medium"]').first();
+    await expect(highCard).toBeVisible();
+    await expect(mediumCard).toBeVisible();
+    const mediumId = await taskId(mediumCard);
+
+    await page.selectOption('select[aria-label="Filter by priority"]', 'high');
+    await expect(page).toHaveURL((url) => url.searchParams.get('priority') === 'high');
+
+    await expectAllCardsMatch(page, 'article[data-task-priority="high"]');
+    await expect(page.locator(`article[data-task-id="${mediumId}"]`)).toHaveCount(0);
   });
 
   test('filters by project', async ({ page }) => {
-    await page.selectOption('select[aria-label="Filter by project"]', { index: 1 });
+    const firstCard = taskCards(page).first();
+    await expect(firstCard).toBeVisible();
+    const projectId = await firstCard.getAttribute('data-task-project-id');
+    if (!projectId) throw new Error('First task is not attached to a project');
 
-    // Should filter by selected project
-    await expect(page.locator('article').first()).toBeVisible();
+    await page.selectOption('select[aria-label="Filter by project"]', projectId);
+    await expect(page).toHaveURL((url) => url.searchParams.get('project') === projectId);
+
+    await expectAllCardsMatch(page, `article[data-task-project-id="${projectId}"]`);
   });
 
   test('filters by due date', async ({ page }) => {
-    // The backlog tracks no due dates, so nothing is overdue…
-    await page.selectOption('select[aria-label="Filter by due date"]', 'overdue');
-    await expect(page.locator('article')).toHaveCount(0);
+    const today = new Date().toLocaleDateString('en-CA');
 
-    // …while the "No Due Date" filter matches the whole backlog.
+    await page.selectOption('select[aria-label="Filter by due date"]', 'overdue');
+    await expect(page).toHaveURL((url) => url.searchParams.get('due') === 'overdue');
+    await expect
+      .poll(async () =>
+        taskCards(page).evaluateAll((cards) =>
+          cards.every((card) => {
+            const dueDate = card.getAttribute('data-task-due-date') ?? '';
+            const status = card.getAttribute('data-task-status') ?? '';
+            return status !== 'done' && dueDate !== '' && dueDate <= today;
+          })
+        )
+      )
+      .toBe(true);
+
     await page.selectOption('select[aria-label="Filter by due date"]', 'no-date');
-    await expect(
-      page.locator('article', { hasText: 'WB-403 Virtualize long lists' })
-    ).toBeVisible();
+    await expect(page).toHaveURL((url) => url.searchParams.get('due') === 'no-date');
+    await expect
+      .poll(async () => {
+        const cards = taskCards(page);
+        const total = await cards.count();
+        if (total === 0) return false;
+        return cards.evaluateAll((elements) =>
+          elements.every((card) => (card.getAttribute('data-task-due-date') ?? '') === '')
+        );
+      })
+      .toBe(true);
   });
 
   test('combines multiple filters', async ({ page }) => {
-    await page.fill('input[placeholder="Search tasks..."]', 'a');
     await page.selectOption('select[aria-label="Filter by status"]', 'todo');
     await page.selectOption('select[aria-label="Filter by priority"]', 'medium');
+    await expect(page).toHaveURL(
+      (url) =>
+        url.searchParams.get('status') === 'todo' && url.searchParams.get('priority') === 'medium'
+    );
+    await expectAllCardsMatch(
+      page,
+      'article[data-task-status="todo"][data-task-priority="medium"]'
+    );
+
+    const cards = taskCards(page);
+    const targetId = await taskId(cards.first());
+    const targetTitle = await taskTitle(cards.first());
+
+    await page.fill('input[placeholder="Search tasks..."]', targetTitle);
+    await expect(page).toHaveURL((url) => url.searchParams.get('q') === targetTitle);
 
     // Should apply all filters (AND logic) — every visible card is todo + medium.
-    const cards = page.locator('article');
-    await expect(cards.first()).toBeVisible();
-    const visibleCount = await cards.count();
-    await expect(cards.filter({ has: page.getByText('To Do', { exact: true }) })).toHaveCount(
-      visibleCount
-    );
-    await expect(cards.filter({ has: page.getByText('Medium', { exact: true }) })).toHaveCount(
-      visibleCount
+    await expect(page.locator(`article[data-task-id="${targetId}"]`)).toBeVisible();
+    await expectAllCardsMatch(
+      page,
+      'article[data-task-status="todo"][data-task-priority="medium"]'
     );
   });
 

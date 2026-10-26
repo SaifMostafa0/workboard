@@ -1,5 +1,11 @@
-import { expect, test, type Download } from '@playwright/test';
+import { expect, test, type Download, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+
+interface TaskIdentity {
+  id: string;
+  title: string;
+  key: string;
+}
 
 async function downloadText(download: Download): Promise<string> {
   const path = await download.path();
@@ -7,8 +13,39 @@ async function downloadText(download: Download): Promise<string> {
   return readFile(path, 'utf8');
 }
 
+async function firstTask(page: Page): Promise<TaskIdentity> {
+  await page.goto('/tasks');
+  await page.waitForLoadState('networkidle');
+
+  const card = page.locator('article[data-task-id]').first();
+  await expect(card).toBeVisible();
+
+  const id = await card.getAttribute('data-task-id');
+  if (!id) throw new Error('Task card is missing data-task-id');
+  const title = (await card.locator('h3').innerText()).trim();
+  const key = /^([A-Za-z]+-\d+)\b/.exec(title)?.[1] ?? id.slice(0, 8);
+
+  return { id, title, key };
+}
+
+async function firstProjectName(page: Page): Promise<string> {
+  await page.goto('/tasks');
+  await page.waitForLoadState('networkidle');
+
+  const names = (
+    await page.locator('select[aria-label="Filter by project"] option').allInnerTexts()
+  )
+    .map((name) => name.trim())
+    .filter((name) => name !== '' && name !== 'All Projects');
+
+  if (names.length === 0) throw new Error('No seeded projects found');
+  return names[0];
+}
+
 test.describe('Human-friendly exports', () => {
   test('exports tasks as RFC 4180 CSV and announces completion', async ({ page }) => {
+    const task = await firstTask(page);
+
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
 
@@ -25,12 +62,14 @@ test.describe('Human-friendly exports', () => {
       'id,projectId,project,title,description,status,priority,dueDate,assignee,tags,parentId,epicId,blockedBy,createdAt,updatedAt,completedAt'
     );
     expect(rows.length).toBeGreaterThan(1);
-    expect(text).toContain('WB-104');
+    expect(text).toContain(task.id);
 
     await expect(page.getByRole('status').filter({ hasText: 'Tasks CSV exported' })).toBeVisible();
   });
 
   test('exports projects as CSV', async ({ page }) => {
+    const projectName = await firstProjectName(page);
+
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
 
@@ -42,7 +81,7 @@ test.describe('Human-friendly exports', () => {
 
     const text = await downloadText(download);
     expect(text.split('\r\n')[0]).toBe('id,name,description,color,createdAt,updatedAt');
-    expect(text).toContain('Roadmap T1');
+    expect(text).toContain(projectName);
 
     await expect(
       page.getByRole('status').filter({ hasText: 'Projects CSV exported' })
@@ -50,6 +89,8 @@ test.describe('Human-friendly exports', () => {
   });
 
   test('exports the backlog as a BACKLOG.md-shaped table', async ({ page }) => {
+    const task = await firstTask(page);
+
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
 
@@ -62,7 +103,7 @@ test.describe('Human-friendly exports', () => {
     const text = await downloadText(download);
     expect(text.startsWith('# Workboard — Backlog')).toBe(true);
     expect(text).toContain('| ID | Title | Status | Priority | Assignee | Tags | Updated |');
-    expect(text).toContain('| WB-104 |');
+    expect(text).toContain(`| ${task.key} |`);
 
     await expect(
       page.getByRole('status').filter({ hasText: 'Backlog Markdown exported' })

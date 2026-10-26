@@ -21,6 +21,8 @@ The project now **manages itself with Workboard** and is documented for AI agent
 
 | Date       | Work                                                             | Ticket                                                 |
 | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
+| 2026-10-26 | Mobile Kanban E2E: touch fallback + keyboard parity              | [WB-508](tickets/WB-508-mobile-dnd-e2e.md)             |
+| 2026-10-26 | Data-driven E2E specs: removed seeded ticket fixtures            | [WB-509](tickets/WB-509-e2e-data-driven.md)            |
 | 2026-10-26 | Calendar view: month/week grids, project colours, URL state      | [WB-202](tickets/WB-202-calendar-view.md)              |
 | 2026-10-26 | CSV/Markdown exports, keyboard-triggered downloads, print layout | [WB-104](tickets/WB-104-csv-markdown-export.md)        |
 | 2026-10-16 | Task dependencies: "blocked by" with cycle prevention + filter   | [WB-103](tickets/WB-103-task-dependencies.md)          |
@@ -44,20 +46,20 @@ _None._ Pick from the next-up list below.
 
 ## Next up (highest priority)
 
-| ID                                         | Title                                  | Why now                                        |
-| ------------------------------------------ | -------------------------------------- | ---------------------------------------------- |
-| [WB-508](tickets/WB-508-mobile-dnd-e2e.md) | Un-skip and fix mobile Kanban drag E2E | Two E2E tests are still skipped                |
-| [WB-203](tickets/WB-203-timeline-view.md)  | Add a timeline / roadmap view          | Next Tier 2 view; builds on the calendar model |
+| ID                                        | Title                         | Why now                                        |
+| ----------------------------------------- | ----------------------------- | ---------------------------------------------- |
+| [WB-203](tickets/WB-203-timeline-view.md) | Add a timeline / roadmap view | Next Tier 2 view; builds on the calendar model |
+| [WB-204](tickets/WB-204-reporting.md)     | Add basic reporting           | Completes the Tier 2 view/reporting set        |
 
 ## Metrics
 
 | Metric               | Value                          | Source                  |
 | -------------------- | ------------------------------ | ----------------------- |
 | Unit/component tests | 502 passing                    | `npm run test:run`      |
-| E2E tests            | 170 passing, 2 skipped         | `npm run test:e2e`      |
+| E2E tests            | 173 passing, 1 skipped         | `npm run test:e2e`      |
 | Coverage             | 86.69% stmts / 79.69% branches | `npm run test:coverage` |
-| Bundle budget        | 176.43 kB gzip JS (≤200 KB)    | `npm run size`          |
-| Backlog              | 28 tickets, 11 open / 17 done  | `BACKLOG.md`            |
+| Bundle budget        | 176.49 kB gzip JS (≤200 KB)    | `npm run size`          |
+| Backlog              | 29 tickets, 10 open / 19 done  | `BACKLOG.md`            |
 
 ## Known limitations
 

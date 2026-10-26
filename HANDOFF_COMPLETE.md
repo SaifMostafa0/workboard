@@ -1,5 +1,8 @@
 # Handoff Complete — Workboard
 
+> Historical snapshot from the quick-wins handoff. Current metrics, active work, and known
+> limitations live in [`STATUS.md`](STATUS.md).
+
 ## Final state
 
 - Branch: main (local)

@@ -522,8 +522,8 @@
       "id": "2a2f487c-b7bf-4d37-89f9-cf374302f103",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
       "title": "WB-508 Un-skip and fix the mobile Kanban drag E2E tests",
-      "description": "`HANDOFF_COMPLETE.md` notes that the Kanban drag-and-drop E2E tests are skipped on mobile and\nthat drag is exercised via dispatched events. Mobile users currently rely on the status-button\nfallback. Close the test gap and make the mobile interaction genuinely usable.\n\n**Acceptance criteria**\n- [ ] Mobile Kanban E2E specs run unskipped against a touch/pointer emulation.\n- [ ] Drag works on touch devices, or the status-button fallback is proven sufficient and the skip is replaced by an explicit test of that path.\n- [ ] Keyboard-accessible status change is verified for parity.\n- [ ] The `jsx-a11y` relaxations taken for DnD are revisited now that the interaction is settled.\n- [ ] No flakiness: the suite passes repeatedly in CI.\n\n- Decide the mobile strategy first (real drag vs fallback) and document it; the accessibility story follows from that.\n- Keep any HTML5 DnD or pointer-event implementation consistent across desktop and mobile.\n\nTicket file: tickets/WB-508-mobile-dnd-e2e.md\n\nSource: handoff",
-      "status": "todo",
+      "description": "`HANDOFF_COMPLETE.md` notes that the Kanban drag-and-drop E2E tests are skipped on mobile and\nthat drag is exercised via dispatched events. Mobile users currently rely on the status-button\nfallback. Close the test gap and make the mobile interaction genuinely usable.\n\n**Acceptance criteria**\n- [x] Mobile Kanban E2E specs run unskipped against a touch/pointer emulation.\n- [x] Drag works on touch devices, or the status-button fallback is proven sufficient and the skip\n      is replaced by an explicit test of that path.\n- [x] Keyboard-accessible status change is verified for parity.\n- [x] The `jsx-a11y` relaxations taken for DnD are revisited now that the interaction is settled.\n- [x] No flakiness: the suite passes repeatedly in CI.\n\n- Keep any HTML5 DnD or pointer-event implementation consistent across desktop and mobile.\n- The mobile status controls are the accessibility fallback; do not hide them behind hover-only UI.\n\nTicket file: tickets/WB-508-mobile-dnd-e2e.md\n\nSource: handoff",
+      "status": "done",
       "priority": "medium",
       "tags": [
         "workboard",
@@ -533,8 +533,27 @@
         "type:test"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-26T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-26T00:00:00.000Z"
+    },
+    {
+      "id": "3095fbda-d5a9-4856-9351-59d9876bd9f0",
+      "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000105",
+      "title": "WB-509 Make E2E specs data-driven instead of coupled to seed fixtures",
+      "description": "Several Playwright specs asserted on specific seeded ticket IDs, titles, and project names\n(`WB-403`, `WB-101`, `WB-202`, `WB-104`, `WB-508`, `Roadmap T1`). The E2E seed is generated from\nthis repository's backlog, so completing a ticket silently changed the tests that referenced it.\n\n**Acceptance criteria**\n- [x] E2E specs no longer reference specific ticket IDs, titles, or seeded project names.\n- [x] Task cards expose stable data attributes for test assertions.\n- [x] Filter, search, saved-view, and export tests assert behavior from rendered data and URL state.\n- [x] Tests wait for filtering to settle instead of counting stale cards.\n- [x] Full CI stays green.\n\n- The attributes are non-visual and stable across copy changes: id, project id, status, priority,\n  due date, and tags.\n- The tag-filter test chooses a tag that applies to only part of the rendered task set, so it\n  proves the filter excludes tasks without naming a fixture.\n- Export tests capture a rendered task/project and assert the downloaded file contains it.\n\nTicket file: tickets/WB-509-e2e-data-driven.md\n\nSource: handoff",
+      "status": "done",
+      "priority": "medium",
+      "tags": [
+        "workboard",
+        "wb-509",
+        "area:ci",
+        "type:test"
+      ],
+      "createdAt": "2026-10-26T00:00:00.000Z",
+      "updatedAt": "2026-10-26T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-26T00:00:00.000Z"
     },
     {
       "id": "191b7c3e-cb21-4324-ae2c-8e1d5f38dec9",

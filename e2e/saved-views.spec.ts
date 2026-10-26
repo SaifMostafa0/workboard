@@ -1,4 +1,22 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+interface CardTags {
+  id: string;
+  tags: string[];
+}
+
+const taskCards = (page: Page) => page.locator('article[data-task-id]');
+
+async function readCardTags(page: Page): Promise<CardTags[]> {
+  return taskCards(page).evaluateAll((cards) =>
+    cards
+      .map((card) => ({
+        id: card.getAttribute('data-task-id') ?? '',
+        tags: JSON.parse(card.getAttribute('data-task-tags') ?? '[]') as string[],
+      }))
+      .filter((card) => card.id !== '')
+  );
+}
 
 test.describe('Saved views', () => {
   test.beforeEach(async ({ page }) => {
@@ -31,13 +49,14 @@ test.describe('Saved views', () => {
     await expect(page).toHaveURL(/status=todo/);
     await expect(page.getByText(`View: ${viewName}`)).toBeVisible();
 
-    // Only todo tasks remain: every visible card has the To Do badge.
-    const cards = page.locator('article');
-    await expect(cards.first()).toBeVisible();
-    const visibleCount = await cards.count();
-    await expect(cards.filter({ has: page.getByText('To Do', { exact: true }) })).toHaveCount(
-      visibleCount
-    );
+    // Only todo tasks remain: every visible card has a todo status.
+    await expect
+      .poll(async () => {
+        const total = await taskCards(page).count();
+        if (total === 0) return false;
+        return (await page.locator('article[data-task-status="todo"]').count()) === total;
+      })
+      .toBe(true);
 
     // Choosing "All views" returns to the default state.
     await page.selectOption('select[aria-label="Apply a saved view"]', { label: 'All views' });
@@ -46,15 +65,49 @@ test.describe('Saved views', () => {
   });
 
   test('filters by tag and reflects the selection in the URL', async ({ page }) => {
-    const chip = page.getByRole('button', { name: 'type:test', exact: true });
+    await page.selectOption('select[id="page-size"]', '100');
+    await expect(page).toHaveURL((url) => url.searchParams.get('pageSize') === '100');
+
+    // Read the header total so the tag choice is based on the complete task set.
+    const subtitle = await page.locator('header p').first().innerText();
+    const total = Number(/(\d+)\s+tasks/.exec(subtitle)?.[1] ?? 0);
+    if (total === 0) throw new Error('Task total was not rendered');
+    await expect(taskCards(page)).toHaveCount(total);
+
+    const before = await readCardTags(page);
+    expect(before.length).toBeGreaterThan(0);
+
+    // Pick a tag that appears on some tasks but not all, so the filter is
+    // demonstrably doing something without naming a specific seeded ticket.
+    const allTags = [...new Set(before.flatMap((card) => card.tags))];
+    const tag = allTags.find(
+      (candidate) =>
+        before.some((card) => card.tags.includes(candidate)) &&
+        before.some((card) => !card.tags.includes(candidate))
+    );
+    if (!tag) throw new Error('Seed data has no partially applied tags');
+
+    const excluded = before.find((card) => !card.tags.includes(tag));
+    if (!excluded) throw new Error('Tag unexpectedly applies to every task');
+
+    const chip = page
+      .getByRole('group', { name: 'Tags' })
+      .getByRole('button', { name: tag, exact: true });
 
     await chip.click();
     await expect(chip).toHaveAttribute('aria-pressed', 'true');
     await expect(page).toHaveURL(/tags=/);
 
-    await expect(
-      page.locator('article', { hasText: 'WB-508 Un-skip and fix the mobile Kanban drag' })
-    ).toBeVisible();
-    await expect(page.locator('article', { hasText: 'WB-202 Add a calendar view' })).toHaveCount(0);
+    await expect
+      .poll(async () => {
+        const after = await readCardTags(page);
+        return (
+          after.length > 0 &&
+          after.length < before.length &&
+          after.every((card) => card.tags.includes(tag))
+        );
+      })
+      .toBe(true);
+    await expect(page.locator(`article[data-task-id="${excluded.id}"]`)).toHaveCount(0);
   });
 });

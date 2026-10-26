@@ -103,6 +103,12 @@ export function TaskCard({
         dense && styles.dense
       )}
       role="listitem"
+      data-task-id={task.id}
+      data-task-project-id={task.projectId ?? ''}
+      data-task-status={task.status}
+      data-task-priority={task.priority}
+      data-task-due-date={task.dueDate ?? ''}
+      data-task-tags={JSON.stringify(task.tags)}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}

@@ -1,5 +1,8 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
+const projectName = 'Kanban DnD Project';
+const taskName = 'Draggable task';
+
 /**
  * Playwright's mouse-based dragTo does not drive the browser's native HTML5
  * drag-and-drop pipeline, so we dispatch the drag events directly (the
@@ -13,38 +16,60 @@ async function dragAndDrop(page: Page, source: Locator, target: Locator) {
   await source.dispatchEvent('dragend', { dataTransfer });
 }
 
-test.describe('Kanban drag and drop', () => {
+test.describe('Kanban status changes', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/projects');
+    await page.getByRole('button', { name: 'New Project' }).click();
+
+    const createDialog = page.getByRole('dialog');
+    await createDialog.getByLabel('Project Name').fill(projectName);
+    await createDialog.getByRole('button', { name: 'Create Project' }).click();
+    await expect(createDialog).toBeHidden();
+
+    const projectCard = page.locator('article', { hasText: projectName });
+    await expect(projectCard).toBeVisible();
+    await projectCard.getByRole('link').first().click();
+    await page.waitForURL(/\/projects\/[^/]+$/);
     await page.waitForLoadState('networkidle');
 
-    await page.click('text=New Project');
-    await page.fill('input[name="name"]', 'Kanban Test Project');
-    await page.click('button:has-text("Create Project")');
-    await page.waitForURL('/projects');
-
-    await page.click('article:has-text("Kanban Test Project") a');
-    await page.waitForLoadState('networkidle');
-
-    await page.click('text=New Task');
-    await page.fill('input[name="title"]', 'Drag Me');
-    await page.click('button:has-text("Create Task")');
-    await expect(page.locator('article', { hasText: 'Drag Me' })).toBeVisible();
+    await page.getByRole('button', { name: 'New Task' }).click();
+    await page.fill('input[name="title"]', taskName);
+    await page.getByRole('button', { name: 'Create Task' }).click();
+    await expect(page.locator('article', { hasText: taskName })).toBeVisible();
   });
 
-  test('moves a card between columns by dragging', async ({ page, isMobile }) => {
-    // Native HTML5 drag-and-drop does not fire on touch devices; the status
-    // buttons remain the accessible fallback there.
-    test.skip(isMobile, 'HTML5 drag-and-drop is not supported on touch devices');
+  test('moves a card between columns with drag or the touch status control', async ({
+    page,
+    isMobile,
+  }) => {
+    const todoColumn = page.getByRole('list', { name: 'To Do tasks' });
+    const inProgressColumn = page.getByRole('list', { name: 'In Progress tasks' });
+    const card = page.locator('article', { hasText: taskName });
 
-    const todoColumn = page.locator('[role="list"][aria-label="To Do tasks"]');
-    const inProgressColumn = page.locator('[role="list"][aria-label="In Progress tasks"]');
+    await expect(todoColumn.locator('article', { hasText: taskName })).toBeVisible();
 
-    await expect(todoColumn.locator('article', { hasText: 'Drag Me' })).toBeVisible();
+    if (isMobile) {
+      // Native HTML5 drag-and-drop does not fire on touch devices. The status
+      // buttons are the supported mobile path and the accessibility fallback.
+      await todoColumn.getByRole('button', { name: 'Start' }).click();
+    } else {
+      await dragAndDrop(page, card, inProgressColumn);
+    }
 
-    await dragAndDrop(page, page.locator('article', { hasText: 'Drag Me' }), inProgressColumn);
+    await expect(inProgressColumn.locator('article', { hasText: taskName })).toBeVisible();
+    await expect(todoColumn.locator('article', { hasText: taskName })).toHaveCount(0);
+  });
 
-    await expect(inProgressColumn.locator('article', { hasText: 'Drag Me' })).toBeVisible();
-    await expect(todoColumn.locator('article', { hasText: 'Drag Me' })).toHaveCount(0);
+  test('moves a card between columns with the keyboard', async ({ page }) => {
+    const todoColumn = page.getByRole('list', { name: 'To Do tasks' });
+    const inProgressColumn = page.getByRole('list', { name: 'In Progress tasks' });
+
+    const startButton = todoColumn.getByRole('button', { name: 'Start' });
+    await startButton.focus();
+    await expect(startButton).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(inProgressColumn.locator('article', { hasText: taskName })).toBeVisible();
+    await expect(todoColumn.locator('article', { hasText: taskName })).toHaveCount(0);
   });
 });

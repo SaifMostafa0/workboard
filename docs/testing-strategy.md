@@ -109,6 +109,11 @@ test('Pagination resets when filters change');
 test('Clear all filters restores full list');
 test('URL updates with filter state → direct load works');
 
+// e2e/kanban-dnd.spec.ts
+test('Desktop drag moves a card between columns');
+test('Touch devices move a card with the status control');
+test('Keyboard moves a card with the status control');
+
 // e2e/persistence.spec.ts
 test('Reload page → data persists');
 test('Import valid JSON → merges data');
@@ -148,6 +153,14 @@ export const test = base.extend<{
 
 // Each test gets isolated storage
 ```
+
+#### Kanban drag and drop on touch
+
+The board uses native HTML5 drag events on desktop. Touch browsers do not expose that pipeline to
+scripts, so the supported mobile interaction is the **Start** / **Complete** status button on each
+card — the same control that provides the keyboard alternative. The E2E spec branches on the
+Playwright device rather than skipping mobile: desktop dispatches drag events, mobile clicks the
+status button, and a separate test drives it with the keyboard.
 
 #### Accessibility (axe)
 

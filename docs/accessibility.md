@@ -56,7 +56,7 @@
 #### 2.5 Input Modalities
 
 - [ ] Click/tap target ≥44×44px (CSS `min-height/min-width`)
-- [ ] Drag-drop (if any) has keyboard alternative
+- [x] Drag-drop (if any) has keyboard alternative (Kanban status buttons)
 - [ ] No custom gestures required
 
 ### Understandable
