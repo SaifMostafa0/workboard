@@ -9,6 +9,8 @@ export interface UserSettings {
   sidebarCollapsed: boolean;
   showCompletedTasks: boolean;
   compactMode: boolean;
+  reminderLeadDays: number;
+  browserNotificationsEnabled: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -17,6 +19,8 @@ export const DEFAULT_SETTINGS: UserSettings = {
   sidebarCollapsed: false,
   showCompletedTasks: true,
   compactMode: false,
+  reminderLeadDays: 1,
+  browserNotificationsEnabled: false,
 };
 
 export interface ISettingsRepository {

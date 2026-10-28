@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/build-sw.mjs",
+    "icons": "node scripts/generate-icons.mjs",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest",
@@ -19,6 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "size": "node scripts/check-bundle-size.mjs",
+    "pwa:check": "node scripts/check-pwa.mjs",
     "tickets:build": "node scripts/tickets-build.mjs",
     "tickets:check": "node scripts/tickets-build.mjs --check",
     "tickets:sync": "node scripts/tickets-sync.mjs",

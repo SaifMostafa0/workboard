@@ -1,3 +1,5 @@
+export * from './activityRepository';
+export * from './attachmentRepository';
 export * from './epicRepository';
 export * from './labelRepository';
 export * from './projectRepository';

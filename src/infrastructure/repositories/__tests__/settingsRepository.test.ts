@@ -49,6 +49,8 @@ describe('LocalSettingsRepository', () => {
         sidebarCollapsed: true,
         showCompletedTasks: false,
         compactMode: true,
+        reminderLeadDays: 3,
+        browserNotificationsEnabled: true,
       };
       await adapter.set('workboard:settings:preferences', custom);
 

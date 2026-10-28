@@ -154,6 +154,11 @@ export const test = base.extend<{
 // Each test gets isolated storage
 ```
 
+Specs must not assume the dev seed contains a particular task state: the seed imports Workboard's
+own backlog, so when every ticket is closed there are no `todo` tasks. `e2e/helpers/tasks.ts` exposes
+`ensureTodoTask(page)`, which creates one through the UI only when needed; the status, combined-filter
+and saved-view specs use it before asserting.
+
 #### Kanban drag and drop on touch
 
 The board uses native HTML5 drag events on desktop. Touch browsers do not expose that pipeline to
@@ -250,7 +255,14 @@ npm run test:ui           # Vitest UI
 npm run test:e2e          # Headless
 npm run test:e2e:ui       # Playwright UI
 npm run test:e2e:headed   # Headed browser
+
+# Production PWA (service worker, manifest, offline shell)
+npm run build
+npm run pwa:check
 ```
+
+`pwa:check` is not part of `npm run ci`: it needs a fresh production build and launches a real
+browser, then stops its preview server to prove the service worker serves the app offline.
 
 ### CI Pipeline
 

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import type { TaskOption } from '@/domain/dependency';
+import type { TaskRecurrence } from '@/domain/recurrence';
 import {
   DEFAULT_TASK_PRIORITY,
   DEFAULT_TASK_STATUS,
@@ -17,6 +18,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useRef } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { BlockerPicker } from './BlockerPicker';
+import { RecurrenceFields } from './RecurrenceFields';
 import styles from './TaskFormDialog.module.css';
 
 interface TaskFormDialogProps {
@@ -75,6 +77,7 @@ export function TaskFormDialog({
       parentId,
       epicId: undefined,
       blockedBy: [] as string[],
+      recurrence: undefined,
     },
     mode: 'onChange',
   });
@@ -82,6 +85,9 @@ export function TaskFormDialog({
   // Handle tags as comma-separated string in input, but array in form data
   const tagsString = useWatch({ control, name: 'tags', defaultValue: [] }) as string[];
   const tagsInputValue = tagsString.join(', ');
+  const dueDate = useWatch({ control, name: 'dueDate' }) as string | undefined;
+  const recurrence = useWatch({ control, name: 'recurrence' }) as TaskRecurrence | undefined;
+  const recurrenceError = (errors.recurrence as { message?: string } | undefined)?.message;
 
   const blockedBy =
     (useWatch({ control, name: 'blockedBy', defaultValue: [] }) as string[] | undefined) ?? [];
@@ -203,6 +209,13 @@ export function TaskFormDialog({
           />
         </div>
 
+        <RecurrenceFields
+          value={recurrence}
+          dueDate={dueDate}
+          error={recurrenceError}
+          onChange={(next) => setValue('recurrence', next, { shouldValidate: true })}
+        />
+
         <div className={styles.tagsField}>
           <span className={styles.tagsLabel}>Tags (optional)</span>
           <Input
@@ -278,6 +291,7 @@ export function TaskFormDialogWithData({
       tags: [] as string[],
       epicId: undefined,
       blockedBy: [] as string[],
+      recurrence: undefined,
       ...initialData,
     },
     mode: 'onChange',
@@ -288,6 +302,9 @@ export function TaskFormDialogWithData({
   // Handle tags as comma-separated string in input, but array in form data
   const tagsString = useWatch({ control, name: 'tags', defaultValue: [] }) as string[];
   const tagsInputValue = tagsString.join(', ');
+  const dueDate = useWatch({ control, name: 'dueDate' }) as string | undefined;
+  const recurrence = useWatch({ control, name: 'recurrence' }) as TaskRecurrence | undefined;
+  const recurrenceError = (errors.recurrence as { message?: string } | undefined)?.message;
 
   const blockedBy =
     (useWatch({ control, name: 'blockedBy', defaultValue: [] }) as string[] | undefined) ?? [];
@@ -315,7 +332,7 @@ export function TaskFormDialogWithData({
     populatedTaskIdRef.current = initialData.id;
 
     Object.entries(initialData).forEach(([key, value]) => {
-      if (key === 'tags' && Array.isArray(value)) {
+      if (key === 'tags' && Array.isArray(value) && value.every((tag) => typeof tag === 'string')) {
         setValue('tags', value, { shouldValidate: true });
       } else if (
         key !== 'id' &&
@@ -403,6 +420,13 @@ export function TaskFormDialogWithData({
             error={errors.assignee?.message}
           />
         </div>
+
+        <RecurrenceFields
+          value={recurrence}
+          dueDate={dueDate}
+          error={recurrenceError}
+          onChange={(next) => setValue('recurrence', next, { shouldValidate: true })}
+        />
 
         <div className={styles.tagsField}>
           <span className={styles.tagsLabel}>Tags (optional)</span>

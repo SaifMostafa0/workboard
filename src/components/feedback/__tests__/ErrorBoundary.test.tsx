@@ -23,18 +23,25 @@ describe('ErrorBoundary', () => {
   });
 
   it('renders a recoverable fallback when a child throws', () => {
-    // React logs caught render errors to console.error; keep the test output clean.
+    // React logs caught render errors to console.error and reports them to
+    // window.onerror; both are expected here, so keep the run clean.
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    const preventDefault = (event: ErrorEvent) => event.preventDefault();
+    window.addEventListener('error', preventDefault);
 
-    render(
-      <ErrorBoundary>
-        <Boom />
-      </ErrorBoundary>
-    );
+    try {
+      render(
+        <ErrorBoundary>
+          <Boom />
+        </ErrorBoundary>
+      );
 
-    expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Something went wrong' })).toBeInTheDocument();
-    expect(screen.getByText('kaboom')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reload page' })).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Something went wrong' })).toBeInTheDocument();
+      expect(screen.getByText('kaboom')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Reload page' })).toBeInTheDocument();
+    } finally {
+      window.removeEventListener('error', preventDefault);
+    }
   });
 });

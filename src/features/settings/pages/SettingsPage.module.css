@@ -93,6 +93,13 @@
   color: var(--color-text);
 }
 
+.fieldHint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
 /* Theme Options */
 .themeOptions {
   display: grid;

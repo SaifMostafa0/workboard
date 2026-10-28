@@ -6,6 +6,10 @@ import {
   validateImportData,
   validateImportRelationships,
 } from '@/domain/validation';
+import {
+  appendTaskActivity,
+  createTaskActivity,
+} from '@/infrastructure/repositories/activityRepository';
 import { loadDevSeed } from './devSeed';
 import type { Result, StorageAdapter } from './storageAdapter';
 import { createStorageKey, err, ok } from './storageAdapter';
@@ -19,6 +23,7 @@ const TASK_PREFIX = 'workboard:tasks:';
 const LABEL_PREFIX = 'workboard:labels:';
 const SAVED_VIEW_PREFIX = 'workboard:savedViews:';
 const EPIC_PREFIX = 'workboard:epics:';
+const ACTIVITY_PREFIX = 'workboard:activity:';
 const SETTINGS_PREFIX = 'workboard:settings:';
 const SETTINGS_KEY = 'workboard:settings:preferences';
 
@@ -151,6 +156,7 @@ export const importData = async (
       LABEL_PREFIX,
       SAVED_VIEW_PREFIX,
       EPIC_PREFIX,
+      ACTIVITY_PREFIX,
     ]) {
       const clearResult = await adapter.clear(prefix);
       if (!clearResult.ok) return clearResult;
@@ -182,6 +188,13 @@ export const importData = async (
 
     const setResult = await adapter.set(key, task);
     if (!setResult.ok) return setResult;
+
+    const activityResult = await appendTaskActivity(
+      adapter,
+      createTaskActivity({ taskId: task.id, kind: 'task_imported' })
+    );
+    if (!activityResult.ok) return activityResult;
+
     tasksCreated++;
   }
 
@@ -240,6 +253,7 @@ export const clearAllData = async (
     LABEL_PREFIX,
     SAVED_VIEW_PREFIX,
     EPIC_PREFIX,
+    ACTIVITY_PREFIX,
     SETTINGS_PREFIX,
   ]) {
     const clearResult = await adapter.clear(prefix);

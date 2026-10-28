@@ -11,6 +11,7 @@ import type { TaskInputValidated, TaskUpdateValidated } from '@/domain/validatio
 import { SavedViewsBar } from '@/features/saved-views/components/SavedViewsBar';
 import { TagFilter } from '@/features/tasks/components/TagFilter';
 import { TaskCard } from '@/features/tasks/components/TaskCard';
+import { TaskDetailDialog } from '@/features/tasks/components/TaskDetailDialog';
 import { TaskFormDialog, TaskFormDialogWithData } from '@/features/tasks/components/TaskFormDialog';
 import {
   useBulkDeleteTasks,
@@ -248,6 +249,7 @@ export function TasksPage() {
   // into component state (and the cascading render that causes).
   const wantsNewTask = isNewRoute || searchParams.get('new') === '1';
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [viewingTaskId, setViewingTaskId] = useState<string | null>(() => searchParams.get('task'));
   // The task that a new sub-task is being created under, if any.
   const [subtaskParent, setSubtaskParent] = useState<Task | null>(null);
   const showCreateTask = dialogOpen || wantsNewTask || subtaskParent !== null;
@@ -290,6 +292,7 @@ export function TasksPage() {
         tags: data.tags ?? [],
         parentId: subtaskParent?.id ?? data.parentId,
         blockedBy: data.blockedBy ?? [],
+        recurrence: data.recurrence,
       },
       {
         onSuccess: () => {
@@ -815,6 +818,7 @@ export function TasksPage() {
                 task={task}
                 onStatusChange={(id, status) => updateTask.mutate({ id, update: { status } })}
                 onEdit={(t) => setEditingTask(paginatedTasks.find((x) => x.id === t.id) ?? null)}
+                onView={(t) => setViewingTaskId(t.id)}
                 onDelete={(id, title) => {
                   const childCount = subtaskProgressById.get(id)?.total ?? 0;
                   const message =
@@ -898,6 +902,7 @@ export function TasksPage() {
             tags: editingTask.tags,
             epicId: editingTask.epicId,
             blockedBy: editingTask.blockedBy ?? [],
+            recurrence: editingTask.recurrence,
           }}
           epics={epics}
           blockerOptions={blockerOptions}
@@ -905,6 +910,19 @@ export function TasksPage() {
           onSubmit={handleEditTask}
         />
       )}
+
+      <TaskDetailDialog
+        open={viewingTaskId !== null}
+        taskId={viewingTaskId ?? undefined}
+        onClose={() => {
+          setViewingTaskId(null);
+          if (searchParams.has('task')) {
+            const params = new URLSearchParams(searchParams);
+            params.delete('task');
+            setSearchParams(params, { replace: true });
+          }
+        }}
+      />
     </div>
   );
 }

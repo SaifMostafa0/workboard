@@ -1,9 +1,20 @@
 import { z } from 'zod';
+import { TASK_ACTIVITY_KINDS } from './activity';
+import type { AttachmentMetadata } from './attachment';
+import { MAX_ATTACHMENTS_PER_TASK, MAX_ATTACHMENT_BYTES } from './attachment';
 import { MAX_BLOCKERS } from './dependency';
 import type { ValidationError, ValidationIssue } from './errors';
 import { createValidationError } from './errors';
 import type { ProjectColor } from './project';
 import { PROJECT_COLORS } from './project';
+import type { RecurrenceFrequency } from './recurrence';
+import {
+  MAX_RECURRENCE_INTERVAL,
+  MIN_RECURRENCE_INTERVAL,
+  RECURRENCE_FREQUENCIES,
+  RECURRENCE_ISSUE_MESSAGES,
+  validateRecurrence,
+} from './recurrence';
 import type { TaskPriority, TaskStatus } from './task';
 import { TASK_PRIORITIES, TASK_STATUSES } from './task';
 
@@ -38,7 +49,34 @@ export const projectSchema = z.object({
 export const taskStatusSchema = z.enum(TASK_STATUSES as [TaskStatus, ...TaskStatus[]]);
 export const taskPrioritySchema = z.enum(TASK_PRIORITIES as [TaskPriority, ...TaskPriority[]]);
 
-export const taskInputSchema = z.object({
+export const attachmentMetadataSchema: z.ZodType<AttachmentMetadata> = z.object({
+  id: z.string().uuid('Invalid attachment ID'),
+  name: z.string().min(1).max(200),
+  type: z.string().max(255),
+  size: z.number().int().nonnegative().max(MAX_ATTACHMENT_BYTES),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+export const recurrenceSchema = z.object({
+  frequency: z.enum(RECURRENCE_FREQUENCIES as [RecurrenceFrequency, ...RecurrenceFrequency[]]),
+  interval: z.number().int().min(MIN_RECURRENCE_INTERVAL).max(MAX_RECURRENCE_INTERVAL),
+  until: z.string().date().optional(),
+});
+
+export const taskActivitySchema = z.object({
+  id: z.string().uuid('Invalid activity ID'),
+  taskId: z.string().uuid('Invalid task ID'),
+  kind: z.enum(TASK_ACTIVITY_KINDS),
+  field: z.string().max(50).optional(),
+  from: z.string().max(500).optional(),
+  to: z.string().max(500).optional(),
+  message: z.string().max(2000).optional(),
+  authorId: z.string().max(100).optional(),
+  authorName: z.string().max(100).optional(),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+const taskInputObjectSchema = z.object({
   projectId: z.string().uuid('Invalid project ID'),
   title: z
     .string()
@@ -59,11 +97,24 @@ export const taskInputSchema = z.object({
     .array(z.string().uuid('Invalid blocking task ID'))
     .max(MAX_BLOCKERS, `A task can be blocked by at most ${MAX_BLOCKERS} tasks`)
     .optional(),
+  recurrence: recurrenceSchema.optional(),
+  attachments: z.array(attachmentMetadataSchema).max(MAX_ATTACHMENTS_PER_TASK).optional(),
 });
 
-export const taskUpdateSchema = taskInputSchema.partial();
+export const taskInputSchema = taskInputObjectSchema.superRefine((data, ctx) => {
+  const issue = validateRecurrence(data.recurrence, data.dueDate);
+  if (issue) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['recurrence'],
+      message: RECURRENCE_ISSUE_MESSAGES[issue],
+    });
+  }
+});
 
-export const taskSchema = z.object({
+export const taskUpdateSchema = taskInputObjectSchema.partial();
+
+const taskObjectSchema = z.object({
   id: z.string().uuid('Invalid task ID'),
   projectId: z.string().uuid('Invalid project ID'),
   title: z.string().min(1).max(200),
@@ -80,6 +131,19 @@ export const taskSchema = z.object({
   parentId: z.string().uuid().optional(),
   epicId: z.string().uuid().optional(),
   blockedBy: z.array(z.string().uuid()).max(MAX_BLOCKERS).optional(),
+  recurrence: recurrenceSchema.optional(),
+  attachments: z.array(attachmentMetadataSchema).max(MAX_ATTACHMENTS_PER_TASK).optional(),
+});
+
+export const taskSchema = taskObjectSchema.superRefine((data, ctx) => {
+  const issue = validateRecurrence(data.recurrence, data.dueDate);
+  if (issue) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['recurrence'],
+      message: RECURRENCE_ISSUE_MESSAGES[issue],
+    });
+  }
 });
 
 // Label schemas
@@ -162,6 +226,7 @@ export type ProjectValidated = z.infer<typeof projectSchema>;
 export type TaskInputValidated = z.infer<typeof taskInputSchema>;
 export type TaskUpdateValidated = z.infer<typeof taskUpdateSchema>;
 export type TaskValidated = z.infer<typeof taskSchema>;
+export type TaskActivityValidated = z.infer<typeof taskActivitySchema>;
 export type LabelValidated = z.infer<typeof labelSchema>;
 export type SavedViewValidated = z.infer<typeof savedViewSchema>;
 export type EpicInputValidated = z.infer<typeof epicInputSchema>;

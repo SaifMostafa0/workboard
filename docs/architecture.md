@@ -58,6 +58,10 @@
   - `calculateCompletionPercentage(tasks)`
   - `computeEpicProgress(epicId, tasks)`
   - `isTaskBlocked(task, tasksById)` / `collectBlockedTaskIds(tasks)` (task dependencies)
+  - `nextRecurrenceDate(currentDueDate, rule)` (UTC-safe daily/weekly/monthly recurrence)
+  - `getReminderCandidates(tasks, { leadDays, now })` (pure reminder selection)
+  - `diffTaskForActivity(before, after)` (audit-trail generation)
+  - `validateAttachment(...)` / `sanitizeAttachmentName(...)` (local file limits and safe names)
   - `isOverdue(task, referenceDate)`
   - `filterTasks(tasks, filters)`
   - `sortTasks(tasks, sortConfig)`
@@ -78,6 +82,8 @@
 ### 5. Storage Layer (`src/infrastructure/storage/`)
 
 - **StorageAdapter**: Abstract interface for key-value + index operations
+- **AttachmentStore**: Separate blob interface backed by a dedicated IndexedDB object store, so file
+  contents never enter the JSON adapter or an export
 - **IndexedDBAdapter**: Primary implementation using `idb`
 - **LocalStorageAdapter**: Fallback for unsupported environments
 - **RemoteStorageAdapter** (optional, prototype): implements `StorageAdapter` over HTTP, so the
@@ -334,10 +340,23 @@ type Migration = (data: unknown) => StorageSchema;
 const migrations: Migration[] = [v1_to_v2, v2_to_v3];
 ```
 
+## Offline & Installability
+
+- `public/sw.js` precaches the app shell plus hashed assets after `vite build`;
+  `scripts/build-sw.mjs` injects the emitted file list and a content-derived cache version.
+- Navigations are network-first with a cached `/index.html` fallback, which keeps SPA deep links
+  working offline (hosts still need an SPA rewrite rule).
+- The manifest and generated PNG icons make the app installable; the update banner in `Layout`
+  asks before activating a waiting worker so unsaved form state is not lost.
+- Attachments are local-only; encrypted backups use Web Crypto (PBKDF2-SHA256 + AES-256-GCM).
+- Details, cache table, update lifecycle and the encrypted-backup format: [`pwa.md`](pwa.md).
+
 ## Security Considerations
 
 - **No XSS**: All user content rendered as text, never `dangerouslySetInnerHTML`
 - **Import Validation**: JSON import size limited (1MB), schema validated, no code execution
+- **Encrypted backups**: Optional AES-256-GCM export derived with PBKDF2-SHA256 (310k iterations);
+  a lost passphrase cannot be recovered. See [`pwa.md`](pwa.md).
 - **No Secrets**: No API keys, tokens, or credentials in client bundle
 - **CSP**: Configure `Content-Security-Policy` headers on deploy
 

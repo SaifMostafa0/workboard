@@ -1,4 +1,6 @@
 import { Button } from '@/components/ui/Button';
+import type { TaskRecurrence } from '@/domain/recurrence';
+import { recurrenceLabel } from '@/domain/recurrence';
 import type { TaskPriority, TaskStatus } from '@/domain/task';
 import { cn } from '@/lib/cn';
 import { formatRelativeTime, isDueToday, isOverdue } from '@/lib/date';
@@ -9,6 +11,9 @@ import {
   ChevronRight,
   Edit,
   ListTree,
+  MessageSquare,
+  Paperclip,
+  Repeat,
   Tag,
   Trash2,
   User,
@@ -30,10 +35,14 @@ interface TaskCardProps {
     tags: string[];
     updatedAt: string;
     parentId?: string;
+    recurrence?: TaskRecurrence;
+    attachments?: Array<{ id: string }>;
   };
   onStatusChange: (id: string, status: TaskStatus) => void;
   onEdit: (task: { id: string }) => void;
   onDelete: (id: string, title: string) => void;
+  /** Opens the detail view with comments, activity and attachments. */
+  onView?: (task: { id: string }) => void;
   variant?: 'kanban' | 'list';
   /** When true, renders a selection checkbox for bulk actions. */
   selectable?: boolean;
@@ -62,6 +71,7 @@ export function TaskCard({
   onStatusChange,
   onEdit,
   onDelete,
+  onView,
   variant = 'kanban',
   selectable = false,
   selected = false,
@@ -151,6 +161,16 @@ export function TaskCard({
                 <ListTree className="w-4 h-4" aria-hidden="true" />
               </Button>
             )}
+            {onView && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onView({ id: task.id })}
+                aria-label={`View details for ${task.title}`}
+              >
+                <MessageSquare className="w-4 h-4" aria-hidden="true" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -208,6 +228,22 @@ export function TaskCard({
             <span className={styles.blockedBadge} data-testid="blocked-badge">
               <Ban className="w-3 h-3" aria-hidden="true" />
               Blocked
+            </span>
+          )}
+
+          {/* Recurrence */}
+          {task.recurrence && (
+            <span className={styles.recurrenceBadge} title={recurrenceLabel(task.recurrence)}>
+              <Repeat className="w-3 h-3" aria-hidden="true" />
+              {recurrenceLabel(task.recurrence)}
+            </span>
+          )}
+
+          {/* Attachment count */}
+          {task.attachments && task.attachments.length > 0 && (
+            <span className={styles.attachmentCount}>
+              <Paperclip className="w-3 h-3" aria-hidden="true" />
+              {task.attachments.length}
             </span>
           )}
 

@@ -1,3 +1,5 @@
+export * from './activity';
+export * from './attachment';
 export * from './calendar';
 export * from './dependency';
 export * from './epic';
@@ -6,6 +8,8 @@ export * from './export';
 export * from './label';
 export * from './pagination';
 export * from './project';
+export * from './recurrence';
+export * from './reminder';
 export * from './reporting';
 export * from './savedView';
 export * from './task';

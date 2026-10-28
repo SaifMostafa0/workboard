@@ -5,6 +5,7 @@ import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { LabelsPage } from '@/features/labels/pages/LabelsPage';
 import { ProjectDetailPage } from '@/features/projects/pages/ProjectDetailPage';
 import { ProjectsPage } from '@/features/projects/pages/ProjectsPage';
+import { RemindersPage } from '@/features/reminders/pages/RemindersPage';
 import { ReportsPage } from '@/features/reports/pages/ReportsPage';
 import { SavedViewsPage } from '@/features/saved-views/pages/SavedViewsPage';
 import { SettingsPage } from '@/features/settings/pages/SettingsPage';
@@ -25,6 +26,7 @@ export function App() {
         <Route path="/tasks/new" element={<TasksPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/timeline" element={<TimelinePage />} />
+        <Route path="/reminders" element={<RemindersPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/labels" element={<LabelsPage />} />
         <Route path="/saved-views" element={<SavedViewsPage />} />

@@ -3,7 +3,7 @@
 > **Generated file — do not edit.** Run `npm run tickets:build` after changing `tickets/WB-*.md`.
 > The ticket markdown files are the source of truth; see [docs/project-management.md](docs/project-management.md).
 
-**6 open / 23 done / 29 total** · last update 2026-10-26
+**0 open / 29 done / 29 total** · last update 2026-10-28
 
 ## Progress by project
 
@@ -11,8 +11,8 @@
 | --- | ---: | ---: | ---: |
 | WB — Roadmap T1 · Quick Wins | 0 | 4 | 4 |
 | WB — Roadmap T2 · Differentiators | 0 | 4 | 4 |
-| WB — Roadmap T3 · Platform | 5 | 0 | 5 |
-| WB — Product Gaps | 1 | 3 | 4 |
+| WB — Roadmap T3 · Platform | 0 | 5 | 5 |
+| WB — Product Gaps | 0 | 4 | 4 |
 | WB — Engineering & AI-DX | 0 | 9 | 9 |
 | WB — Quality & Accessibility | 0 | 3 | 3 |
 
@@ -44,11 +44,11 @@ Tier 3 roadmap: platform and ecosystem work.
 
 | ID | Title | Status | Priority | Assignee | Tags | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
-| WB-301 | Add file attachments stored in IndexedDB | To Do | medium | unassigned | tier:3, area:storage, area:ui, type:feature | 2026-10-14 |
-| WB-305 | Ship a PWA with install and encrypted local backup | To Do | medium | unassigned | tier:3, area:ux, area:storage, type:feature | 2026-10-14 |
-| WB-302 | Support recurring tasks | To Do | low | unassigned | tier:3, area:domain, type:feature | 2026-10-14 |
-| WB-303 | Add due-date reminders and in-app notifications | To Do | low | unassigned | tier:3, area:ux, area:storage, type:feature | 2026-10-14 |
-| WB-304 | Design a public API and webhooks for automation | To Do | low | unassigned | tier:3, area:sync, area:docs, type:spike | 2026-10-14 |
+| WB-301 | Add file attachments stored in IndexedDB | Done | medium | agent:opencode | tier:3, area:storage, area:ui, type:feature | 2026-10-28 |
+| WB-305 | Ship a PWA with install and encrypted local backup | Done | medium | agent:opencode | tier:3, area:ux, area:storage, type:feature | 2026-10-28 |
+| WB-302 | Support recurring tasks | Done | low | agent:opencode | tier:3, area:domain, type:feature | 2026-10-28 |
+| WB-303 | Add due-date reminders and in-app notifications | Done | low | agent:opencode | tier:3, area:ux, area:storage, type:feature | 2026-10-28 |
+| WB-304 | Design a public API and webhooks for automation | Done | low | agent:opencode | tier:3, area:sync, area:docs, type:spike | 2026-10-26 |
 
 ## WB — Product Gaps
 
@@ -59,7 +59,7 @@ Capability gaps versus Jira, Trello and Linear, plus gaps found in the codebase.
 | WB-401 | Add epics / milestones above tasks | Done | high | agent:opencode | area:domain, area:ui, type:feature, gap:hierarchy | 2026-10-15 |
 | WB-403 | Virtualize long lists and raise the ~10k-task scale ceiling | Done | high | agent:opencode | area:perf, area:ui, type:feature, gap:scale | 2026-10-16 |
 | WB-404 | Include labels and saved views in export/import | Done | high | agent:opencode | area:storage, area:docs, type:bug, gap:data | 2026-10-14 |
-| WB-402 | Add comments and an activity feed | To Do | medium | unassigned | area:domain, area:ui, type:feature, gap:collaboration | 2026-10-14 |
+| WB-402 | Add comments and an activity feed | Done | medium | agent:opencode | area:domain, area:ui, type:feature, gap:collaboration | 2026-10-28 |
 
 ## WB — Engineering & AI-DX
 

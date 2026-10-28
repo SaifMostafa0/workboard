@@ -18,8 +18,14 @@ import {
   queryTasks,
   validateTaskBlockers,
 } from '@/domain';
+import { diffTaskForActivity } from '@/domain/activity';
 import type { DomainError, StorageError, ValidationError } from '@/domain/errors';
 import { createNotFoundError, createValidationError } from '@/domain/errors';
+import {
+  nextRecurrenceDate,
+  RECURRENCE_ISSUE_MESSAGES,
+  validateRecurrence,
+} from '@/domain/recurrence';
 import { PARENT_ASSIGNMENT_MESSAGES, validateParentAssignment } from '@/domain/task';
 import {
   safeValidateTaskInput,
@@ -33,6 +39,7 @@ import {
   err,
   ok,
 } from '@/infrastructure/storage/storageAdapter';
+import { appendTaskActivity, clearTaskActivities, createTaskActivity } from './activityRepository';
 
 export interface ITaskRepository {
   list(projectId?: string): Promise<Result<Task[], DomainError>>;
@@ -80,6 +87,15 @@ const parentIssueError = (issue: ParentAssignmentIssue): ValidationError =>
 const dependencyIssueError = (issue: TaskDependencyIssue): ValidationError =>
   createValidationError([
     { field: 'blockedBy', message: DEPENDENCY_MESSAGES[issue], code: `dependency_${issue}` },
+  ]);
+
+const recurrenceIssueError = (issue: keyof typeof RECURRENCE_ISSUE_MESSAGES): ValidationError =>
+  createValidationError([
+    {
+      field: 'recurrence',
+      message: RECURRENCE_ISSUE_MESSAGES[issue],
+      code: issue,
+    },
   ]);
 
 export class LocalTaskRepository implements ITaskRepository {
@@ -251,6 +267,8 @@ export class LocalTaskRepository implements ITaskRepository {
       parentId: validatedInput.parentId,
       epicId,
       blockedBy,
+      recurrence: validatedInput.recurrence,
+      attachments: validatedInput.attachments,
       createdAt: now,
       updatedAt: now,
       completedAt: validatedInput.status === 'done' ? now : undefined,
@@ -259,6 +277,12 @@ export class LocalTaskRepository implements ITaskRepository {
     const key = createStorageKey('tasks', id);
     const setResult = await this.adapter.set(key, task);
     if (!setResult.ok) return err(toDomainError(setResult.error));
+
+    const activityResult = await appendTaskActivity(
+      this.adapter,
+      createTaskActivity({ taskId: id, kind: 'task_created', now })
+    );
+    if (!activityResult.ok) return err(activityResult.error);
 
     return ok(task);
   }
@@ -274,6 +298,14 @@ export class LocalTaskRepository implements ITaskRepository {
 
     const task = getResult.value;
     const now = new Date().toISOString();
+
+    // Recurrence is a cross-field rule: the rule needs a due date to anchor it,
+    // and the end date cannot precede that due date. Validate against the
+    // effective state because an update may change either side.
+    const nextDueDate = 'dueDate' in update ? update.dueDate : task.dueDate;
+    const nextRecurrence = 'recurrence' in update ? update.recurrence : task.recurrence;
+    const recurrenceIssue = validateRecurrence(nextRecurrence, nextDueDate);
+    if (recurrenceIssue) return err(recurrenceIssueError(recurrenceIssue));
 
     // Re-validate the hierarchy when a parent reference is being set.
     if (validation.data.parentId) {
@@ -316,6 +348,66 @@ export class LocalTaskRepository implements ITaskRepository {
     const key = createStorageKey('tasks', id);
     const setResult = await this.adapter.set(key, updatedTask);
     if (!setResult.ok) return err(toDomainError(setResult.error));
+
+    // Generate the change history from the actual post-update records, so only
+    // fields that really changed are recorded.
+    for (const change of diffTaskForActivity(task, updatedTask)) {
+      const activityResult = await appendTaskActivity(
+        this.adapter,
+        createTaskActivity({
+          taskId: id,
+          kind: 'task_updated',
+          now,
+          field: change.field,
+          from: change.from,
+          to: change.to,
+        })
+      );
+      if (!activityResult.ok) return err(activityResult.error);
+    }
+
+    // Completing a recurring task keeps the completed occurrence as history
+    // and creates the next occurrence as a fresh, active task.
+    if (updatedTask.status === 'done' && task.status !== 'done' && updatedTask.recurrence) {
+      const nextDueDateValue = updatedTask.dueDate
+        ? nextRecurrenceDate(updatedTask.dueDate, updatedTask.recurrence)
+        : undefined;
+      if (nextDueDateValue) {
+        const nextTask: Task = {
+          ...updatedTask,
+          id: crypto.randomUUID(),
+          status: 'todo',
+          completedAt: undefined,
+          deletedAt: undefined,
+          dueDate: nextDueDateValue,
+          attachments: undefined,
+          createdAt: now,
+          updatedAt: now,
+        };
+        const nextSetResult = await this.adapter.set(
+          createStorageKey('tasks', nextTask.id),
+          nextTask
+        );
+        if (!nextSetResult.ok) return err(toDomainError(nextSetResult.error));
+
+        const nextActivityResult = await appendTaskActivity(
+          this.adapter,
+          createTaskActivity({ taskId: nextTask.id, kind: 'task_created', now })
+        );
+        if (!nextActivityResult.ok) return err(nextActivityResult.error);
+
+        const scheduleActivityResult = await appendTaskActivity(
+          this.adapter,
+          createTaskActivity({
+            taskId: id,
+            kind: 'recurrence_scheduled',
+            now,
+            to: nextDueDateValue,
+          })
+        );
+        if (!scheduleActivityResult.ok) return err(scheduleActivityResult.error);
+      }
+    }
 
     return ok(updatedTask);
   }
@@ -413,6 +505,9 @@ export class LocalTaskRepository implements ITaskRepository {
     const key = createStorageKey('tasks', id);
     const deleteResult = await this.adapter.delete(key);
     if (!deleteResult.ok) return err(toDomainError(deleteResult.error));
+
+    const activityResult = await clearTaskActivities(this.adapter, id);
+    if (!activityResult.ok) return err(activityResult.error);
 
     return ok(undefined);
   }

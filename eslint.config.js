@@ -80,10 +80,42 @@ export default tseslint.config(
       ecmaVersion: 2022,
       sourceType: 'module',
       globals: {
+        Buffer: 'readonly',
         console: 'readonly',
         process: 'readonly',
         __dirname: 'readonly',
         __filename: 'readonly',
+      },
+    },
+  },
+  {
+    // The service worker runs in a worker global scope with its own globals.
+    files: ['public/sw.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'script',
+      globals: {
+        console: 'readonly',
+        self: 'readonly',
+        caches: 'readonly',
+        fetch: 'readonly',
+        Response: 'readonly',
+        URL: 'readonly',
+      },
+    },
+  },
+  {
+    // `page.evaluate` callbacks in the PWA smoke test run in a browser page.
+    files: ['scripts/check-pwa.mjs'],
+    languageOptions: {
+      globals: {
+        caches: 'readonly',
+        clearTimeout: 'readonly',
+        fetch: 'readonly',
+        navigator: 'readonly',
+        setTimeout: 'readonly',
+        URL: 'readonly',
+        window: 'readonly',
       },
     },
   },

@@ -42,6 +42,7 @@ React Hook Form + Zod, IndexedDB (with localStorage fallback). No backend, no ac
 | `npm run bench`               | Benchmarks the task query pipeline and windowed list render             |
 | `npm run test:coverage`       | Tests with coverage                                                     |
 | `npm run test:e2e`            | Playwright E2E (starts the dev server, seeded with this repo's backlog) |
+| `npm run pwa:check`           | Production PWA smoke test (needs `npm run build` first)                 |
 | `npm run ci`                  | Full local gate (format, lint, typecheck, tickets, tests, build, e2e)   |
 | `npm run tickets:build`       | Regenerate `BACKLOG.md` + `workboard-import.json`                       |
 | `npm run tickets:check`       | Fail if generated artifacts are stale                                   |
@@ -96,4 +97,4 @@ scripts/           Node tooling (bundle size, ticket build/sync)
 - Do not edit `BACKLOG.md` or `project-management/workboard-import.json` by hand.
 - Do not rename a ticket file without updating its `id`.
 - Do not commit build/test output (`dist`, `coverage`, `playwright-report`, `test-results`).
-- Do not add dependencies casually — the bundle budget is ≤100 KB gzip JS.
+- Do not add dependencies casually — the bundle budget is ≤200 KB gzip JS (`npm run size` enforces it).

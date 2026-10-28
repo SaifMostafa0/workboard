@@ -2,7 +2,7 @@ import { createStorageError, type StorageError } from '@/domain/errors';
 import type { DBSchema, IDBPDatabase } from 'idb';
 import { openDB } from 'idb';
 import { shouldFailWrites } from './failureInjection';
-import type { Result, StorageAdapter } from './storageAdapter';
+import type { AttachmentStore, Result, StorageAdapter } from './storageAdapter';
 import { err, handleStorageError, ok } from './storageAdapter';
 
 interface WorkboardDBSchema extends DBSchema {
@@ -14,12 +14,17 @@ interface WorkboardDBSchema extends DBSchema {
     key: string;
     value: { version: number; updatedAt: string };
   };
+  attachments: {
+    key: string;
+    value: Blob;
+  };
 }
 
 const DB_NAME = 'workboard-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const DATA_STORE = 'data';
 const META_STORE = 'meta';
+const ATTACHMENTS_STORE = 'attachments';
 
 /**
  * The keys for a collection are `workboard:<collection>:<id>`, so a key range
@@ -42,6 +47,9 @@ const getDB = async (): Promise<IDBPDatabase<WorkboardDBSchema>> => {
         }
         if (!db.objectStoreNames.contains(META_STORE)) {
           db.createObjectStore(META_STORE);
+        }
+        if (!db.objectStoreNames.contains(ATTACHMENTS_STORE)) {
+          db.createObjectStore(ATTACHMENTS_STORE);
         }
       },
     });
@@ -125,6 +133,79 @@ export const indexedDBAdapter: StorageAdapter = {
       return ok(keys.filter((key): key is string => typeof key === 'string'));
     } catch (error) {
       return err(handleStorageError('getKeys', error, prefix));
+    }
+  },
+};
+
+export const indexedDBAttachmentStore: AttachmentStore = {
+  async put(key: string, blob: Blob): Promise<Result<void, StorageError>> {
+    if (shouldFailWrites()) {
+      return err(
+        createStorageError('QUOTA_EXCEEDED', 'Injected attachment write failure', { key })
+      );
+    }
+    try {
+      const db = await getDB();
+      await db.put(ATTACHMENTS_STORE, blob, key);
+      return ok(undefined);
+    } catch (error) {
+      return err(handleStorageError('set', error, key));
+    }
+  },
+
+  async get(key: string): Promise<Result<Blob | null, StorageError>> {
+    try {
+      const db = await getDB();
+      const value = await db.get(ATTACHMENTS_STORE, key);
+      return ok(value ?? null);
+    } catch (error) {
+      return err(handleStorageError('get', error, key));
+    }
+  },
+
+  async delete(key: string): Promise<Result<void, StorageError>> {
+    if (shouldFailWrites()) {
+      return err(
+        createStorageError('QUOTA_EXCEEDED', 'Injected attachment delete failure', { key })
+      );
+    }
+    try {
+      const db = await getDB();
+      await db.delete(ATTACHMENTS_STORE, key);
+      return ok(undefined);
+    } catch (error) {
+      return err(handleStorageError('delete', error, key));
+    }
+  },
+
+  async deleteByPrefix(prefix: string): Promise<Result<void, StorageError>> {
+    if (shouldFailWrites()) {
+      return err(
+        createStorageError('QUOTA_EXCEEDED', 'Injected attachment delete failure', { key: prefix })
+      );
+    }
+    try {
+      const db = await getDB();
+      const keys = await db.getAllKeys(ATTACHMENTS_STORE, prefixRange(prefix));
+      for (const key of keys) {
+        await db.delete(ATTACHMENTS_STORE, key);
+      }
+      return ok(undefined);
+    } catch (error) {
+      return err(handleStorageError('clear', error, prefix));
+    }
+  },
+
+  async clear(): Promise<Result<void, StorageError>> {
+    if (shouldFailWrites()) {
+      return err(createStorageError('QUOTA_EXCEEDED', 'Injected attachment clear failure'));
+    }
+    try {
+      const db = await getDB();
+      await db.clear(ATTACHMENTS_STORE);
+      return ok(undefined);
+    } catch (error) {
+      return err(handleStorageError('clear', error));
     }
   },
 };

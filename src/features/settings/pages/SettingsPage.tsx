@@ -2,10 +2,13 @@ import { useTheme } from '@/app/providers';
 import { Alert } from '@/components/feedback/Alert';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { backlogToMarkdown, projectsToCsv, tasksToCsv } from '@/domain';
+import { REMINDER_LEAD_OPTIONS } from '@/domain/reminder';
 import {
   useClearAllData,
+  useEncryptedExport,
   useExportData,
   useImportData,
   useProjects,
@@ -13,14 +16,18 @@ import {
   useTasks,
   useUpdateSettings,
 } from '@/hooks/useData';
+import { requestNotificationPermission } from '@/hooks/useReminders';
+import { decryptBackup, isEncryptedBackup, validatePassphrase } from '@/lib/backup';
 import { cn } from '@/lib/cn';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  Bell,
   Database,
   Download,
   FileJson,
   FileSpreadsheet,
   FileText,
+  Lock,
   Monitor,
   Moon,
   Palette,
@@ -39,6 +46,8 @@ const settingsSchema = z.object({
   sidebarCollapsed: z.boolean(),
   showCompletedTasks: z.boolean(),
   compactMode: z.boolean(),
+  reminderLeadDays: z.number().int().min(0).max(30),
+  browserNotificationsEnabled: z.boolean(),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -76,6 +85,7 @@ export function SettingsPage() {
   const { data: tasks } = useTasks();
   const updateSettings = useUpdateSettings();
   const exportData = useExportData();
+  const encryptedExport = useEncryptedExport();
   const importData = useImportData();
   const clearAllData = useClearAllData();
   const { setTheme } = useTheme();
@@ -83,8 +93,16 @@ export function SettingsPage() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPayload, setImportPayload] = useState<unknown>(null);
+  const [importIsEncrypted, setImportIsEncrypted] = useState(false);
+  const [importPassphrase, setImportPassphrase] = useState('');
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
   const [importError, setImportError] = useState<string | null>(null);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
+  const [backupPassphrase, setBackupPassphrase] = useState('');
+  const [backupConfirm, setBackupConfirm] = useState('');
+  const [backupError, setBackupError] = useState<string | null>(null);
   const [exportNotice, setExportNotice] = useState<ExportNotice | null>(null);
   const exportDataReady = Boolean(projects && tasks);
 
@@ -93,6 +111,7 @@ export function SettingsPage() {
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -102,6 +121,8 @@ export function SettingsPage() {
       sidebarCollapsed: false,
       showCompletedTasks: true,
       compactMode: false,
+      reminderLeadDays: 1,
+      browserNotificationsEnabled: false,
     },
   });
 
@@ -114,10 +135,34 @@ export function SettingsPage() {
       sidebarCollapsed: settings.sidebarCollapsed,
       showCompletedTasks: settings.showCompletedTasks,
       compactMode: settings.compactMode,
+      reminderLeadDays: settings.reminderLeadDays,
+      browserNotificationsEnabled: settings.browserNotificationsEnabled,
     });
   }, [settings, reset]);
 
   const theme = useWatch({ control, name: 'theme' });
+  const notificationsEnabled = useWatch({ control, name: 'browserNotificationsEnabled' });
+
+  const handleNotificationsToggle = async (enabled: boolean) => {
+    setNotificationError(null);
+    if (!enabled) {
+      setValue('browserNotificationsEnabled', false, { shouldDirty: true });
+      return;
+    }
+
+    const permission = await requestNotificationPermission();
+    if (permission === 'granted') {
+      setValue('browserNotificationsEnabled', true, { shouldDirty: true });
+      return;
+    }
+
+    setValue('browserNotificationsEnabled', false, { shouldDirty: true });
+    setNotificationError(
+      permission === 'unsupported'
+        ? 'This browser does not support desktop notifications. The in-app reminder centre still works.'
+        : 'Notifications are blocked for this site. Enable them in your browser settings, or use the in-app reminder centre.'
+    );
+  };
 
   const handleSubmitSettings = (data: SettingsFormData) => {
     setTheme(data.theme);
@@ -174,34 +219,61 @@ export function SettingsPage() {
     });
   };
 
-  const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 1024 * 1024) {
-        setImportError('File size must be less than 1MB');
-        return;
-      }
-      if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
-        setImportError('File must be a JSON file');
-        return;
-      }
+    setImportPayload(null);
+    setImportIsEncrypted(false);
+    setImportPassphrase('');
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+      setImportFile(null);
+      setImportError('File size must be less than 1MB');
+      return;
+    }
+    if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
+      setImportFile(null);
+      setImportError('File must be a JSON file');
+      return;
+    }
+
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
       setImportFile(file);
+      setImportPayload(parsed);
+      setImportIsEncrypted(isEncryptedBackup(parsed));
       setImportError(null);
+    } catch {
+      setImportFile(null);
+      setImportError('Invalid JSON file');
     }
   };
 
   const handleImport = async () => {
-    if (!importFile) return;
+    if (!importFile || importPayload === null) return;
 
     try {
-      const text = await importFile.text();
-      const data = JSON.parse(text);
+      let data: unknown = importPayload;
+      if (importIsEncrypted) {
+        if (!isEncryptedBackup(data)) {
+          throw new Error('This file is not a Workboard encrypted backup.');
+        }
+        if (!importPassphrase) {
+          setImportError('Enter the passphrase for this encrypted backup.');
+          return;
+        }
+        data = await decryptBackup(data, importPassphrase);
+      }
+
       importData.mutate(
         { data, mode: importMode },
         {
           onSuccess: () => {
             setImportDialogOpen(false);
             setImportFile(null);
+            setImportPayload(null);
+            setImportPassphrase('');
+            setImportIsEncrypted(false);
             (document.getElementById('import-file') as HTMLInputElement)!.value = '';
           },
           onError: (err) => {
@@ -209,9 +281,33 @@ export function SettingsPage() {
           },
         }
       );
-    } catch {
-      setImportError('Invalid JSON file');
+    } catch (cause) {
+      setImportError(cause instanceof Error ? cause.message : 'Could not read the import file');
     }
+  };
+
+  const handleEncryptedBackup = () => {
+    const problem = validatePassphrase(backupPassphrase);
+    if (problem) {
+      setBackupError(problem);
+      return;
+    }
+    if (backupPassphrase !== backupConfirm) {
+      setBackupError('The passphrases do not match.');
+      return;
+    }
+
+    encryptedExport.mutate(backupPassphrase, {
+      onSuccess: () => {
+        setBackupDialogOpen(false);
+        setBackupPassphrase('');
+        setBackupConfirm('');
+        setBackupError(null);
+      },
+      onError: (err) => {
+        setBackupError(err.message);
+      },
+    });
   };
 
   const handleDeleteAll = () => {
@@ -333,6 +429,65 @@ export function SettingsPage() {
         </form>
       </section>
 
+      <section className={styles.section} aria-labelledby="reminders-heading">
+        <h2 id="reminders-heading" className={styles.sectionTitle}>
+          <Bell className={styles.sectionIcon} aria-hidden="true" />
+          Reminders
+        </h2>
+
+        <form onSubmit={handleSubmit(handleSubmitSettings)} className={styles.form}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel} htmlFor="settings-reminder-lead">
+              Remind me before a due date
+            </label>
+            <Select
+              id="settings-reminder-lead"
+              {...register('reminderLeadDays', { valueAsNumber: true })}
+              options={REMINDER_LEAD_OPTIONS.map((days) => ({
+                value: String(days),
+                label:
+                  days === 0 ? 'On the due date' : `${days} ${days === 1 ? 'day' : 'days'} before`,
+              }))}
+              error={errors.reminderLeadDays?.message}
+            />
+            <p className={styles.fieldHint}>
+              The reminder centre always lists overdue, due-today and upcoming work. This setting
+              controls how far ahead upcoming tasks appear.
+            </p>
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <span className={styles.fieldLabel}>Desktop notifications</span>
+            <div className={styles.toggleGroup}>
+              <label className={styles.toggle}>
+                <input
+                  type="checkbox"
+                  checked={notificationsEnabled}
+                  onChange={(event) => void handleNotificationsToggle(event.target.checked)}
+                />
+                <span className={styles.toggleSlider} />
+                <span className={styles.toggleLabel}>Notify me while Workboard is open</span>
+              </label>
+            </div>
+            <p className={styles.fieldHint}>
+              Notifications stay on this device. Nothing is sent to a server, and the reminder
+              centre keeps working if you decline permission.
+            </p>
+            {notificationError && (
+              <Alert type="warning" title="Notifications unavailable">
+                {notificationError}
+              </Alert>
+            )}
+          </div>
+
+          <div className={styles.formActions}>
+            <Button type="submit" variant="primary" loading={isSubmitting}>
+              Save Settings
+            </Button>
+          </div>
+        </form>
+      </section>
+
       <section className={styles.section} aria-labelledby="data-heading">
         <h2 id="data-heading" className={styles.sectionTitle}>
           <Database className={styles.sectionIcon} aria-hidden="true" />
@@ -346,7 +501,8 @@ export function SettingsPage() {
               <div>
                 <h3 className={styles.dataCardTitle}>Export Data</h3>
                 <p className={styles.dataCardDesc}>
-                  Download all your projects, tasks, labels and saved views as a JSON file
+                  Download all your projects, tasks, labels and saved views as a JSON file.
+                  Attachment metadata is included; file contents never leave this browser.
                 </p>
               </div>
             </div>
@@ -443,6 +599,30 @@ export function SettingsPage() {
             </Button>
           </div>
 
+          <div className={styles.dataCard}>
+            <div className={styles.dataCardHeader}>
+              <Lock className={styles.dataCardIcon} aria-hidden="true" />
+              <div>
+                <h3 className={styles.dataCardTitle}>Encrypted Backup</h3>
+                <p className={styles.dataCardDesc}>
+                  A passphrase-protected copy of your data using AES-GCM. Attachments stay on this
+                  device.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setBackupError(null);
+                setBackupDialogOpen(true);
+              }}
+              className={styles.dataCardButton}
+            >
+              <Lock className="w-4 h-4" aria-hidden="true" />
+              Create Encrypted Backup
+            </Button>
+          </div>
+
           <div className={cn(styles.dataCard, styles.danger)}>
             <div className={styles.dataCardHeader}>
               <Trash2 className={styles.dataCardIcon} aria-hidden="true" />
@@ -480,7 +660,8 @@ export function SettingsPage() {
             <li>Data persists between browser sessions</li>
             <li>Data is not synced across devices or browsers</li>
             <li>Clearing browser data will delete your Workboard data</li>
-            <li>Use Export/Import to backup or transfer data</li>
+            <li>Use Export/Import or an encrypted backup to move data between devices</li>
+            <li>Attachments are stored only on this device and are excluded from exports</li>
           </ul>
         </div>
       </section>
@@ -491,6 +672,9 @@ export function SettingsPage() {
         onClose={() => {
           setImportDialogOpen(false);
           setImportError(null);
+          setImportPayload(null);
+          setImportPassphrase('');
+          setImportIsEncrypted(false);
         }}
         title="Import Data"
         description="Select a JSON file exported from Workboard to restore your data."
@@ -515,6 +699,22 @@ export function SettingsPage() {
               Selected: <strong>{importFile.name}</strong> ({(importFile.size / 1024).toFixed(1)}{' '}
               KB)
             </p>
+          )}
+
+          {importIsEncrypted && (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel} htmlFor="import-passphrase">
+                Backup passphrase
+              </label>
+              <Input
+                id="import-passphrase"
+                type="password"
+                autoComplete="current-password"
+                value={importPassphrase}
+                onChange={(event) => setImportPassphrase(event.target.value)}
+                placeholder="Enter the passphrase used for this backup"
+              />
+            </div>
           )}
 
           {importError && (
@@ -565,6 +765,78 @@ export function SettingsPage() {
               loading={importData.isPending}
             >
               Import Data
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Encrypted Backup Dialog */}
+      <Dialog
+        open={backupDialogOpen}
+        onClose={() => {
+          setBackupDialogOpen(false);
+          setBackupError(null);
+        }}
+        title="Create Encrypted Backup"
+        description="Protect a full data export with a passphrase. The file can only be restored with the same passphrase."
+        size="md"
+      >
+        <div className={styles.importDialog}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel} htmlFor="backup-passphrase">
+              Passphrase
+            </label>
+            <Input
+              id="backup-passphrase"
+              type="password"
+              autoComplete="new-password"
+              value={backupPassphrase}
+              onChange={(event) => setBackupPassphrase(event.target.value)}
+              placeholder="At least 8 characters, with a letter and a number"
+            />
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel} htmlFor="backup-confirm">
+              Confirm passphrase
+            </label>
+            <Input
+              id="backup-confirm"
+              type="password"
+              autoComplete="new-password"
+              value={backupConfirm}
+              onChange={(event) => setBackupConfirm(event.target.value)}
+              placeholder="Repeat the passphrase"
+            />
+          </div>
+
+          <p className={styles.fieldHint}>
+            Workboard cannot recover a lost passphrase. Attachments are local-only and are not part
+            of any export.
+          </p>
+
+          {backupError && (
+            <Alert type="error" title="Could not create backup">
+              {backupError}
+            </Alert>
+          )}
+
+          <div className={styles.dialogActions}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setBackupDialogOpen(false);
+                setBackupError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleEncryptedBackup}
+              loading={encryptedExport.isPending}
+            >
+              Create Backup
             </Button>
           </div>
         </div>

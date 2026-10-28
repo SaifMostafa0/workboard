@@ -1,3 +1,6 @@
+import type { AttachmentMetadata } from './attachment';
+import type { TaskRecurrence } from './recurrence';
+
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
@@ -58,6 +61,13 @@ export interface Task {
    * task has no blockers.
    */
   blockedBy?: string[];
+  /** Optional repeating schedule; the due date anchors each next occurrence. */
+  recurrence?: TaskRecurrence;
+  /**
+   * Metadata for locally stored files. The blobs themselves live in the
+   * dedicated attachment store and are never exported.
+   */
+  attachments?: AttachmentMetadata[];
 }
 
 export interface TaskInput {
@@ -72,6 +82,8 @@ export interface TaskInput {
   parentId?: string;
   epicId?: string;
   blockedBy?: string[];
+  recurrence?: TaskRecurrence;
+  attachments?: AttachmentMetadata[];
 }
 
 export type TaskUpdate = Partial<TaskInput>;

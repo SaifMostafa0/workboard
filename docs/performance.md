@@ -365,6 +365,16 @@ All assertions passed; there were no regressions to grandfather. CI runners are 
 than this workstation, so treat these numbers as a baseline rather than an SLA — the thresholds in
 `lighthouse-budget.json` and `scripts/check-bundle-size.mjs` are the gate.
 
+### Bundle update — 2026-10-28
+
+Attachments, recurring tasks, reminders, the activity feed and the PWA/encryption work added runtime
+code. The bundle was re-measured with `npm run size` on the same production build pipeline:
+
+- Total JavaScript: **196.55 kB gzipped** (budget 200 kB) — 3.5 kB headroom left
+- Total CSS: **16.76 kB gzipped** (budget 20 kB)
+- The Lighthouse performance baseline above predates this change; re-run
+  `npm run test:e2e`/Lighthouse CI before claiming those medians for the current build.
+
 Refresh this section with:
 
 ```bash

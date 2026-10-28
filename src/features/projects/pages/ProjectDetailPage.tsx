@@ -11,6 +11,7 @@ import type {
   TaskUpdateValidated,
 } from '@/domain/validation';
 import { TaskCard } from '@/features/tasks/components/TaskCard';
+import { TaskDetailDialog } from '@/features/tasks/components/TaskDetailDialog';
 import { TaskFormDialog, TaskFormDialogWithData } from '@/features/tasks/components/TaskFormDialog';
 import {
   useCreateEpic,
@@ -40,6 +41,7 @@ export function ProjectDetailPage() {
   });
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [viewingTaskId, setViewingTaskId] = useState<string | null>(null);
   const [showSubtasks, setShowSubtasks] = useState(false);
   const [subtaskParent, setSubtaskParent] = useState<Task | null>(null);
   const [showCreateEpic, setShowCreateEpic] = useState(false);
@@ -375,6 +377,7 @@ export function ProjectDetailPage() {
               onStatusChange={handleStatusChange}
               onDropTask={handleDropTask}
               onEdit={(t) => setEditingTask(tasks?.find((x) => x.id === t.id) ?? null)}
+              onView={(t) => setViewingTaskId(t.id)}
               onDelete={handleDelete}
               subtaskProgressById={subtaskProgressById}
               blockedTaskIds={blockedTaskIds}
@@ -387,6 +390,7 @@ export function ProjectDetailPage() {
           tasks={visibleTasks}
           onStatusChange={handleStatusChange}
           onEdit={(t) => setEditingTask(tasks?.find((x) => x.id === t.id) ?? null)}
+          onView={(t) => setViewingTaskId(t.id)}
           onDelete={handleDelete}
           onCreateTask={() => setShowCreateTask(true)}
           subtaskProgressById={subtaskProgressById}
@@ -429,6 +433,7 @@ export function ProjectDetailPage() {
             tags: editingTask.tags,
             epicId: editingTask.epicId,
             blockedBy: editingTask.blockedBy ?? [],
+            recurrence: editingTask.recurrence,
           }}
           epics={epics}
           blockerOptions={blockerOptions}
@@ -461,6 +466,12 @@ export function ProjectDetailPage() {
           onSubmit={handleEditEpic}
         />
       )}
+
+      <TaskDetailDialog
+        open={viewingTaskId !== null}
+        taskId={viewingTaskId ?? undefined}
+        onClose={() => setViewingTaskId(null)}
+      />
     </div>
   );
 }
@@ -483,6 +494,7 @@ interface KanbanColumnProps {
   onStatusChange: (id: string, status: 'todo' | 'in_progress' | 'done') => void;
   onDropTask: (taskId: string, status: TaskStatus) => void;
   onEdit: (task: { id: string }) => void;
+  onView: (task: { id: string }) => void;
   onDelete: (id: string, title: string) => void;
   subtaskProgressById: Map<string, { done: number; total: number }>;
   blockedTaskIds: Set<string>;
@@ -497,6 +509,7 @@ function KanbanColumn({
   onStatusChange,
   onDropTask,
   onEdit,
+  onView,
   onDelete,
   subtaskProgressById,
   blockedTaskIds,
@@ -563,6 +576,7 @@ function KanbanColumn({
               task={task}
               onStatusChange={onStatusChange}
               onEdit={onEdit}
+              onView={onView}
               onDelete={onDelete}
               draggable
               isDragging={draggingId === task.id}
@@ -597,6 +611,7 @@ interface TaskListViewProps {
   }>;
   onStatusChange: (id: string, status: 'todo' | 'in_progress' | 'done') => void;
   onEdit: (task: { id: string }) => void;
+  onView: (task: { id: string }) => void;
   onDelete: (id: string, title: string) => void;
   onCreateTask: () => void;
   subtaskProgressById: Map<string, { done: number; total: number }>;
@@ -608,6 +623,7 @@ function TaskListView({
   tasks,
   onStatusChange,
   onEdit,
+  onView,
   onDelete,
   onCreateTask,
   subtaskProgressById,
@@ -633,6 +649,7 @@ function TaskListView({
           task={task}
           onStatusChange={onStatusChange}
           onEdit={onEdit}
+          onView={onView}
           onDelete={onDelete}
           variant="list"
           subtaskProgress={subtaskProgressById.get(task.id)}

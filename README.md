@@ -2,7 +2,7 @@
 
 A polished, responsive project and task management application demonstrating professional frontend engineering practices.
 
-> **Docs at a glance:** [Architecture](docs/architecture.md) · [Competitor analysis (Jira, Trello, Linear)](COMPETITOR_ANALYSIS.md) · [Backlog](BACKLOG.md) · [Status](STATUS.md) · [Agent guide](AGENTS.md)
+> **Docs at a glance:** [Architecture](docs/architecture.md) · [PWA & encrypted backups](docs/pwa.md) · [Competitor analysis (Jira, Trello, Linear)](COMPETITOR_ANALYSIS.md) · [Backlog](BACKLOG.md) · [Status](STATUS.md) · [Agent guide](AGENTS.md)
 
 ## Features
 
@@ -20,8 +20,13 @@ A polished, responsive project and task management application demonstrating pro
 - **Trash & Undo**: Deleting is reversible — an inline Undo toast plus a Trash page to restore or remove items for good
 - **Bulk Actions**: Select multiple tasks to change their status or priority, or move them to Trash at once
 - **Command Palette**: `⌘/Ctrl + K` to jump anywhere or run actions, plus keyboard shortcuts (`?` for help, `g` then a letter to navigate)
+- **Comments & Activity**: A task detail view with a dated comment thread and an audit trail of status, priority, assignee, due-date, recurrence and attachment changes
+- **Attachments**: Drag-and-drop or picker uploads stored in a dedicated IndexedDB blob store, with per-file, per-task and global quota guards and safe downloads
+- **Recurring Tasks**: Daily/weekly/monthly rules with custom intervals and an end date; completing an occurrence schedules the next one
+- **Reminders**: An in-app reminder centre for overdue, due-today and upcoming tasks, configurable lead time, and opt-in browser notifications
+- **Installable PWA**: Precached app shell, offline deep links, an update prompt, and an optional passphrase-encrypted backup (PBKDF2 + AES-GCM)
 - **Data Persistence**: IndexedDB (with localStorage fallback) - works offline
-- **Import/Export**: JSON backup and restore with validation (projects, tasks, epics, labels, saved views)
+- **Import/Export**: JSON backup and restore with validation (projects, tasks, epics, labels, saved views, attachment metadata only)
 - **Human-friendly exports**: CSV for tasks and projects, Markdown for the backlog, plus a print/PDF view of boards and lists
 - **Theme Support**: Light, dark, and system preference modes
 - **Accessibility**: WCAG 2.2 AA compliant
@@ -80,6 +85,7 @@ The app will be available at `http://localhost:5173`
 | `npm run test:run`       | Run tests once                           |
 | `npm run test:coverage`  | Run tests with coverage report           |
 | `npm run test:e2e`       | Run Playwright E2E tests                 |
+| `npm run pwa:check`      | PWA smoke test (after `npm run build`)   |
 | `npm run lint`           | Run ESLint                               |
 | `npm run format`         | Format with Prettier                     |
 | `npm run format:check`   | Check formatting                         |

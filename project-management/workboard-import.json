@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "exportedAt": "2026-10-26T00:00:00.000Z",
+  "exportedAt": "2026-10-28T00:00:00.000Z",
   "projects": [
     {
       "id": "8f1c2a10-1a2b-4c3d-8e4f-000000000101",
@@ -216,8 +216,8 @@
       "id": "6800178f-4c17-4966-b8cf-c26911b3617a",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
       "title": "WB-301 Add file attachments stored in IndexedDB",
-      "description": "Tasks cannot hold files. Attachments are expected in every comparable tool. Store blobs locally\nin IndexedDB so the offline, no-upload promise is preserved.\n\n**Acceptance criteria**\n- [ ] A task can hold zero or more attachments (name, type, size, blob).\n- [ ] Files are stored in a dedicated IndexedDB object store; metadata is validated with Zod.\n- [ ] A configurable per-file size limit and total-quota guard surface clear errors on `QUOTA_EXCEEDED`.\n- [ ] Attachments can be added via drag-and-drop and a file picker, downloaded, and removed.\n- [ ] Non-text files never render inline; downloads use safe `Content-Disposition` behaviour.\n- [ ] Import/export clearly states that attachments are local-only (see `WB-404` for the export gap).\n- [ ] Tests cover add/remove and error paths; the storage adapter's failure injection is exercised.\n\n- Keep blobs out of the JSON export by default to avoid multi-megabyte backups; document the trade-off.\n- Consider whether attachments live in the trash lifecycle with their task.\n\nTicket file: tickets/WB-301-file-attachments.md\n\nSource: readme-gaps",
-      "status": "todo",
+      "description": "Tasks cannot hold files. Attachments are expected in every comparable tool. Store blobs locally\nin IndexedDB so the offline, no-upload promise is preserved.\n\n**Acceptance criteria**\n- [x] A task can hold zero or more attachments (name, type, size, blob).\n- [x] Files are stored in a dedicated IndexedDB object store; metadata is validated with Zod.\n- [x] A configurable per-file size limit and total-quota guard surface clear errors on `QUOTA_EXCEEDED`.\n- [x] Attachments can be added via drag-and-drop and a file picker, downloaded, and removed.\n- [x] Non-text files never render inline; downloads use safe `Content-Disposition` behaviour.\n- [x] Import/export clearly states that attachments are local-only (see `WB-404` for the export gap).\n- [x] Tests cover add/remove and error paths; the storage adapter's failure injection is exercised.\n\n- Keep blobs out of the JSON export by default to avoid multi-megabyte backups; document the trade-off.\n- Consider whether attachments live in the trash lifecycle with their task.\n\nTicket file: tickets/WB-301-file-attachments.md\n\nSource: readme-gaps",
+      "status": "done",
       "priority": "medium",
       "tags": [
         "workboard",
@@ -228,15 +228,16 @@
         "type:feature"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-28T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-28T00:00:00.000Z"
     },
     {
       "id": "299b404e-0b5e-4a4b-bec7-6dff724318fa",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
       "title": "WB-302 Support recurring tasks",
-      "description": "Tasks that repeat (daily, weekly, monthly, custom interval) are unsupported. They are common\nfor maintenance and routine work.\n\n**Acceptance criteria**\n- [ ] `Task` gains an optional recurrence rule (frequency + interval + optional until date).\n- [ ] Completing a recurring task schedules the next occurrence rather than ending the series.\n- [ ] Recurrence is validated in the domain and rendered in the task form and list.\n- [ ] The next occurrence is computed by a pure, timezone-safe domain function.\n- [ ] A series can be stopped; past occurrences are retained as history.\n- [ ] Tests cover interval maths, DST/timezone edges, and completion behaviour.\n\n- Keep the rule shape simple (RFC 5545 RRULE is likely overkill); document the subset supported.\n- All dates in the app are calendar dates (`YYYY-MM-DD`); preserve that convention.\n\nTicket file: tickets/WB-302-recurring-tasks.md\n\nSource: readme-gaps",
-      "status": "todo",
+      "description": "Tasks that repeat (daily, weekly, monthly, custom interval) are unsupported. They are common\nfor maintenance and routine work.\n\n**Acceptance criteria**\n- [x] `Task` gains an optional recurrence rule (frequency + interval + optional until date).\n- [x] Completing a recurring task schedules the next occurrence rather than ending the series.\n- [x] Recurrence is validated in the domain and rendered in the task form and list.\n- [x] The next occurrence is computed by a pure, timezone-safe domain function.\n- [x] A series can be stopped; past occurrences are retained as history.\n- [x] Tests cover interval maths, DST/timezone edges, and completion behaviour.\n\n- Keep the rule shape simple (RFC 5545 RRULE is likely overkill); document the subset supported.\n- All dates in the app are calendar dates (`YYYY-MM-DD`); preserve that convention.\n\nTicket file: tickets/WB-302-recurring-tasks.md\n\nSource: readme-gaps",
+      "status": "done",
       "priority": "low",
       "tags": [
         "workboard",
@@ -246,15 +247,16 @@
         "type:feature"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-28T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-28T00:00:00.000Z"
     },
     {
       "id": "4609da8e-1abb-4c1e-a1d7-0992a381c390",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
       "title": "WB-303 Add due-date reminders and in-app notifications",
-      "description": "The app surfaces overdue tasks passively on the dashboard. Add reminders so upcoming due dates\nreach the user without them opening the app.\n\n**Acceptance criteria**\n- [ ] A notifications centre lists tasks that are due soon or overdue.\n- [ ] Optional browser notifications are requested and scheduled with user consent, degrading gracefully when denied.\n- [ ] Users can configure a lead time (e.g. remind 1 day before due).\n- [ ] Preferences persist with the existing settings repository.\n- [ ] No network calls; scheduling is local (Notification API / service worker if `WB-305` lands first).\n- [ ] Tests cover the \"which tasks are due for a reminder\" pure function.\n\n- Depends on `WB-305` (PWA/service worker) for reliable background reminders; in-app list can ship first.\n- Respect the reduced-motion and accessibility conventions used by toasts.\n\nTicket file: tickets/WB-303-reminders.md\n\nSource: readme-gaps",
-      "status": "todo",
+      "description": "The app surfaces overdue tasks passively on the dashboard. Add reminders so upcoming due dates\nreach the user without them opening the app.\n\n**Acceptance criteria**\n- [x] A notifications centre lists tasks that are due soon or overdue.\n- [x] Optional browser notifications are requested and scheduled with user consent, degrading gracefully when denied.\n- [x] Users can configure a lead time (e.g. remind 1 day before due).\n- [x] Preferences persist with the existing settings repository.\n- [x] No network calls; scheduling is local (Notification API / service worker if `WB-305` lands first).\n- [x] Tests cover the \"which tasks are due for a reminder\" pure function.\n\n- Depends on `WB-305` (PWA/service worker) for reliable background reminders; in-app list can ship first.\n- Respect the reduced-motion and accessibility conventions used by toasts.\n\nTicket file: tickets/WB-303-reminders.md\n\nSource: readme-gaps",
+      "status": "done",
       "priority": "low",
       "tags": [
         "workboard",
@@ -265,15 +267,16 @@
         "type:feature"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-28T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-28T00:00:00.000Z"
     },
     {
       "id": "74869e8c-a0c6-438d-98f2-e9e108340a62",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
       "title": "WB-304 Design a public API and webhooks for automation",
-      "description": "Workboard has no integration surface, which blocks automation and dev-tool wiring where Jira and\nLinear excel. The local-first architecture makes a hosted API a product decision, so start with a\ndesign spike rather than an implementation.\n\n**Acceptance criteria**\n- [ ] A design document defines resources, endpoints, auth model, and versioning.\n- [ ] At least one concrete integration scenario is walked through end-to-end (e.g. create task from a webhook payload).\n- [ ] The proposal states how a public API coexists with the offline/local-only default, including a self-hosted option.\n- [ ] Security review covers auth, rate limiting, and data exposure for a client-owned data model.\n- [ ] The recommendation is captured in `docs/decisions/` with an explicit decision on build vs defer.\n\n- This is deliberately a spike: it depends on the sync decision in `WB-201`.\n- Do not expose user data without an explicit, documented consent model.\n\nTicket file: tickets/WB-304-public-api.md\n\nSource: competitor-analysis",
-      "status": "todo",
+      "description": "Workboard has no integration surface, which blocks automation and dev-tool wiring where Jira and\nLinear excel. The local-first architecture makes a hosted API a product decision, so start with a\ndesign spike rather than an implementation.\n\n**Acceptance criteria**\n- [x] A design document defines resources, endpoints, auth model, and versioning.\n- [x] At least one concrete integration scenario is walked through end-to-end (e.g. create task from a webhook payload).\n- [x] The proposal states how a public API coexists with the offline/local-only default, including a self-hosted option.\n- [x] Security review covers auth, rate limiting, and data exposure for a client-owned data model.\n- [x] The recommendation is captured in `docs/decisions/` with an explicit decision on build vs defer.\n\n- This is deliberately a spike: it depends on the sync decision in `WB-201`.\n- Do not expose user data without an explicit, documented consent model.\n\nTicket file: tickets/WB-304-public-api.md\n\nSource: competitor-analysis",
+      "status": "done",
       "priority": "low",
       "tags": [
         "workboard",
@@ -284,15 +287,16 @@
         "type:spike"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-26T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-26T00:00:00.000Z"
     },
     {
       "id": "c9f68f90-cc7a-4881-bca9-9af3e486c01b",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000103",
       "title": "WB-305 Ship a PWA with install and encrypted local backup",
-      "description": "Workboard works offline in the browser but is not installable. A PWA makes the offline-first\npromise tangible and closes part of the platform gap with native apps.\n\n**Acceptance criteria**\n- [ ] A service worker precaches the app shell and assets; the app loads offline after first visit.\n- [ ] A web app manifest (name, icons, theme colours) enables install on desktop and mobile.\n- [ ] An update flow prompts the user to reload when a new version is available.\n- [ ] An optional encrypted backup exports data protected by a user passphrase (Web Crypto).\n- [ ] Cache strategy is documented and does not break SPA deep links.\n- [ ] Lighthouse PWA checks pass and no performance budget regressions.\n\n- Coordinate with `WB-303` (notifications) which benefits from a service worker.\n- Encryption must be documented clearly: a lost passphrase means lost data.\n\nTicket file: tickets/WB-305-pwa-encrypted-backup.md\n\nSource: competitor-analysis",
-      "status": "todo",
+      "description": "Workboard works offline in the browser but is not installable. A PWA makes the offline-first\npromise tangible and closes part of the platform gap with native apps.\n\n**Acceptance criteria**\n- [x] A service worker precaches the app shell and assets; the app loads offline after first visit.\n- [x] A web app manifest (name, icons, theme colours) enables install on desktop and mobile.\n- [x] An update flow prompts the user to reload when a new version is available.\n- [x] An optional encrypted backup exports data protected by a user passphrase (Web Crypto).\n- [x] Cache strategy is documented and does not break SPA deep links.\n- [x] Lighthouse PWA checks pass and no performance budget regressions.\n\n- Coordinate with `WB-303` (notifications) which benefits from a service worker.\n- Encryption must be documented clearly: a lost passphrase means lost data.\n\nTicket file: tickets/WB-305-pwa-encrypted-backup.md\n\nSource: competitor-analysis",
+      "status": "done",
       "priority": "medium",
       "tags": [
         "workboard",
@@ -303,8 +307,9 @@
         "type:feature"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-28T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-28T00:00:00.000Z"
     },
     {
       "id": "f77186c8-a539-44fe-9d93-efa3e5da1213",
@@ -330,8 +335,8 @@
       "id": "6524de51-5b54-4dd3-8567-63939800374d",
       "projectId": "8f1c2a10-1a2b-4c3d-8e4f-000000000104",
       "title": "WB-402 Add comments and an activity feed",
-      "description": "Every comparable tool lets you annotate work and see what changed. Workboard has neither\ncomments nor an audit trail. Even single-user, a per-task activity log improves recall and\nforms the foundation for future collaboration.\n\n**Acceptance criteria**\n- [ ] A task detail view shows a dated comment thread and a change history (status, priority, assignee, due date).\n- [ ] Comments and activity entries are persisted with the task or in a related store.\n- [ ] Changes made through the app (and via import) produce activity entries.\n- [ ] The feed is accessible: ordered list semantics, timestamps in readable form.\n- [ ] Tests cover activity generation on update and rendering of an empty thread.\n\n- Design the record shape so it can later carry an author id when accounts arrive (`WB-201` sync, future auth).\n- Keep the activity log out of the compact JSON export unless `WB-404` decides otherwise.\n\nTicket file: tickets/WB-402-comments-activity.md\n\nSource: competitor-analysis",
-      "status": "todo",
+      "description": "Every comparable tool lets you annotate work and see what changed. Workboard has neither\ncomments nor an audit trail. Even single-user, a per-task activity log improves recall and\nforms the foundation for future collaboration.\n\n**Acceptance criteria**\n- [x] A task detail view shows a dated comment thread and a change history (status, priority, assignee, due date).\n- [x] Comments and activity entries are persisted with the task or in a related store.\n- [x] Changes made through the app (and via import) produce activity entries.\n- [x] The feed is accessible: ordered list semantics, timestamps in readable form.\n- [x] Tests cover activity generation on update and rendering of an empty thread.\n\n- Design the record shape so it can later carry an author id when accounts arrive (`WB-201` sync, future auth).\n- Keep the activity log out of the compact JSON export unless `WB-404` decides otherwise.\n\nTicket file: tickets/WB-402-comments-activity.md\n\nSource: competitor-analysis",
+      "status": "done",
       "priority": "medium",
       "tags": [
         "workboard",
@@ -342,8 +347,9 @@
         "gap:collaboration"
       ],
       "createdAt": "2026-10-14T00:00:00.000Z",
-      "updatedAt": "2026-10-14T00:00:00.000Z",
-      "assignee": "unassigned"
+      "updatedAt": "2026-10-28T00:00:00.000Z",
+      "assignee": "agent:opencode",
+      "completedAt": "2026-10-28T00:00:00.000Z"
     },
     {
       "id": "8650f284-7a81-4cf2-9eb0-3a112a913172",

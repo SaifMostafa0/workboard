@@ -3,9 +3,12 @@ import { CommandPalette } from '@/components/command-palette/CommandPalette';
 import { KeyboardShortcutsDialog } from '@/components/command-palette/KeyboardShortcutsDialog';
 import { useSettings, useUpdateSettings } from '@/hooks/useData';
 import { useGlobalHotkeys } from '@/hooks/useGlobalHotkeys';
+import { useBrowserReminderNotifications } from '@/hooks/useReminders';
+import { useServiceWorkerUpdate } from '@/hooks/useServiceWorkerUpdate';
 import { cn } from '@/lib/cn';
 import { isApplePlatform } from '@/lib/hotkeys';
 import {
+  Bell,
   CalendarDays,
   ChartColumn,
   FolderKanban,
@@ -32,6 +35,7 @@ const navigation = [
   { path: '/tasks', label: 'Tasks', icon: ListTodo },
   { path: '/calendar', label: 'Calendar', icon: CalendarDays },
   { path: '/timeline', label: 'Timeline', icon: SquareChartGantt },
+  { path: '/reminders', label: 'Reminders', icon: Bell },
   { path: '/reports', label: 'Reports', icon: ChartColumn },
   { path: '/labels', label: 'Labels', icon: Tag },
   { path: '/saved-views', label: 'Saved Views', icon: Save },
@@ -45,6 +49,9 @@ export function Layout({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings({ silent: true });
+  useBrowserReminderNotifications();
+  const { updateReady, applyUpdate } = useServiceWorkerUpdate();
+  const [updateDismissed, setUpdateDismissed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -213,6 +220,24 @@ export function Layout({ children }: { children?: React.ReactNode }) {
 
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
       <KeyboardShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+      {updateReady && !updateDismissed && (
+        <div className={styles.updateBanner} role="region" aria-label="Application update">
+          <span className={styles.updateMessage} role="status">
+            A new version of Workboard is available.
+          </span>
+          <button type="button" className={styles.updateAction} onClick={applyUpdate}>
+            Reload to update
+          </button>
+          <button
+            type="button"
+            className={styles.updateDismiss}
+            onClick={() => setUpdateDismissed(true)}
+          >
+            Later
+          </button>
+        </div>
+      )}
     </div>
   );
 }

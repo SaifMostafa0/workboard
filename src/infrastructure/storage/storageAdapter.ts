@@ -10,6 +10,18 @@ export interface StorageAdapter {
   getKeys(prefix: string): Promise<Result<string[], StorageError>>;
 }
 
+/**
+ * Blob storage is separate from the JSON adapter so attachments can live in a
+ * dedicated IndexedDB object store (and never be stringified into exports).
+ */
+export interface AttachmentStore {
+  put(key: string, blob: Blob): Promise<Result<void, StorageError>>;
+  get(key: string): Promise<Result<Blob | null, StorageError>>;
+  delete(key: string): Promise<Result<void, StorageError>>;
+  deleteByPrefix(prefix: string): Promise<Result<void, StorageError>>;
+  clear(): Promise<Result<void, StorageError>>;
+}
+
 export type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
 
 export const ok = <T>(value: T): Result<T, never> => ({ ok: true, value });

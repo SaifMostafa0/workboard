@@ -160,8 +160,9 @@ test.describe('Import/Export', () => {
       mimeType: 'application/json',
       buffer: Buffer.from('{ invalid json }'),
     });
-    await page.click('button:has-text("Import Data")');
 
+    // Parsing happens on selection so encrypted envelopes can be detected; the
+    // error therefore appears without submitting the dialog.
     await expect(page.locator('text=Invalid JSON file')).toBeVisible();
   });
 

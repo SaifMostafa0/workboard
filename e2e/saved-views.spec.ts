@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ensureTodoTask } from './helpers/tasks';
 
 interface CardTags {
   id: string;
@@ -26,6 +27,7 @@ test.describe('Saved views', () => {
 
   test('saves the current filters as a view and re-applies them', async ({ page }) => {
     const viewName = 'Todo work';
+    await ensureTodoTask(page);
 
     // Apply a filter, then capture it as a view.
     await page.selectOption('select[aria-label="Filter by status"]', 'todo');

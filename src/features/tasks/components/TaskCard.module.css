@@ -299,6 +299,24 @@
   white-space: nowrap;
 }
 
+.recurrenceBadge,
+.attachmentCount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.attachmentCount {
+  color: var(--color-text-muted);
+  background: var(--color-bg-tertiary);
+}
+
 .dueDate {
   display: inline-flex;
   align-items: center;

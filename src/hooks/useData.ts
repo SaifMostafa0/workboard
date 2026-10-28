@@ -1,5 +1,6 @@
 import { useToastHelpers } from '@/components/feedback/Toast';
 import type {
+  AttachmentMetadata,
   EpicInput,
   EpicUpdate,
   LabelInput,
@@ -14,7 +15,10 @@ import type {
   TaskQuery,
   TaskUpdate,
 } from '@/domain';
+import { ATTACHMENT_ISSUE_MESSAGES, sanitizeAttachmentName, validateAttachment } from '@/domain';
 import {
+  createActivityRepository,
+  createAttachmentRepository,
   createEpicRepository,
   createLabelRepository,
   createProjectRepository,
@@ -22,14 +26,24 @@ import {
   createSettingsRepository,
   createTaskRepository,
 } from '@/infrastructure/repositories';
+import {
+  appendTaskActivity,
+  createTaskActivity,
+} from '@/infrastructure/repositories/activityRepository';
 import type { UserSettings } from '@/infrastructure/repositories/settingsRepository';
-import { indexedDBAdapter, localStorageAdapter } from '@/infrastructure/storage';
+import {
+  indexedDBAdapter,
+  indexedDBAttachmentStore,
+  localStorageAdapter,
+  unsupportedAttachmentStore,
+} from '@/infrastructure/storage';
 import {
   clearAllData,
   exportAllData,
   importData as importDataFromStorage,
   validateImportData,
 } from '@/infrastructure/storage/migrations';
+import { encryptBackup } from '@/lib/backup';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Storage adapter selection
@@ -40,6 +54,13 @@ const getStorageAdapter = () => {
   return localStorageAdapter;
 };
 
+const getAttachmentStore = () => {
+  if (typeof window !== 'undefined' && 'indexedDB' in window) {
+    return indexedDBAttachmentStore;
+  }
+  return unsupportedAttachmentStore;
+};
+
 // Repository instances (singletons)
 let projectRepository: ReturnType<typeof createProjectRepository> | null = null;
 let taskRepository: ReturnType<typeof createTaskRepository> | null = null;
@@ -47,6 +68,8 @@ let settingsRepository: ReturnType<typeof createSettingsRepository> | null = nul
 let labelRepository: ReturnType<typeof createLabelRepository> | null = null;
 let epicRepository: ReturnType<typeof createEpicRepository> | null = null;
 let savedViewRepository: ReturnType<typeof createSavedViewRepository> | null = null;
+let activityRepository: ReturnType<typeof createActivityRepository> | null = null;
+let attachmentRepository: ReturnType<typeof createAttachmentRepository> | null = null;
 
 const getProjectRepository = () => {
   if (!projectRepository) {
@@ -90,6 +113,20 @@ const getEpicRepository = () => {
   return epicRepository;
 };
 
+const getActivityRepository = () => {
+  if (!activityRepository) {
+    activityRepository = createActivityRepository(getStorageAdapter());
+  }
+  return activityRepository;
+};
+
+const getAttachmentRepository = () => {
+  if (!attachmentRepository) {
+    attachmentRepository = createAttachmentRepository(getAttachmentStore());
+  }
+  return attachmentRepository;
+};
+
 // Query keys
 export const queryKeys = {
   projects: ['projects'] as const,
@@ -99,6 +136,7 @@ export const queryKeys = {
   tasksPage: (query: TaskQuery) => ['tasks', 'page', query] as const,
   taskSummary: ['tasks', 'summary'] as const,
   task: (id: string) => ['tasks', id] as const,
+  taskActivity: (id: string) => ['tasks', id, 'activity'] as const,
   trash: ['trash'] as const,
   settings: ['settings'] as const,
   labels: ['labels'] as const,
@@ -363,7 +401,23 @@ export function usePurgeProject() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const taskResult = await getTaskRepository().purgeByProject(id);
+      const taskRepo = getTaskRepository();
+      const [activeResult, deletedResult] = await Promise.all([
+        taskRepo.list(id),
+        taskRepo.listDeleted(),
+      ]);
+      if (!activeResult.ok) throw new Error(activeResult.error.message);
+      if (!deletedResult.ok) throw new Error(deletedResult.error.message);
+      const projectTasks = [
+        ...activeResult.value,
+        ...deletedResult.value.filter((task) => task.projectId === id),
+      ];
+      for (const task of projectTasks) {
+        const attachmentResult = await getAttachmentRepository().removeForTask(task.id);
+        if (!attachmentResult.ok) throw new Error(attachmentResult.error.message);
+      }
+
+      const taskResult = await taskRepo.purgeByProject(id);
       if (!taskResult.ok) throw new Error(taskResult.error.message);
       const result = await getProjectRepository().purge(id);
       if (!result.ok) throw new Error(result.error.message);
@@ -386,6 +440,8 @@ export function usePurgeTask() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      const attachmentResult = await getAttachmentRepository().removeForTask(id);
+      if (!attachmentResult.ok) throw new Error(attachmentResult.error.message);
       const result = await getTaskRepository().purge(id);
       if (!result.ok) throw new Error(result.error.message);
     },
@@ -420,6 +476,8 @@ export function useEmptyTrash() {
         if (!result.ok) throw new Error(result.error.message);
       }
       for (const task of tasksResult.value) {
+        const attachmentResult = await getAttachmentRepository().removeForTask(task.id);
+        if (!attachmentResult.ok) throw new Error(attachmentResult.error.message);
         const result = await taskRepo.purge(task.id);
         if (!result.ok) throw new Error(result.error.message);
       }
@@ -496,6 +554,174 @@ export function useTask(id: string) {
     },
     enabled: !!id,
   });
+}
+
+export function useTaskActivity(taskId: string) {
+  return useQuery({
+    queryKey: queryKeys.taskActivity(taskId),
+    queryFn: async () => {
+      const repo = getActivityRepository();
+      const result = await repo.list(taskId);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    enabled: !!taskId,
+  });
+}
+
+export function useAddComment(taskId: string) {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async (message: string) => {
+      const repo = getActivityRepository();
+      const result = await repo.comment(taskId, message, 'You');
+      if (!result.ok) throw new Error(result.error.message);
+      return result.value;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.taskActivity(taskId) });
+      success('Comment added');
+    },
+    onError: (err: Error) => {
+      error('Failed to add comment', err.message);
+    },
+  });
+}
+
+export function useAddAttachment(taskId: string) {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const taskRepo = getTaskRepository();
+      const taskResult = await taskRepo.get(taskId);
+      if (!taskResult.ok) throw new Error(taskResult.error.message);
+      const task = taskResult.value;
+      const existing = task.attachments ?? [];
+
+      const [activeResult, deletedResult] = await Promise.all([
+        taskRepo.list(),
+        taskRepo.listDeleted(),
+      ]);
+      if (!activeResult.ok) throw new Error(activeResult.error.message);
+      if (!deletedResult.ok) throw new Error(deletedResult.error.message);
+      const totalStoredBytes = [...activeResult.value, ...deletedResult.value].reduce(
+        (total, candidate) =>
+          total +
+          (candidate.attachments ?? []).reduce((sum, attachment) => sum + attachment.size, 0),
+        0
+      );
+
+      const metadata: AttachmentMetadata = {
+        id: crypto.randomUUID(),
+        name: sanitizeAttachmentName(file.name),
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        createdAt: new Date().toISOString(),
+      };
+      const issue = validateAttachment({
+        candidate: metadata,
+        existing,
+        totalStoredBytes,
+      });
+      if (issue) throw new Error(ATTACHMENT_ISSUE_MESSAGES[issue]);
+
+      const stored = await getAttachmentRepository().put(taskId, metadata, file);
+      if (!stored.ok) throw new Error(stored.error.message);
+
+      const updated = await taskRepo.update(taskId, {
+        attachments: [...existing, metadata],
+      });
+      if (!updated.ok) {
+        await getAttachmentRepository().remove(taskId, metadata.id);
+        throw new Error(updated.error.message);
+      }
+
+      await appendTaskActivity(
+        getStorageAdapter(),
+        createTaskActivity({
+          taskId,
+          kind: 'attachment_added',
+          to: metadata.name,
+        })
+      );
+
+      return updated.value;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.task(taskId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.taskActivity(taskId) });
+      success('Attachment added', 'The file is stored locally on this device.');
+    },
+    onError: (err: Error) => {
+      error('Failed to add attachment', err.message);
+    },
+  });
+}
+
+export function useRemoveAttachment(taskId: string) {
+  const queryClient = useQueryClient();
+  const { success, error } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async (attachment: AttachmentMetadata) => {
+      const taskRepo = getTaskRepository();
+      const taskResult = await taskRepo.get(taskId);
+      if (!taskResult.ok) throw new Error(taskResult.error.message);
+      const remaining = (taskResult.value.attachments ?? []).filter(
+        (item) => item.id !== attachment.id
+      );
+
+      const updated = await taskRepo.update(taskId, { attachments: remaining });
+      if (!updated.ok) throw new Error(updated.error.message);
+
+      const removed = await getAttachmentRepository().remove(taskId, attachment.id);
+      if (!removed.ok) throw new Error(removed.error.message);
+
+      await appendTaskActivity(
+        getStorageAdapter(),
+        createTaskActivity({
+          taskId,
+          kind: 'attachment_removed',
+          to: attachment.name,
+        })
+      );
+
+      return updated.value;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.task(taskId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.taskActivity(taskId) });
+      success('Attachment removed');
+    },
+    onError: (err: Error) => {
+      error('Failed to remove attachment', err.message);
+    },
+  });
+}
+
+export async function downloadTaskAttachment(
+  taskId: string,
+  attachment: AttachmentMetadata
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const result = await getAttachmentRepository().getBlob(taskId, attachment.id);
+  if (!result.ok) return { ok: false, message: result.error.message };
+
+  const url = URL.createObjectURL(result.value);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = sanitizeAttachmentName(attachment.name);
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  return { ok: true };
 }
 
 export function useCreateTask() {
@@ -730,6 +956,43 @@ export function useExportData() {
   });
 }
 
+/**
+ * Produces a passphrase-encrypted copy of the same export payload as
+ * `useExportData`. Attachments are metadata-only in exports by design.
+ */
+export function useEncryptedExport() {
+  const { success, error } = useToastHelpers();
+
+  return useMutation({
+    mutationFn: async (passphrase: string) => {
+      const adapter = getStorageAdapter();
+      const result = await exportAllData(adapter);
+      if (!result.ok) throw new Error(result.error.message);
+      return encryptBackup(result.value, passphrase);
+    },
+    onSuccess: (envelope) => {
+      const blob = new Blob([JSON.stringify(envelope, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `workboard-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      success(
+        'Encrypted backup created',
+        'Keep the passphrase safe — it cannot be recovered if lost.'
+      );
+    },
+    onError: (err: Error) => {
+      error('Encrypted backup failed', err.message);
+    },
+  });
+}
+
 export function useImportData() {
   const queryClient = useQueryClient();
   const { success, error } = useToastHelpers();
@@ -772,6 +1035,8 @@ export function useClearAllData() {
       const adapter = getStorageAdapter();
       const result = await clearAllData(adapter);
       if (!result.ok) throw new Error(result.error.message);
+      const attachmentResult = await getAttachmentRepository().clearAll();
+      if (!attachmentResult.ok) throw new Error(attachmentResult.error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects });

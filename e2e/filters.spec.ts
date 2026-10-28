@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { ensureTodoTask } from './helpers/tasks';
 
 const taskCards = (page: Page) => page.locator('article[data-task-id]');
 
@@ -52,6 +53,7 @@ test.describe('Filters and Search', () => {
   test('filters by status', async ({ page }) => {
     // Widen the page so both done and open seed tasks are present before filtering.
     await page.selectOption('select[id="page-size"]', '50');
+    await ensureTodoTask(page);
 
     const todoId = await taskId(page.locator('article[data-task-status="todo"]').first());
 
@@ -123,6 +125,7 @@ test.describe('Filters and Search', () => {
   });
 
   test('combines multiple filters', async ({ page }) => {
+    await ensureTodoTask(page);
     await page.selectOption('select[aria-label="Filter by status"]', 'todo');
     await page.selectOption('select[aria-label="Filter by priority"]', 'medium');
     await expect(page).toHaveURL(
