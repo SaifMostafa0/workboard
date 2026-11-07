@@ -57,7 +57,7 @@ A polished, responsive project and task management application demonstrating pro
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/workboard.git
+git clone https://github.com/SaifMostafa0/workboard.git
 cd workboard
 
 # Install dependencies (also installs Git hooks via the prepare script)
@@ -284,18 +284,21 @@ content is readable on paper.
 
 ## Deployment
 
-### Netlify (Recommended)
+Workboard deploys to Vercel as a static SPA. [`vercel.json`](vercel.json) provides the SPA
+fallback so direct routes resolve to `index.html`, and sets the cache headers: the service
+worker (`/sw.js`) is never cached and hashed assets under `/assets/` are immutable. There are
+no environment variables.
 
-1. Connect repository to Netlify
-2. Build command: `npm run build`
-3. Publish directory: `dist`
-4. Add redirect rule for SPA: `/* /index.html 200`
+### Vercel (used for the live demo)
 
-### Vercel
+1. Import the GitHub repository in Vercel.
+2. Vercel reads `vercel.json`: Vite preset, `npm run build`, output `dist`, SPA rewrite and headers.
 
-1. Import project
-2. Framework preset: Vite
-3. Output directory: `dist`
+### Netlify
+
+1. Connect the repository to Netlify.
+2. Build command: `npm run build`; publish directory: `dist`.
+3. Add the SPA redirect rule: `/* /index.html 200`.
 
 ### Static Hosting (Any)
 
