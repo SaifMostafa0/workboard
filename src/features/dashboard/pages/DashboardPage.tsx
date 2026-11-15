@@ -1,6 +1,8 @@
 import { EmptyState, Loading } from '@/components/feedback';
+import { useToastHelpers } from '@/components/feedback/Toast';
 import { Button } from '@/components/ui/Button';
-import { useProjects, useTasks } from '@/hooks/useData';
+import { useImportData, useProjects, useTasks } from '@/hooks/useData';
+import { loadSampleData } from '@/infrastructure/storage/sampleData';
 import { cn } from '@/lib/cn';
 import { formatRelativeTime, isOverdue } from '@/lib/date';
 import {
@@ -13,6 +15,7 @@ import {
   Plus,
   TrendingUp,
 } from 'lucide-react';
+import { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './DashboardPage.module.css';
 
@@ -20,8 +23,29 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const { data: projects, isLoading: projectsLoading, error: projectsError } = useProjects();
   const { data: tasks, isLoading: tasksLoading, error: tasksError } = useTasks();
+  const importData = useImportData();
+  const toast = useToastHelpers();
 
   const isLoading = projectsLoading || tasksLoading;
+
+  // A ref, not state: a second click in the same tick must see the first one's flag.
+  const sampleLoadStarted = useRef(false);
+
+  const handleLoadSampleData = async () => {
+    if (sampleLoadStarted.current) return;
+    sampleLoadStarted.current = true;
+    const release = () => {
+      sampleLoadStarted.current = false;
+    };
+    try {
+      const data = await loadSampleData();
+      // The mutation shows its own success and error toasts.
+      importData.mutate({ data, mode: 'merge' }, { onSettled: release });
+    } catch (err) {
+      release();
+      toast.error('Could not load sample data', err instanceof Error ? err.message : String(err));
+    }
+  };
 
   if (isLoading) {
     return (
@@ -52,11 +76,15 @@ export function DashboardPage() {
         <EmptyState
           icon={<FolderKanban className="w-10 h-10" />}
           title="Welcome to Workboard"
-          description="Create your first project to start organizing tasks and tracking progress."
+          description="Create your first project, or load sample data to explore every view."
           action={{
             label: 'Create Project',
             onClick: () => navigate('/projects/new'),
             variant: 'primary',
+          }}
+          secondaryAction={{
+            label: 'Load sample data',
+            onClick: () => void handleLoadSampleData(),
           }}
         />
       </div>
