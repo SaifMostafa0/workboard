@@ -13,8 +13,7 @@ source: handoff
 
 ## Summary
 
-`HANDOFF_COMPLETE.md` notes that the Kanban drag-and-drop E2E tests are skipped on mobile and
-that drag is exercised via dispatched events. Mobile users currently rely on the status-button
+Mobile users currently rely on the status-button
 fallback. Close the test gap and make the mobile interaction genuinely usable.
 
 ## Acceptance criteria

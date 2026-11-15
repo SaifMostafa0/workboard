@@ -52,4 +52,4 @@ and list lack. This is a common reason teams move to Asana or Monday.com.
   bar rendering, zoom, filters, range navigation, keyboard opening, and undated tasks; Timeline
   added to the axe page sweep.
 - Docs: README, `STATUS.md`, `docs/architecture.md`, `docs/accessibility.md`,
-  `docs/testing-strategy.md`, and `COMPETITOR_ANALYSIS.md` updated.
+  `docs/testing-strategy.md`, and `docs/competitor-analysis.md` updated.

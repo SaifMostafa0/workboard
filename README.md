@@ -5,7 +5,7 @@ timeline and reports over IndexedDB, with no backend.
 
 **Live demo:** https://workboard-blush.vercel.app · **Status:** feature-complete, see [STATUS.md](STATUS.md)
 
-> **Docs at a glance:** [Architecture](docs/architecture.md) · [PWA & encrypted backups](docs/pwa.md) · [Competitor analysis (Jira, Trello, Linear)](COMPETITOR_ANALYSIS.md) · [Backlog](BACKLOG.md) · [Status](STATUS.md) · [Agent guide](AGENTS.md)
+> **Docs at a glance:** [Architecture](docs/architecture.md) · [PWA & encrypted backups](docs/pwa.md) · [Competitor analysis (Jira, Trello, Linear)](docs/competitor-analysis.md) · [Backlog](BACKLOG.md) · [Status](STATUS.md) · [Agent guide](AGENTS.md)
 
 ## Features
 

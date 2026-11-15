@@ -42,8 +42,7 @@ offline-first + zero-cost + accessibility**, which is a real (if narrow) niche.
 
 ## 2. Workboard at a glance (as-built)
 
-Grounded in `README.md`, `PROJECT_SPEC.md`, `docs/architecture.md`, `CASE_STUDY.md`,
-and `HANDOFF_COMPLETE.md`.
+Grounded in `../README.md`, `project-spec.md`, `architecture.md`, and `case-study.md`.
 
 **Product**
 
@@ -64,7 +63,7 @@ and `HANDOFF_COMPLETE.md`.
   desktop-only skip), lint/typecheck clean, 184.96 KB gzip JS, Lighthouse targets (perf ≥90,
   a11y ≥95).
 
-**Honest gaps (from `README.md` "Known Limitations" and `HANDOFF_COMPLETE.md`)**
+**Honest gaps (from `../README.md` "Known Limitations")**
 
 - No real-time collaboration, no backend/API, no auth, no file attachments,
   no recurring tasks. The calendar covers month/week due dates, and the timeline adds
@@ -75,7 +74,7 @@ and `HANDOFF_COMPLETE.md`.
 - Saved Views are applied on the Tasks page (filters encoded in the URL) and, like labels and
   preferences, round-trip through JSON export/import.
 - Scale: list rendering is virtualized and benchmarked to 50,000 tasks; filtering/sorting still
-  run in memory ([docs/performance.md](docs/performance.md)).
+  run in memory ([performance.md](performance.md)).
 - Single user, single device, manual JSON export to move data.
 
 ---

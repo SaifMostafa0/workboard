@@ -32,7 +32,7 @@ filter/sort/pagination machinery does the rest.
 ## Notes
 
 - `SavedView.filters` already mirrors the Tasks URL param names (`q`, `status`, `priority`, `project`, `due`, `sort`, `order`, `tags`), so no schema migration is needed.
-- Keep filter state URL-driven (see `CASE_STUDY.md` Decision 1); do not introduce a second source of truth.
+- Keep filter state URL-driven (see `docs/case-study.md` Decision 1); do not introduce a second source of truth.
 - Tag filtering was wired into the Tasks filter bar as toggle chips (multi-select); a view's `tags` array round-trips through the `tags` URL param.
 
 ## Updates

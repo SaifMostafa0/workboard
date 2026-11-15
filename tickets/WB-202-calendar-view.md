@@ -47,4 +47,4 @@ Trello Premium and Asana and makes due dates actionable.
 - Tests: 10 pure date-bucketing/grouping tests in `src/domain/__tests__/calendar.test.ts`; a
   Playwright journey in `e2e/calendar.spec.ts`; Calendar added to the axe page sweep.
 - Docs: README feature/future-work lists, `STATUS.md`, `docs/architecture.md`,
-  `docs/accessibility.md`, `docs/testing-strategy.md`, and `COMPETITOR_ANALYSIS.md` updated.
+  `docs/accessibility.md`, `docs/testing-strategy.md`, and `docs/competitor-analysis.md` updated.

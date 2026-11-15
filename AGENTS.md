@@ -10,8 +10,8 @@ portfolio-grade engineering project. React 18 + TypeScript + Vite, React Router,
 React Hook Form + Zod, IndexedDB (with localStorage fallback). No backend, no accounts, no sync.
 
 - Architecture: [`docs/architecture.md`](docs/architecture.md)
-- Engineering decisions: [`CASE_STUDY.md`](CASE_STUDY.md)
-- Market context: [`COMPETITOR_ANALYSIS.md`](COMPETITOR_ANALYSIS.md)
+- Engineering decisions: [`docs/case-study.md`](docs/case-study.md)
+- Market context: [`docs/competitor-analysis.md`](docs/competitor-analysis.md)
 - Current state: [`STATUS.md`](STATUS.md)
 - Backlog: [`BACKLOG.md`](BACKLOG.md)
 - **How work is tracked (read this):** [`docs/project-management.md`](docs/project-management.md)
