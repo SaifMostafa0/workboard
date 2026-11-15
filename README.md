@@ -1,6 +1,9 @@
 # Workboard
 
-A polished, responsive project and task management application demonstrating professional frontend engineering practices.
+A local-first project and task manager that runs entirely in the browser: Kanban, list, calendar,
+timeline and reports over IndexedDB, with no backend.
+
+**Live demo:** https://workboard-blush.vercel.app · **Status:** feature-complete, see [STATUS.md](STATUS.md)
 
 > **Docs at a glance:** [Architecture](docs/architecture.md) · [PWA & encrypted backups](docs/pwa.md) · [Competitor analysis (Jira, Trello, Linear)](COMPETITOR_ANALYSIS.md) · [Backlog](BACKLOG.md) · [Status](STATUS.md) · [Agent guide](AGENTS.md)
 
@@ -29,7 +32,7 @@ A polished, responsive project and task management application demonstrating pro
 - **Import/Export**: JSON backup and restore with validation (projects, tasks, epics, labels, saved views, attachment metadata only)
 - **Human-friendly exports**: CSV for tasks and projects, Markdown for the backlog, plus a print/PDF view of boards and lists
 - **Theme Support**: Light, dark, and system preference modes
-- **Accessibility**: WCAG 2.2 AA compliant
+- **Accessibility**: built to WCAG 2.2 AA; automated axe scans of every main page run in the E2E suite
 - **Responsive Design**: Works on mobile, tablet, and desktop
 
 ## Tech Stack
@@ -229,7 +232,7 @@ Covers critical user journeys:
 
 ## Accessibility
 
-WCAG 2.2 AA compliant with:
+Built to WCAG 2.2 AA and checked with automated axe scans (no manual screen-reader audit yet):
 
 - Semantic HTML landmarks
 - Full keyboard navigation
@@ -311,11 +314,10 @@ Ensure your host supports SPA fallback (redirect all routes to `index.html`).
 
 ## Known Limitations
 
-- No real-time collaboration
-- No backend/API (data is local only)
-- No user authentication
-- No file attachments
-- No recurring tasks
+- No backend, accounts, collaboration or sync (data is local to this browser)
+- Attachments live only in this browser's IndexedDB and are not included in any export
+- Encrypted backups have no passphrase recovery
+- Reminder notifications fire only while Workboard is open
 - List views are benchmarked to 50,000 tasks ([docs/performance.md](docs/performance.md)); rendering is
   virtualized, but filtering/sorting still scan the collection in memory, so total task count is
   bounded by available memory rather than by rendering
@@ -325,7 +327,6 @@ Ensure your host supports SPA fallback (redirect all routes to `index.html`).
 - Backend API with synchronization
 - Real-time updates via WebSockets
 - User accounts & teams
-- File attachments
 - Advanced reporting & custom dashboards
 - Mobile app (React Native)
 
