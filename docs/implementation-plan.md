@@ -3,8 +3,8 @@
 ## Milestone 1: Repository Setup & Architecture Documentation ✓
 
 - [x] Inspect repository (empty)
-- [x] Create PROJECT_SPEC.md
-- [x] Create IMPLEMENTATION_PLAN.md
+- [x] Create docs/project-spec.md
+- [x] Create docs/implementation-plan.md
 - [ ] Create docs/architecture.md
 - [ ] Create docs/testing-strategy.md
 - [ ] Create docs/decisions/ directory

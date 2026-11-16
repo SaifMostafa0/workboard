@@ -57,5 +57,5 @@ repository layer so the app stays smooth at scale.
   `search()` now reuses it. Because pagination controls are retained, per-page DOM is already bounded, so
   windowing acts as a second cap for large page sizes.
 - 2026-10-16 — Docs updated (`README`, `docs/architecture.md`, `docs/performance.md`, `AGENTS.md`,
-  `CASE_STUDY.md`, `COMPETITOR_ANALYSIS.md`, `STATUS.md`). Gates green: 401 unit tests (28 files), lint,
+  `docs/case-study.md`, `docs/competitor-analysis.md`, `STATUS.md`). Gates green: 401 unit tests (28 files), lint,
   typecheck, build, size (168 KB gzip JS / 11 KB CSS), E2E 154 passed / 2 skipped.

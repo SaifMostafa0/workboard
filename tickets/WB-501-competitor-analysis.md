@@ -19,7 +19,7 @@ Jira (the enterprise anchor) and its two closest analogs — Trello (scope) and 
 
 ## Acceptance criteria
 
-- [x] `COMPETITOR_ANALYSIS.md` documents positioning, a feature matrix, and dimension-by-dimension analysis.
+- [x] `docs/competitor-analysis.md` documents positioning, a feature matrix, and dimension-by-dimension analysis.
 - [x] The two "best similar products" are justified (Trello for scope, Linear for UX), with Jira as the requested anchor.
 - [x] Honest gaps and a tiered roadmap are derived from the analysis.
 - [x] The README links to the analysis.
@@ -32,4 +32,4 @@ Jira (the enterprise anchor) and its two closest analogs — Trello (scope) and 
 
 ## Updates
 
-- 2026-10-14 — Wrote `COMPETITOR_ANALYSIS.md`, added the README link, and spawned the roadmap + gap tickets (WB-1xx through WB-4xx).
+- 2026-10-14 — Wrote `docs/competitor-analysis.md`, added the README link, and spawned the roadmap + gap tickets (WB-1xx through WB-4xx).

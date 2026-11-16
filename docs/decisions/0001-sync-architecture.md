@@ -10,7 +10,7 @@
 
 Workboard is deliberately local-first: no backend, no accounts, no network. The largest gap versus
 Jira, Trello and Linear is therefore **collaboration and multi-device use** (see
-[`COMPETITOR_ANALYSIS.md`](../../COMPETITOR_ANALYSIS.md)). The goal is to close some of that gap
+[`docs/competitor-analysis.md`](../competitor-analysis.md)). The goal is to close some of that gap
 **without surrendering the offline-first identity**: the app must keep working with no network and
 no server, and adding sync must be opt-in.
 

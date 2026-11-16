@@ -42,7 +42,7 @@ const filtered = tasks.filter(
 
 - Typical user has < 500 tasks — well within memory limits
 - Filter operations complete in < 5ms at typical sizes (benchmarked to 50k tasks in
-  [docs/performance.md](docs/performance.md))
+  [performance.md](performance.md))
 - Instant UX: no loading spinners when changing filters
 - Shareable URLs: `?status=todo&priority=high&sort=dueDate&order=asc`
 - Works completely offline
@@ -58,7 +58,7 @@ const filtered = tasks.filter(
 The strongest version of this seam is the storage adapter, not the repository class: the repositories
 are pure functions of a `StorageAdapter`, so mounting an HTTP-backed adapter on the existing factories
 yields fully contract-compliant repositories with no repository, hook or component changes. This was
-validated by a spike ([ADR 0001](docs/decisions/0001-sync-architecture.md), [WB-201](tickets/WB-201-sync-spike.md));
+validated by a spike ([ADR 0001](decisions/0001-sync-architecture.md), [WB-201](../tickets/WB-201-sync-spike.md));
 local-only remains the default.
 
 ---
